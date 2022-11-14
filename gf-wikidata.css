@@ -1,0 +1,59 @@
+body {
+    background-color: #f6f6f6;
+}
+.gp-head {
+    padding-top: 1em;
+    height: 2em;
+}
+.gp-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 10em;
+}
+.gp-logo {
+    width: 10em;
+}
+.gp-body {
+    background-color: #ffffff;
+    margin-left: 11em;
+    height: 100%;
+    padding: 1.25em 1.5em 1.5em 1.5em;
+    border: 1px solid #a7d7f9;
+    border-right-width: 0;
+}
+.gp-languages {
+    padding-top: 2em;
+    padding-left: 1em;
+}
+.search-box {
+    float: right;
+    border: solid 1px black;
+    background-color: field;
+}
+.search-box-input {
+    width: 20vw;
+    border: none;
+    outline: none;
+    height: 17.5px;
+    vertical-align: middle;
+}
+.search-box-button {
+    height: 17.5px;
+    vertical-align: middle;
+}
+.search-box-results {
+    width: 21vw;
+    border-spacing: 5px;
+    display: none;
+}
+.search-box-results > tr > div {
+    overflow-wrap: break-word; 
+}
+.search-box-results > tr > div:first-child {
+    font-weight: bold;
+}
+.search-box-results > tr.current {
+    background-color: #2a4b8d;
+    color: #fff;
+}

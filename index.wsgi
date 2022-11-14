@@ -1,12 +1,61 @@
 import os
 
+template = [
+  '<html>',
+  ' <title>GFpedia</title>',
+  ' <head>',
+  '     <link rel="stylesheet" type="text/css" href="gf-wikidata.css">',
+  '     <script src="gf-wikidata.js"></script>',
+  ' </head>',
+  ' <body>',
+  '     <div class="gp-head">',
+  '          <form class="search-box">',
+  '             <input class="search-box-input" type="search" name="search"',
+  '                    placeholder="Search GFpedia" aria-label="Search GFpedia"',
+  '                    autocapitalize="sentences" title="Search GFpedia" id="searchInput"',
+  '                    autocomplete="off"',
+  '                    oninput="showSearches(this)"',
+  '                    onkeypress="searchInputOnKeyPress(event)"',
+  '                    onkeydown="searchInputOnKeyDown(event)">',
+  '             <img class="search-box-button" src="search.svg">',
+  '             <table class="search-box-results" id="searchResults"></table>',
+  '         </form>',
+  '     </div>',
+  '     <div class="gp-panel">',
+  '         <img class="gp-logo" src="gp-logo.svg">',
+  '         <table id="from" class="gp-languages">',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Afrikaans</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Bulgarian</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Catalan</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Chinese</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Dutch</a></td></tr>',
+  '             <tr><td><b>English</b></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Estonian</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Finnish</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">French</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">German</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Italian</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Korean</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Maltese</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Polish</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Portuguese</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Romanian</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Russian</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Slovenian</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Somali</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Spanish</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Swahili</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Swedish</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Thai</a></td></tr>',
+  '             <tr><td><a href="#" onclick="changeLanguage(event)">Turkish</a></td></tr>',
+  '         </table>',
+  '     </div>',
+  '     <div class="gp-body" id="content">',
+  '         body',
+  '     </div>',
+  ' </body>',
+  '</html>']
+
 def application(env, start_response):
     start_response('200 OK', [('Content-Type','text/html')])
-
-    fpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "index.html")
-    with open(fpath, "r") as f:
-      content = []
-      for line in f:
-        content.append(line)	  
-    return content
-
+    return template
