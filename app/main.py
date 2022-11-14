@@ -1,3 +1,5 @@
+import json
+import urllib.request
 from urllib.parse import parse_qs
 
 prelude = [
@@ -84,7 +86,11 @@ def application(env, start_response):
     content.append(b'     </div>')
     content.append(b'     <div class="gp-body" id="content" data-qid="'+bytes(qid,"utf8")+b'" data-lang="'+bytes(lang,"utf8")+b'">')
 
-    content.append(bytes(str(qid),"utf8"))
+    u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
+    result = json.loads(u2.read())
+    entity = result["entities"][qid]
+    content.append(bytes(str(entity["labels"]),"utf8"))
+
     for line in epilogue:
         content.append(line)
     return content
