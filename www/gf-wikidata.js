@@ -1,7 +1,8 @@
 function showSearches(searchbox) {
     if (searchbox.value.length < 3) return;
 
-    fetch("https://www.wikidata.org/w/api.php?action=wbsearchentities&language=en&type=item&continue=0&origin=*&format=json&search="+encodeURIComponent(searchbox.value),
+	const content = document.getElementById("content");
+	fetch("https://www.wikidata.org/w/api.php?action=wbsearchentities&language="+content.dataset.lang+"&uselang="+content.dataset.lang+"&type=item&continue=0&origin=*&format=json&search="+encodeURIComponent(searchbox.value),
           { method: "GET" })
        .then((response) => response.json())
        .then((data) => {
