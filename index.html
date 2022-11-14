@@ -179,6 +179,28 @@ function loadEntity(qid) {
     const searchResults = document.getElementById("searchResults");
     searchResults.style.display = "none";
 }
+function changeLanguage(event) {
+    event.preventDefault();
+    
+    let tr = event.target.parentElement.parentElement.parentElement.firstElementChild;
+    while (tr != null) {
+        const element = tr.firstElementChild.firstElementChild;
+        if (element.tagName == "A" && element == event.target) {
+            const b = document.createElement("B");
+            b.appendChild(document.createTextNode(element.innerHTML));
+            element.parentElement.insertBefore(b,element);
+            element.remove();
+        } else if (element.tagName == "B") {
+            const a = document.createElement("A");
+            a.setAttribute("href","#");
+            a.setAttribute("onclick","changeLanguage(event)");
+            a.appendChild(document.createTextNode(element.innerHTML));
+            element.parentElement.insertBefore(a,element);
+            element.remove();
+        }
+        tr = tr.nextElementSibling;
+    }
+}
 </script>
 
     </head>
@@ -199,30 +221,30 @@ function loadEntity(qid) {
         <div class="gp-panel">
             <img class="gp-logo" src="gp-logo.svg">
             <table id="from" class="gp-languages">
-                <tr><td>Afrikaans</td></tr>
-                <tr><td>Bulgarian</td></tr>
-                <tr><td>Catalan</td></tr>
-                <tr><td>Chinese</td></tr>
-                <tr><td>Dutch</td></tr>
-                <tr><td>English</td></tr>
-                <tr><td>Estonian</td></tr>
-                <tr><td>Finnish</td></tr>
-                <tr><td>French</td></tr>
-                <tr><td>German</td></tr>
-                <tr><td>Italian</td></tr>
-                <tr><td>Korean</td></tr>
-                <tr><td>Maltese</td></tr>
-                <tr><td>Polish</td></tr>
-                <tr><td>Portuguese</td></tr>
-                <tr><td>Romanian</td></tr>
-                <tr><td>Russian</td></tr>
-                <tr><td>Slovenian</td></tr>
-                <tr><td>Somali</td></tr>
-                <tr><td>Spanish</td></tr>
-                <tr><td>Swahili</td></tr>
-                <tr><td>Swedish</td></tr>
-                <tr><td>Thai</td></tr>
-                <tr><td>Turkish</td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Afrikaans</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Bulgarian</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Catalan</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Chinese</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Dutch</a></td></tr>
+                <tr><td><b>English</b></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Estonian</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Finnish</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">French</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">German</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Italian</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Korean</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Maltese</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Polish</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Portuguese</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Romanian</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Russian</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Slovenian</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Somali</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Spanish</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Swahili</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Swedish</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Thai</a></td></tr>
+                <tr><td><a href="#" onclick="changeLanguage(event)">Turkish</a></td></tr>
             </table>
         </div>
         <div class="gp-body" id="content">
