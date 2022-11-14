@@ -1,0 +1,232 @@
+<html>
+    <title>GFpedia</title>
+    <head>
+        <style type="text/css">
+             body {
+               background-color: #f6f6f6;
+             }
+            .gp-head {
+                padding-top: 1em;
+                height: 2em;
+            }
+            .gp-panel {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 10em;
+            }
+            .gp-logo {
+                width: 10em;
+            }
+            .gp-body {
+                background-color: #ffffff;
+                margin-left: 11em;
+                height: 100%;
+                padding: 1.25em 1.5em 1.5em 1.5em;
+                border: 1px solid #a7d7f9;
+                border-right-width: 0;
+            }
+            .gp-languages {
+                padding-top: 2em;
+                padding-left: 1em;
+            }
+            .search-box {
+                float: right;
+                border: solid 1px black;
+                background-color: field;
+            }
+            .search-box-input {
+                width: 20vw;
+                border: none;
+                outline: none;
+                height: 17.5px;
+                vertical-align: middle;
+            }
+            .search-box-button {
+                height: 17.5px;
+                vertical-align: middle;
+            }
+            .search-box-results {
+                width: 21vw;
+                border-spacing: 5px;
+                display: none;
+            }
+            .search-box-results > tr > div {
+                overflow-wrap: break-word; 
+            }
+            .search-box-results > tr > div:first-child {
+                font-weight: bold;
+            }
+            .search-box-results > tr.current {
+                background-color: #2a4b8d;
+                color: #fff;
+            }
+        </style>
+<script>
+function showSearches(searchbox) {
+    if (searchbox.value.length < 3) return;
+
+    fetch("https://www.wikidata.org/w/api.php?action=wbsearchentities&language=en&type=item&continue=0&origin=*&format=json&search="+encodeURIComponent(searchbox.value),
+          { method: "GET" })
+       .then((response) => response.json())
+       .then((data) => {
+                const searchResults = document.getElementById("searchResults");
+                searchResults.innerHTML = "";
+                searchResults.style.display = "none";
+                for (const res of data.search) {
+                    searchResults.style.display = "block";
+
+                    const option = document.createElement("TR");
+                    option.dataset.qid = res.id;
+                    if (res.label != null) {
+                        const value = document.createElement("DIV");
+                        value.appendChild(document.createTextNode(res.label));
+                        option.appendChild(value);
+                    }
+                    if (res.description != null) {
+                        const descr = document.createElement("DIV");
+                        descr.appendChild(document.createTextNode(res.description));
+                        option.appendChild(descr);
+                    }
+
+                    option.addEventListener('mouseenter', (event) => {
+                        let element = searchResults.firstElementChild;
+                        while (element != null) {
+                            element.className = null;
+                            element = element.nextElementSibling;
+                        }
+                        event.target.className = "current";
+                    });
+                    option.addEventListener('mouseleave', (event) => {
+                        let element = searchResults.firstElementChild;
+                        while (element != null) {
+                            element.className = null;
+                            element = element.nextElementSibling;
+                        }
+                    });
+                    option.addEventListener('click', (event) => {
+                        loadEntity(event.target.parentElement.dataset.qid);
+                    });
+
+                    searchResults.appendChild(option);
+                    
+                    if (res.label == searchbox.value) {
+                        searchbox.dataset.qid = res.id;
+                    }
+                }
+             });
+}
+
+function searchInputOnKeyPress(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+
+        let element = searchResults.firstElementChild;
+        while (element != null) {
+            if (element.className == "current") {
+                break;
+            }
+            element = element.nextElementSibling;
+        }
+        if (element == null)
+            element = searchResults.firstElementChild;
+        if (element != null) {
+            loadEntity(element.dataset.qid);
+        }
+    }
+}
+function searchInputOnKeyDown(event) {
+    const searchResults = document.getElementById("searchResults");
+    if (event.code === "ArrowUp") {
+        event.preventDefault();
+        let element = searchResults.firstElementChild;
+        let last    = null;
+        while (element != null) {
+            if (element.className == "current") {
+                if (last != null) {
+                    element.className = null;
+                    last.className = "current";
+                }
+                break;
+            }
+            last    = element;
+            element = element.nextElementSibling;
+        }
+    } else if (event.code === "ArrowDown") {
+        event.preventDefault();
+        let element = searchResults.firstElementChild;
+        while (element != null) {
+            const next = element.nextElementSibling;
+            if (element.className == "current") {
+                if (next != null) {
+                    element.className = null;
+                    next.className = "current";
+                }
+                break;
+            }
+            element = next;
+        }
+        if (element == null) {
+            searchResults.firstElementChild.className = "current";
+        }
+    }
+}
+function loadEntity(qid) {
+    const content = document.getElementById("content");
+    content.innerHTML = qid;
+    const searchInput = document.getElementById("searchInput");
+    searchInput.value = "";
+    const searchResults = document.getElementById("searchResults");
+    searchResults.style.display = "none";
+}
+</script>
+
+    </head>
+    <body>
+        <div class="gp-head">
+            <form class="search-box">
+                <input class="search-box-input" type="search" name="search" 
+                       placeholder="Search GFpedia" aria-label="Search GFpedia" 
+                       autocapitalize="sentences" title="Search GFpedia" id="searchInput" 
+                       autocomplete="off"
+                       oninput="showSearches(this)" 
+                       onkeypress="searchInputOnKeyPress(event)"
+                       onkeydown="searchInputOnKeyDown(event)">
+                <img class="search-box-button" src="search.svg">
+                <table class="search-box-results" id="searchResults"></table>
+            </form>
+        </div>
+        <div class="gp-panel">
+            <img class="gp-logo" src="gp-logo.svg">
+            <table id="from" class="gp-languages">
+                <tr><td>Afrikaans</td></tr>
+                <tr><td>Bulgarian</td></tr>
+                <tr><td>Catalan</td></tr>
+                <tr><td>Chinese</td></tr>
+                <tr><td>Dutch</td></tr>
+                <tr><td>English</td></tr>
+                <tr><td>Estonian</td></tr>
+                <tr><td>Finnish</td></tr>
+                <tr><td>French</td></tr>
+                <tr><td>German</td></tr>
+                <tr><td>Italian</td></tr>
+                <tr><td>Korean</td></tr>
+                <tr><td>Maltese</td></tr>
+                <tr><td>Polish</td></tr>
+                <tr><td>Portuguese</td></tr>
+                <tr><td>Romanian</td></tr>
+                <tr><td>Russian</td></tr>
+                <tr><td>Slovenian</td></tr>
+                <tr><td>Somali</td></tr>
+                <tr><td>Spanish</td></tr>
+                <tr><td>Swahili</td></tr>
+                <tr><td>Swedish</td></tr>
+                <tr><td>Thai</td></tr>
+                <tr><td>Turkish</td></tr>
+            </table>
+        </div>
+        <div class="gp-body" id="content">
+            body
+        </div>
+    </body>
+</html>
