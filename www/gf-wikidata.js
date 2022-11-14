@@ -107,32 +107,11 @@ function searchInputOnKeyDown(event) {
     }
 }
 function loadEntity(qid) {
-    const content = document.getElementById("content");
-    content.innerHTML = qid;
     const searchInput = document.getElementById("searchInput");
     searchInput.value = "";
     const searchResults = document.getElementById("searchResults");
     searchResults.style.display = "none";
-}
-function changeLanguage(event) {
-    event.preventDefault();
-    
-    let tr = event.target.parentElement.parentElement.parentElement.firstElementChild;
-    while (tr != null) {
-        const element = tr.firstElementChild.firstElementChild;
-        if (element.tagName == "A" && element == event.target) {
-            const b = document.createElement("B");
-            b.appendChild(document.createTextNode(element.innerHTML));
-            element.parentElement.insertBefore(b,element);
-            element.remove();
-        } else if (element.tagName == "B") {
-            const a = document.createElement("A");
-            a.setAttribute("href","#");
-            a.setAttribute("onclick","changeLanguage(event)");
-            a.appendChild(document.createTextNode(element.innerHTML));
-            element.parentElement.insertBefore(a,element);
-            element.remove();
-        }
-        tr = tr.nextElementSibling;
-    }
+
+    const content = document.getElementById("content");
+    window.location.href = "index.wsgi?id="+qid+"&lang="+content.dataset.lang;
 }
