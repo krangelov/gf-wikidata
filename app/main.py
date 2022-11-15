@@ -33,34 +33,32 @@ prelude = [
   b'         <table id="from" class="gp-languages">'
   ]
 
-concrs = gr.languages
 langs = {
-  "af": ("Afrikaans", concrs["ParseAfr"]),
-  "bg": ("Bulgarian", concrs["ParseBul"]),
-  "ca": ("Catalan",   concrs["ParseCat"]),
-  "zh": ("Chinese",   concrs["ParseChi"]),
-  "nl": ("Dutch",     concrs["ParseDut"]),
-  "en": ("English",   concrs["ParseEng"]),
-  "et": ("Estonian",  concrs["ParseEst"]),
-  "fi": ("Finnish",   concrs["ParseFin"]),
-  "fr": ("French",    concrs["ParseFre"]),
-  "de": ("German",    concrs["ParseGer"]),
-  "it": ("Italian",   concrs["ParseIta"]),
-  "ko": ("Korean",    concrs["ParseKor"]),
-  "mt": ("Maltese",   concrs["ParseMlt"]),
-  "pl": ("Polish",    concrs["ParsePol"]),
-  "pt": ("Portuguese",concrs["ParsePor"]),
-  "ro": ("Romanian",  concrs["ParseRon"]),
-  "ru": ("Russian",   concrs["ParseRus"]),
-  "sl": ("Slovenian", concrs["ParseSlv"]),
-  "so": ("Somali",    concrs["ParseSom"]),
-  "es": ("Spanish",   concrs["ParseSpa"]),
-  "sw": ("Swahili",   concrs["ParseSwa"]),
-  "sv": ("Swedish",   concrs["ParseSwe"]),
-  "th": ("Thai",      concrs["ParseTha"]),
-  "tr": ("Turkish",   concrs["ParseTur"])
+  "af": ("Afrikaans", "ParseAfr"),
+  "bg": ("Bulgarian", "ParseBul"),
+  "ca": ("Catalan",   "ParseCat"),
+  "zh": ("Chinese",   "ParseChi"),
+  "nl": ("Dutch",     "ParseDut"),
+  "en": ("English",   "ParseEng"),
+  "et": ("Estonian",  "ParseEst"),
+  "fi": ("Finnish",   "ParseFin"),
+  "fr": ("French",    "ParseFre"),
+  "de": ("German",    "ParseGer"),
+  "it": ("Italian",   "ParseIta"),
+  "ko": ("Korean",    "ParseKor"),
+  "mt": ("Maltese",   "ParseMlt"),
+  "pl": ("Polish",    "ParsePol"),
+  "pt": ("Portuguese","ParsePor"),
+  "ro": ("Romanian",  "ParseRon"),
+  "ru": ("Russian",   "ParseRus"),
+  "sl": ("Slovenian", "ParseSlv"),
+  "so": ("Somali",    "ParseSom"),
+  "es": ("Spanish",   "ParseSpa"),
+  "sw": ("Swahili",   "ParseSwa"),
+  "sv": ("Swedish",   "ParseSwe"),
+  "th": ("Thai",      "ParseTha"),
+  "tr": ("Turkish",   "ParseTur")
   }
-del concrs
 
 home = [
   b'Search for a Wikidata entity in the upper left corner.'
@@ -111,7 +109,7 @@ def application(env, start_response):
         u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
         result = json.loads(u2.read())
         entity = result["entities"][qid]
-        cnc = langs[lang][1]
+        cnc = gr.languages[langs[lang][1]]
         lex = qids.get(qid)
         if lex:
             s=cnc.linearize(pgf.ExprFun(qids[qid])).title()
