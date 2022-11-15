@@ -67,7 +67,7 @@ home = [
   b'based on information from <a href="https://www.wikidata.org/">Wikidata</a> and by using ',
   b'the resource grammars in <a href="http://www.grammaticalframework.org/">GF</a> plus ',
   b'lexical resources in <a href="https://cloud.grammaticalframework.org/wordnet/">GF WordNet</a>.</p>'
-  b'<p>Search for a Wikidata entity in the upper left corner.</p>'
+  b'<p>Search for a Wikidata entity in the upper left corner!</p>'
   ]
 
 epilogue = [
