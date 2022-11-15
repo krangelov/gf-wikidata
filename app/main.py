@@ -30,7 +30,8 @@ prelude = [
   b'     </div>',
   b'     <div class="gp-panel">',
   b'         <img class="gp-logo" src="gp-logo.svg">',
-  b'         <table id="from" class="gp-languages">'
+  b'         <div class="gp-panel-section">',
+  b'           <table>'
   ]
 
 langs = {
@@ -61,7 +62,12 @@ langs = {
   }
 
 home = [
-  b'Search for a Wikidata entity in the upper left corner.'
+  b'<h1>GF Pedia</h1>',
+  b'<p>This is an experiment to see to what extend we can generate encyclopedic articles ',
+  b'based on information from <a href="https://www.wikidata.org/">Wikidata</a> and by using ',
+  b'the resource grammars in <a href="http://www.grammaticalframework.org/">GF</a> plus ',
+  b'lexical resources in <a href="https://cloud.grammaticalframework.org/wordnet/">GF WordNet</a>.</p>'
+  b'<p>Search for a Wikidata entity in the upper left corner.</p>'
   ]
 
 epilogue = [
@@ -92,6 +98,17 @@ def application(env, start_response):
     content = []
     for line in prelude:
         content.append(line)
+
+    if qid:
+        content.append(b'             <tr><td><a href="https://cloud.grammaticalframework.org/wikidata">Main page</a></td></tr>')
+        content.append(b'             <tr><td><a href="https://www.wikidata.org/wiki/'+bytes(qid,"utf8")+b'">Wikidata item</a></td></tr>')
+
+    content.append(b'           </table>')
+    content.append(b'         </div>')
+
+    content.append(b'         <div class="gp-panel-section">')
+    content.append(b'           <h3>Languages</h3>')
+    content.append(b'           <table id="from">'),
     for code,(name,cnc) in langs.items():
         if code != lang:
             if qid != None:
@@ -100,8 +117,8 @@ def application(env, start_response):
                 content.append(bytes('             <tr><td><a href="index.wsgi?lang='+code+'">'+name+'</a></td></tr>','utf8'))
         else:
             content.append(bytes('             <tr><td><b>'+name+'</b></td></tr>','utf8'))
-
     content.append(b'         </table>')
+    content.append(b'       </div>')
     content.append(b'     </div>')
     content.append(b'     <div class="gp-body" id="content" data-lang="'+bytes(lang,"utf8")+b'">')
 
