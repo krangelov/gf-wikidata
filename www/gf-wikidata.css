@@ -30,6 +30,9 @@ a {
     color: #0645ad;
     text-decoration: none;
 }
+a:hover {
+    text-decoration: underline;
+}
 .search-box {
     float: right;
     border: solid 1px black;
