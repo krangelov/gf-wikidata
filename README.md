@@ -19,4 +19,4 @@ examples.
 
 There is also a mock up web interface here:
 
-https://cloud.grammaticalframework.org/wikidata
+https://cloud.grammaticalframework.org/wikidatahttps://cloud.grammaticalframework.org/wikidata/index.wsgi
