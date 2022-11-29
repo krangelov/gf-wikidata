@@ -1,5 +1,4 @@
 import json
-import html
 import urllib.request
 from urllib.parse import parse_qs
 from daison import *
@@ -9,11 +8,8 @@ gr = pgf.readNGF("/usr/local/share/x86_64-linux-ghc-8.0.2/gf-4.0.0/www/Parse.ngf
 gr.embed("wordnet")
 import wordnet as w
 from wordnet.api import *
-from wordnet.semantics import *
-
-#import nlg.country
-#import nlg.capital
-#import nlg.city
+from nlg import render
+from nlg.util import *
 
 db = openDB("/usr/local/www/gf-wordnet/semantics.db")
 
@@ -86,53 +82,6 @@ epilogue = [
   b'</html>'
   ]
 
-def get_lex_fun(qid):
-    with db.run("w") as t:
-        for synset_id in t.cursor(synsets_qid, qid):
-            for lexeme_id in t.cursor(lexemes_synset, synset_id):
-                for lexeme in t.cursor(lexemes, lexeme_id):
-                    return lexeme.lex_fun
-    return None
-
-def country_render(lexeme, cnc, entity):
-	for value in entity["claims"]["P30"]:
-		continent_qid = value["mainsnak"]["datavalue"]["value"]["id"]
-		break
-		
-	if continent_qid:
-		cn = mkCN(mkCN(w.country_1_N),mkAdv(w.in_1_Prep,mkNP(pgf.ExprFun(get_lex_fun(continent_qid)))))
-	else:
-		cn = mkCN(w.country_1_N)
-
-	s=cnc.linearize(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn))))
-	yield "<p>"+html.escape(s)+"</p>"
-
-def capital_render(lexeme, cnc, entity):
-    for value in entity["claims"]["P17"]:
-        country_qid = value["mainsnak"]["datavalue"]["value"]["id"]
-        break
-		
-    if country_qid:
-        cn = w.PossNP(mkCN(w.capital_3_N),mkNP(pgf.ExprFun(get_lex_fun(country_qid))))
-    else:
-        cn = mkCN(w.capital_3_N)
-
-    s=cnc.linearize(mkS(mkCl(mkNP(lexeme),mkNP(the_Det,cn))))
-    yield "<p>"+html.escape(s)+"</p>"
-
-def city_render(lexeme, cnc, entity):
-	for value in entity["claims"]["P17"]:
-		country_qid = value["mainsnak"]["datavalue"]["value"]["id"]
-		break
-		
-	if country_qid:
-		cn = mkCN(mkCN(w.city_1_N),mkAdv(w.in_1_Prep,mkNP(pgf.ExprFun(get_lex_fun(country_qid)))))
-	else:
-		cn = mkCN(w.city_1_N)
-
-	s=cnc.linearize(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn))))
-	yield "<p>"+html.escape(s)+"</p>"
-
 def application(env, start_response):
     start_response('200 OK', [('Content-Type','text/html; charset=utf-8')])
     query = parse_qs(env["QUERY_STRING"])
@@ -145,32 +94,31 @@ def application(env, start_response):
     if lang not in langs:
         lang="en"
 
-    content = []
     for line in prelude:
-        content.append(line)
+        yield line
 
     if qid:
-        content.append(b'             <tr><td><a href="https://cloud.grammaticalframework.org/wikidata">Main page</a></td></tr>')
-        content.append(b'             <tr><td><a href="https://www.wikidata.org/wiki/'+bytes(qid,"utf8")+b'">Wikidata item</a></td></tr>')
+        yield b'             <tr><td><a href="https://cloud.grammaticalframework.org/wikidata">Main page</a></td></tr>'
+        yield b'             <tr><td><a href="https://www.wikidata.org/wiki/'+bytes(qid,"utf8")+b'">Wikidata item</a></td></tr>'
 
-    content.append(b'           </table>')
-    content.append(b'         </div>')
+    yield b'           </table>'
+    yield b'         </div>'
 
-    content.append(b'         <div class="gp-panel-section">')
-    content.append(b'           <h3>Languages</h3>')
-    content.append(b'           <table id="from">'),
+    yield b'         <div class="gp-panel-section">'
+    yield b'           <h3>Languages</h3>'
+    yield b'           <table id="from">'
     for code,(name,cnc) in langs.items():
         if code != lang:
             if qid != None:
-                content.append(bytes('             <tr><td><a href="index.wsgi?id='+qid+'&lang='+code+'">'+name+'</a></td></tr>','utf8'))
+                yield bytes('             <tr><td><a href="index.wsgi?id='+qid+'&lang='+code+'">'+name+'</a></td></tr>','utf8')
             else:
-                content.append(bytes('             <tr><td><a href="index.wsgi?lang='+code+'">'+name+'</a></td></tr>','utf8'))
+                yield bytes('             <tr><td><a href="index.wsgi?lang='+code+'">'+name+'</a></td></tr>','utf8')
         else:
-            content.append(bytes('             <tr><td><b>'+name+'</b></td></tr>','utf8'))
-    content.append(b'         </table>')
-    content.append(b'       </div>')
-    content.append(b'     </div>')
-    content.append(b'     <div class="gp-body" id="content" data-lang="'+bytes(lang,"utf8")+b'">')
+            yield bytes('             <tr><td><b>'+name+'</b></td></tr>','utf8')
+    yield b'         </table>'
+    yield b'       </div>'
+    yield b'     </div>'
+    yield b'     <div class="gp-body" id="content" data-lang="'+bytes(lang,"utf8")+b'">'
 
     if qid != None:
         u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
@@ -178,40 +126,16 @@ def application(env, start_response):
         entity = result["entities"][qid]
         cnc = gr.languages[langs[lang][1]]
 
-        lex_fun = get_lex_fun(qid)
-
-        class_qids = []
-        for value in entity["claims"]["P31"]:
-            class_qid = value["mainsnak"]["datavalue"]["value"]["id"]
-            class_qids.append(class_qid)
-
+        lex_fun = get_lex_fun(db, qid)
         if lex_fun:
-            lex_expr = pgf.ExprFun(lex_fun)
-            s=cnc.linearize(lex_expr).title()
-            content.append(bytes("<h1>"+html.escape(s)+"</h1>","utf8"))
-            
-            if "Q6256" in class_qids:
-                renderer = country_render
-            elif "Q5119" in class_qids:
-                renderer = capital_render
-            elif "Q1549591" in class_qids:
-                renderer = city_render
-            elif "Q515" in class_qids:
-                renderer = city_render
-            else:
-                renderer = None
-                content.append(bytes("<p>Define a renderer for at least one of the following classes: "+", ".join(class_qids)+"</p>","utf8"))
-				
-            if renderer:
-                for s in renderer(lex_expr,cnc,entity):
-                    content.append(bytes(s,"utf8"))
+            for s in render(db,lex_fun,cnc,entity):
+                yield bytes(s,"utf8")
         else:
-            content.append(bytes("<h1>"+qid+"</h1>","utf8"))
-            content.append(bytes("<p>There is no NLG for this item yet.</p>","utf8"))
+            yield bytes("<h1>"+qid+"</h1>","utf8")
+            yield bytes("<p>There is no NLG for this item yet.</p>","utf8")
     else:
         for line in home:
-            content.append(line)
+            yield line
 
     for line in epilogue:
-        content.append(line)
-    return content
+        yield line
