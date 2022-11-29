@@ -2,10 +2,14 @@ import json
 import html
 import urllib.request
 from urllib.parse import parse_qs
+from daison import *
+from wordnet.semantics import *
 
 import pgf
 gr = pgf.readNGF("/usr/local/share/x86_64-linux-ghc-8.0.2/gf-4.0.0/www/Parse.ngf")
 gr.embed("wordnet")
+
+db = openDB("/usr/local/www/gf-wordnet/semantics.db")
 
 prelude = [
   b'<html>',
@@ -67,7 +71,7 @@ home = [
   b'based on information from <a href="https://www.wikidata.org/">Wikidata</a> and by using ',
   b'the resource grammars in <a href="http://www.grammaticalframework.org/">GF</a> plus ',
   b'lexical resources in <a href="https://cloud.grammaticalframework.org/wordnet/">GF WordNet</a>.</p>'
-  b'<p>Search for a Wikidata entity in the upper left corner!</p>'
+  b'<p>Search for a Wikidata entity in the upper left corner.</p>'
   ]
 
 epilogue = [
@@ -76,12 +80,13 @@ epilogue = [
   b'</html>'
   ]
 
-qids = {
-  "Q89": "apple_1_N",
-  "Q158657": "apple_2_N",
-  "Q13099586": "pear_1_N",
-  "Q434": "pear_2_N"
-  }
+def get_lex_fun(qid):
+    with db.run("w") as t:
+        for synset_id in t.cursor(synsets_qid, qid):
+            for lexeme_id in t.cursor(lexemes_synset, synset_id):
+                for lexeme in t.cursor(lexemes, lexeme_id):
+                    return lexeme.lex_fun
+    return None
 
 def application(env, start_response):
     start_response('200 OK', [('Content-Type','text/html; charset=utf-8')])
@@ -127,9 +132,10 @@ def application(env, start_response):
         result = json.loads(u2.read())
         entity = result["entities"][qid]
         cnc = gr.languages[langs[lang][1]]
-        lex = qids.get(qid)
-        if lex:
-            s=cnc.linearize(pgf.ExprFun(qids[qid])).title()
+
+        lex_fun = get_lex_fun(qid)
+        if lex_fun:
+            s=cnc.linearize(pgf.ExprFun(lex_fun)).title()
         else:
             s=qid
         content.append(bytes(str("<h1>"+html.escape(s)+"</h1>"),"utf8"))
