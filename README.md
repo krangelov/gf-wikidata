@@ -14,7 +14,7 @@ countries, capitals and cities.
 
 For the NLG we don't need to write an application grammar. You can use
 the RGL api and the lexicon directly from Python. Look at 
-[nlg.countries](app/nlg/countries.py), [nlg.capital](app/nlg/capital.py) and [nlg.cities](app/nlg/cities.py) for
+[nlg.country](app/nlg/country.py), [nlg.capital](app/nlg/capital.py) and [nlg.city](app/nlg/city.py) for
 examples.
 
 There is also a mock up web interface here:
