@@ -20,3 +20,5 @@ examples.
 There is also a mock up web interface here:
 
 https://cloud.grammaticalframework.org/wikidata/index.wsgi
+
+Try searching for countries and cities! The response is currently slow since it takes time to fetch the data from Wikidata. This is something to be improved in the future.
