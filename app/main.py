@@ -3,11 +3,13 @@ import html
 import urllib.request
 from urllib.parse import parse_qs
 from daison import *
-from wordnet.semantics import *
 
 import pgf
 gr = pgf.readNGF("/usr/local/share/x86_64-linux-ghc-8.0.2/gf-4.0.0/www/Parse.ngf")
 gr.embed("wordnet")
+import wordnet as w
+from wordnet.api import *
+from wordnet.semantics import *
 
 db = openDB("/usr/local/www/gf-wordnet/semantics.db")
 
@@ -134,11 +136,30 @@ def application(env, start_response):
         cnc = gr.languages[langs[lang][1]]
 
         lex_fun = get_lex_fun(qid)
+
+        class_count = 0
+        for value in entity["claims"]["P31"]:
+            class_qid = value["mainsnak"]["datavalue"]["value"]["id"]
+            class_lex_fun = get_lex_fun(class_qid)
+            if class_lex_fun:
+                if class_count == 0:
+                    class_expr = mkCN(pgf.ExprFun(class_lex_fun))
+                else:
+                    class_expr = mkList(class_expr,mkCN(pgf.ExprFun(class_lex_fun)))
+                class_count += 1
+        if class_count > 1:
+            class_expr = w.ConjCN(w.and_Conj,class_expr)
+
         if lex_fun:
-            s=cnc.linearize(pgf.ExprFun(lex_fun)).title()
+            lex_expr = pgf.ExprFun(lex_fun)
+            s=cnc.linearize(lex_expr).title()
+            content.append(bytes("<h1>"+html.escape(s)+"</h1>","utf8"))
+            if class_count > 0:
+                s=cnc.linearize(mkS(mkCl(mkNP(lex_expr),mkNP(aSg_Det,class_expr))))
+                content.append(bytes("<p>"+html.escape(s)+"</p>","utf8"))
         else:
-            s=qid
-        content.append(bytes(str("<h1>"+html.escape(s)+"</h1>"),"utf8"))
+            content.append(bytes("<h1>"+qid+"</h1>","utf8"))
+            content.append(bytes("<p>There is no NLG for this item yet.</p>","utf8"))
     else:
         for line in home:
             content.append(line)
