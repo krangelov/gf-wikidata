@@ -11,6 +11,10 @@ import wordnet as w
 from wordnet.api import *
 from wordnet.semantics import *
 
+#import nlg.country
+#import nlg.capital
+#import nlg.city
+
 db = openDB("/usr/local/www/gf-wordnet/semantics.db")
 
 prelude = [
@@ -90,6 +94,45 @@ def get_lex_fun(qid):
                     return lexeme.lex_fun
     return None
 
+def country_render(lexeme, cnc, entity):
+	for value in entity["claims"]["P30"]:
+		continent_qid = value["mainsnak"]["datavalue"]["value"]["id"]
+		break
+		
+	if continent_qid:
+		cn = mkCN(mkCN(w.country_1_N),mkAdv(w.in_1_Prep,mkNP(pgf.ExprFun(get_lex_fun(continent_qid)))))
+	else:
+		cn = mkCN(w.country_1_N)
+
+	s=cnc.linearize(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn))))
+	yield "<p>"+html.escape(s)+"</p>"
+
+def capital_render(lexeme, cnc, entity):
+    for value in entity["claims"]["P17"]:
+        country_qid = value["mainsnak"]["datavalue"]["value"]["id"]
+        break
+		
+    if country_qid:
+        cn = w.PossNP(mkCN(w.capital_3_N),mkNP(pgf.ExprFun(get_lex_fun(country_qid))))
+    else:
+        cn = mkCN(w.capital_3_N)
+
+    s=cnc.linearize(mkS(mkCl(mkNP(lexeme),mkNP(the_Det,cn))))
+    yield "<p>"+html.escape(s)+"</p>"
+
+def city_render(lexeme, cnc, entity):
+	for value in entity["claims"]["P17"]:
+		country_qid = value["mainsnak"]["datavalue"]["value"]["id"]
+		break
+		
+	if country_qid:
+		cn = mkCN(mkCN(w.city_1_N),mkAdv(w.in_1_Prep,mkNP(pgf.ExprFun(get_lex_fun(country_qid)))))
+	else:
+		cn = mkCN(w.city_1_N)
+
+	s=cnc.linearize(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn))))
+	yield "<p>"+html.escape(s)+"</p>"
+
 def application(env, start_response):
     start_response('200 OK', [('Content-Type','text/html; charset=utf-8')])
     query = parse_qs(env["QUERY_STRING"])
@@ -137,26 +180,31 @@ def application(env, start_response):
 
         lex_fun = get_lex_fun(qid)
 
-        class_count = 0
+        class_qids = []
         for value in entity["claims"]["P31"]:
             class_qid = value["mainsnak"]["datavalue"]["value"]["id"]
-            class_lex_fun = get_lex_fun(class_qid)
-            if class_lex_fun:
-                if class_count == 0:
-                    class_expr = mkCN(pgf.ExprFun(class_lex_fun))
-                else:
-                    class_expr = mkList(class_expr,mkCN(pgf.ExprFun(class_lex_fun)))
-                class_count += 1
-        if class_count > 1:
-            class_expr = w.ConjCN(w.and_Conj,class_expr)
+            class_qids.append(class_qid)
 
         if lex_fun:
             lex_expr = pgf.ExprFun(lex_fun)
             s=cnc.linearize(lex_expr).title()
             content.append(bytes("<h1>"+html.escape(s)+"</h1>","utf8"))
-            if class_count > 0:
-                s=cnc.linearize(mkS(mkCl(mkNP(lex_expr),mkNP(aSg_Det,class_expr))))
-                content.append(bytes("<p>"+html.escape(s)+"</p>","utf8"))
+            
+            if "Q6256" in class_qids:
+                renderer = country_render
+            elif "Q5119" in class_qids:
+                renderer = capital_render
+            elif "Q1549591" in class_qids:
+                renderer = city_render
+            elif "Q515" in class_qids:
+                renderer = city_render
+            else:
+                renderer = None
+                content.append(bytes("<p>Define a renderer for at least one of the following classes: "+", ".join(class_qids)+"</p>","utf8"))
+				
+            if renderer:
+                for s in renderer(lex_expr,cnc,entity):
+                    content.append(bytes(s,"utf8"))
         else:
             content.append(bytes("<h1>"+qid+"</h1>","utf8"))
             content.append(bytes("<p>There is no NLG for this item yet.</p>","utf8"))
