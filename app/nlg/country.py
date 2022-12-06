@@ -24,7 +24,7 @@ def render(db, lexeme, cnc, entity):
 		cn = mkCN(mkCN(w.country_1_N),mkAdv(w.in_1_Prep,mkNP(pgf.ExprFun(get_lex_fun(db, continent_qids[0][0])))))
 
 	# add the number of inhabitants
-	population_list = sorted(((population,get_time_qualifier("P585",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1])
+	population_list = sorted(((population,get_time_qualifier("P585",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
 	if population_list:
 		population = population_list[0][0]
 		cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkDigits(int(population)),w.inhabitant_1_N)))
@@ -33,7 +33,7 @@ def render(db, lexeme, cnc, entity):
 	yield escape(cnc.linearize(phr))
 
 	# state the area
-	area_list = sorted(((population,get_time_qualifier("P2046",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1] or "")
+	area_list = sorted(((area,get_time_qualifier("P585",quals)) for area,quals in get_quantities("P2046",entity)),key=lambda p: p[1] or "",reverse=True)
 	if area_list:
 		area = area_list[0][0]
 		if cnc.name in ["ParseSwe", "ParseGer"]:

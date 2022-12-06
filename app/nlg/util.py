@@ -14,7 +14,7 @@ def get_lex_fun(db, qid):
 def get_items(prop,entity):
 	items = []
 	for value in entity["claims"].get(prop,[]):
-		items.append((value["mainsnak"]["datavalue"]["value"]["id"],value.get("qualifiers",[])))
+		items.append((value["mainsnak"]["datavalue"]["value"]["id"],value.get("qualifiers",{})))
 	return items
 
 def get_quantities(prop,entity):
@@ -24,7 +24,7 @@ def get_quantities(prop,entity):
 			amount = float(value["mainsnak"]["datavalue"]["value"]["amount"])
 		except:
 			continue
-		quantities.append((amount,value.get("qualifiers",[])))
+		quantities.append((amount,value.get("qualifiers",{})))
 	return quantities
 
 def get_medias(prop,entity):
@@ -37,7 +37,7 @@ def get_medias(prop,entity):
 		img = img.replace(' ','_')
 		h = hashlib.md5(img.encode("utf-8")).hexdigest()
 		img = "https://upload.wikimedia.org/wikipedia/commons/"+h[0]+"/"+h[0:2]+"/"+img
-		medias.append((img,value.get("qualifiers",[])))
+		medias.append((img,value.get("qualifiers",{})))
 	return medias
 
 def get_time_qualifier(prop,quals):
