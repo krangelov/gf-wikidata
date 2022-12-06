@@ -36,7 +36,11 @@ def render(db, lexeme, cnc, entity):
 	area_list = sorted(((population,get_time_qualifier("P2046",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1] or "")
 	if area_list:
 		area = area_list[0][0]
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N),mkNP(mkDigits(int(area)),mkCN(w.square_1_A,w.kilometre_1_N))))),fullStopPunct)
+		if cnc.name in ["ParseSwe", "ParseGer"]:
+			sq_km = w.CompoundN(w.square_1_N,w.kilometre_1_N)
+		else:
+			sq_km = mkCN(w.square_1_A,w.kilometre_1_N)
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N),mkNP(mkDigits(int(area)),sq_km)))),fullStopPunct)
 		yield " "+escape(capit(cnc.linearize(phr)))
 
 	yield "</p>"
