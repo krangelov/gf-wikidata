@@ -1,11 +1,24 @@
 # gf-wikidata
-A repository for experiments in integration with the lexemes in wikidata
+An experimental NLG system which uses [GF WordNet](https://cloud.grammaticalframework.org/wordnet/) to generate articles
+about entities in [Wikidata](https://www.wikidata.org). 
 
-TODO List:
+The advantage of the approach is that
+GF WordNet already provides a lexicon for >20 languages with an
+abstract API of >100k words. Of those ~30k words are linked to their
+Wikidata items. On top of this core lexicon, I integrated ~600k given
+and family names plust ~4 million geographical names from Wikidata. This means
+that the total lexicon contains close to 5 million lexical items most of which
+are linked with their corresponding Wikidata items.
+These are the starting point to generating articles about people,
+countries, capitals and cities.
 
-- [ ] Wikidata contains more languages than GF. For each lexeme Wikidata lists all inflection forms. For languages that exist in GF create a mapping of how the GF forms are represented in Wikidata. For languages that doesn't exist in GF, the information in Wikidata is enough to automatically create the Cat module and parts of Res and Paradigms. To this we should add Harald's numerals library. In this way, we will get ~200 resource grammars.
-- [ ] Both Wikidata and GF WordNet contain mappings to WordNet. Use that to find a matching between the two resources.
-- [ ] Develop a tool which can generate a grammar from Wikidata by using the resources created in the previous two bullets.
-- [ ] GF WordNet contains information that does not exist in Wikidata. Identify it an donate it to Wikidata
-- [ ] Update the grammar generator to use the new information from GF WordNet. If everything goes well the resulting grammar should be strictly a superset of GF WordNet with more languages and more lexica.
+For the NLG we don't need to write an application grammar. You can use
+the RGL api and the lexicon directly from Python. Look at 
+[nlg.country](app/nlg/country.py), [nlg.capital](app/nlg/capital.py) and [nlg.city](app/nlg/city.py) for
+examples.
 
+There is also a mock up web interface here:
+
+https://cloud.grammaticalframework.org/wikidata/index.wsgi
+
+Try searching for countries and cities! The response is currently slow since it takes time to fetch the data from Wikidata. This is something to be improved in the future.
