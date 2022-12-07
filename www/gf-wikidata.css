@@ -82,9 +82,13 @@ h1, h2, h3 {
     border-bottom: 1px solid #a2a9b1;
 }
 
-div.infobox {
+table.infobox {
 	float: right;
     border: 1px solid #a2a9b1;
+    border-collapse: collapse;
     background-color: #f8f9fa;
-    padding: 0.4em 0.6em 0.2em 0.6em;
+}
+
+table.infobox > tbody > tr > td {
+   padding: 0.4em;
 }

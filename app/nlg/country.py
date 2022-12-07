@@ -4,12 +4,36 @@ from wordnet.api import *
 from nlg.util import *
 
 def render(db, lexeme, cnc, entity):
-	yield "<div class='infobox'>"
+	yield "<table class='infobox' border=1>"
 	# show the flag and the coat of arms if available
+	yield "<tr><td><table style='border-collapse: collapse'><tr>"
+	has_flag = False
 	for media,qual in get_medias("P41",entity):
-		yield "<table><tr><td><img src='"+escape(media)+"' width=125 height=78/></td></tr><tr><td style='text-align: center'>"+escape(capit(cnc.linearize(w.flag_1_N)))+"</td></tr></table>"
+		yield "<td><img src='"+escape(media)+"' width=125 height=78/></td>"
+		has_flag = True
 		break
-	yield "</div>"
+	has_arms = False
+	for media,qual in get_medias("P94",entity):
+		yield "<td><img src='"+escape(media)+"' width=125 height=78/></td>"
+		has_arms = True
+		break
+	yield "</tr><tr>"
+	if has_flag:
+		yield "<td style='text-align: center'>"+escape(capit(cnc.linearize(w.flag_1_N)))+"</td>"
+	else:
+		yield "<td></td>"
+	if has_arms:
+		yield "<td style='text-align: center'>"+escape(capit(cnc.linearize(w.blazon_N)))+"</td>"
+	else:
+		yield "<td></td>"
+	yield "</tr></table></td></tr>"
+
+	# show the location
+	for media,qual in get_medias("P242",entity):
+		yield "<tr><td><img src='"+escape(media)+"' width=250></td></tr>"
+		break
+
+	yield "</table>"
 
 
 	# start the text generation

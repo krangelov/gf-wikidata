@@ -4,12 +4,16 @@ from wordnet.api import *
 from nlg.util import *
 
 def render(db, lexeme, cnc, entity):
-    yield "<div class='infobox'>"
+    yield "<table class='infobox' border=1>"
     # show the flag and the coat of arms if available
     for media,qual in get_medias("P18",entity):
-        yield "<img src='"+escape(media)+"' width=250/>"
+        yield "<tr><td><img src='"+escape(media)+"' width=250/></td></tr>"
         break
-    yield "</div>"
+	# show the location
+    for media,qual in get_medias("P242",entity):
+        yield "<tr><td><img src='"+escape(media)+"' width=250></td></tr>"
+        break
+    yield "</table>"
 
     country_qids = get_items("P17", entity)
     if country_qids:
