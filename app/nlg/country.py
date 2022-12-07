@@ -40,12 +40,30 @@ def render(db, lexeme, cnc, entity):
 	yield "<p>"
 
 	# it is a country
-	cn = mkCN(w.country_1_N)
+	class_qids = map(lambda x: x[0], get_items("P31",entity))
+	if "Q112099" in class_qids:
+		cn = mkCN(w.CompoundN(w.island_1_N,w.country_1_N))
+	else:
+		cn = mkCN(w.country_1_N)
 
-	# add the continent if stated
-	continent_qids  = get_items("P30",entity)
-	if continent_qids:
-		cn = mkCN(mkCN(w.country_1_N),mkAdv(w.in_1_Prep,mkNP(pgf.ExprFun(get_lex_fun(db, continent_qids[0][0])))))
+	# state the location in different ways
+	part_of_qids  = list(map(lambda x: x[0], get_items("P361",entity)))
+	location_qids = list(map(lambda x: x[0], get_items("P706",entity)))
+	if "Q52062" in part_of_qids:  # nordic
+		cn = mkCN(w.nordic_2_A,cn)
+		if "Q21195" in location_qids:
+			cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(w.scandinavia_2_PN)))
+	elif "Q39731" in part_of_qids:  # baltic
+		cn = mkCN(w.baltic_2_A,cn)
+	elif "Q664609" in part_of_qids:
+		cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(w.caribbean_PN))) # caribbean
+	elif "Q23522" in location_qids:
+		cn = mkCN(cn,mkAdv(w.on_1_Prep,mkNP(w.balkans_2_PN))) # balkan
+	else:
+		# add the continent if stated
+		continent_qids  = get_items("P30",entity)
+		if continent_qids:
+			cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(pgf.ExprFun(get_lex_fun(db, continent_qids[0][0])))))
 
 	# add the number of inhabitants
 	population_list = sorted(((population,get_time_qualifier("P585",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
@@ -65,6 +83,12 @@ def render(db, lexeme, cnc, entity):
 		else:
 			sq_km = mkCN(w.square_1_A,w.kilometre_1_N)
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N),mkNP(mkDigits(int(area)),sq_km)))),fullStopPunct)
+		yield " "+escape(capit(cnc.linearize(phr)))
+
+    # state the capital
+	capital_qids  = get_items("P36",entity)
+	if capital_qids:
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,w.capital_3_N),mkNP(pgf.ExprFun(get_lex_fun(db, capital_qids[0][0])))))),fullStopPunct)
 		yield " "+escape(capit(cnc.linearize(phr)))
 
 	yield "</p>"
