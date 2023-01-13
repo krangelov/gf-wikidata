@@ -1,20 +1,108 @@
+import pgf
 from daison import *
 from wordnet.semantics import *
 from html import escape
 import hashlib
 
-def get_lex_fun(db, qid):
-    with db.run("w") as t:
-        for synset_id in t.cursor(synsets_qid, qid):
-            for lexeme_id in t.cursor(lexemes_synset, synset_id):
-                for lexeme in t.cursor(lexemes, lexeme_id):
-                    return lexeme.lex_fun
-    return None
+import pgf
 
-def get_items(prop,entity):
+class ConcrHelper:
+	def __init__(self,cnc,db,lang,edit):
+		self.cnc  = cnc
+		self.db   = db
+		self.edit = edit
+		self.links = {}
+		self.name  = cnc.name
+		self.lang  = lang
+		self.exprs = []
+
+	def addLink(self,lexeme,qid):
+		for lang,status in lexeme.status:
+			if lang == self.cnc.name:
+				break
+		else:
+			status = Status.Checked
+		self.links[lexeme.lex_fun] = (qid,status)
+
+	def removeLink(self,fun):
+		del self.links[fun]
+
+	def linearize(self,e):
+		if self.edit:
+			self.exprs.append(e)
+		text = ""
+		bind = True
+		info = None
+		def flatten(xs):
+			nonlocal text, bind, info
+			for x in xs:
+				if isinstance(x,str):
+					if bind:
+						bind = False
+					else:
+						text += " "
+					if info:
+						if self.edit:
+							text += '<span class="'+info[1].name.lower()+'" lang='+self.lang+'">'
+						else:
+							text += '<a href="index.wsgi?id='+info[0]+'&lang='+self.lang+'">'
+						info = None
+					text += escape(x)
+				elif isinstance(x,pgf.Bracket):
+					info = self.links.get(x.fun)
+					if self.edit and info == None:
+						self.links[x.fun] = False
+						with self.db.run("r") as t:
+							for lexeme_id in t.cursor(lexemes_fun, x.fun):
+								for lexeme in t.cursor(lexemes, lexeme_id):
+									self.addLink(lexeme, None)
+					tmp  = info
+
+					flatten(x.children)
+					if tmp:
+						if self.edit:
+							text += '</span>'
+						else:
+							text += '</a>'
+				elif isinstance(x,pgf.BIND):
+					bind = True
+		flatten(self.cnc.bracketedLinearize(e))
+		return text[0].upper()+text[1:]
+
+	def get_lex_fun(self, qid, link=True):
+		with self.db.run("r") as t:
+			for synset_id in t.cursor(synsets_qid, qid):
+				for lexeme_id in t.cursor(lexemes_synset, synset_id):
+					for lexeme in t.cursor(lexemes, lexeme_id):
+						if link:
+							self.addLink(lexeme, qid)
+						return pgf.ExprFun(lexeme.lex_fun)
+		return None
+
+	def get_lexemes(self,prop,entity,qual=True,link=True):
+		items = []
+		if qual:
+			for value in entity["claims"].get(prop,[]):
+				qid = value["mainsnak"]["datavalue"]["value"]["id"]
+				fun = self.get_lex_fun(qid,link)
+				if fun:
+					items.append((fun,value.get("qualifiers",{})))
+		else:
+			for value in entity["claims"].get(prop,[]):
+				qid = value["mainsnak"]["datavalue"]["value"]["id"]
+				fun = self.get_lex_fun(qid,link)
+				if fun:
+					items.append(fun)
+		return items
+
+def get_items(prop,entity,qual=True):
 	items = []
-	for value in entity["claims"].get(prop,[]):
-		items.append((value["mainsnak"]["datavalue"]["value"]["id"],value.get("qualifiers",{})))
+	if qual:
+		for value in entity["claims"].get(prop,[]):
+			items.append((value["mainsnak"]["datavalue"]["value"]["id"],value.get("qualifiers",{})))
+	else:
+		for value in entity["claims"].get(prop,[]):
+			items.append(value["mainsnak"]["datavalue"]["value"]["id"])
 	return items
 
 def get_quantities(prop,entity):
@@ -40,10 +128,12 @@ def get_medias(prop,entity):
 		medias.append((img,value.get("qualifiers",{})))
 	return medias
 
+def get_item_qualifier(prop,quals):
+	for value in quals.get(prop,[]):
+		return value["datavalue"]["value"]["id"]
+	return None
+
 def get_time_qualifier(prop,quals):
 	for value in quals.get(prop,[]):
 		return value["datavalue"]["value"]["time"]
 	return None
-
-def capit(s):
-	return s[0].upper()+s[1:]

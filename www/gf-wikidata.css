@@ -3,7 +3,7 @@ body {
 }
 .gp-head {
     padding-top: 1em;
-    height: 2em;
+    margin-left: 11em;
 }
 .gp-panel {
     position: absolute;
@@ -17,6 +17,7 @@ body {
 .gp-body {
     background-color: #ffffff;
     margin-left: 11em;
+    margin-top: -1px;
     height: 100%;
     padding: 1.25em 1.5em 1.5em 1.5em;
     border: 1px solid #a7d7f9;
@@ -25,6 +26,27 @@ body {
 .gp-panel-section {
     padding-top: 2em;
     padding-left: 1em;
+}
+.gp-navigation {
+	display: inline-block;
+	padding-left: 1px;
+	margin: 0;
+	background: linear-gradient(to bottom,#f6f6f6 0,#a7d7f9 100%);
+}
+.gp-navigation li {
+	display: inline-block;
+	list-style: none;
+	padding: 3px 3px 3px 3px;
+	margin-right: 1px;
+	font-size: 1.1em;
+	cursor: pointer;
+	background-image: linear-gradient(to top,#77c1f6 0,#e8f2f8 1px,#ffffff 100%);
+}
+.gp-navigation li.selected {
+	background-image: linear-gradient(to bottom,#f6f6f6 0,white 100%);
+}
+.gp-dump {
+	background: silver
 }
 a {
     color: #0645ad;
@@ -89,6 +111,17 @@ table.infobox {
     background-color: #f8f9fa;
 }
 
-table.infobox > tbody > tr > td {
-   padding: 0.4em;
+table.infobox td {
+   padding: 0.3em;
+   text-align: center;
+}
+
+.unchecked {
+	text-decoration: underline dotted gold;
+	text-decoration-thickness: 3px;
+}
+
+.guessed {
+	text-decoration: underline dotted red;
+	text-decoration-thickness: 3px;
 }

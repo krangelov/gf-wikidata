@@ -13,32 +13,47 @@ from nlg.util import *
 
 db = openDB("/usr/local/www/gf-wordnet/semantics.db")
 
-prelude = [
-  b'<html>',
-  b' <title>GFpedia</title>',
-  b' <head>',
-  b'     <link rel="stylesheet" type="text/css" href="gf-wikidata.css">',
-  b'     <script src="gf-wikidata.js"></script>',
-  b' </head>',
-  b' <body>',
-  b'     <div class="gp-head">',
-  b'          <form class="search-box">',
-  b'             <input class="search-box-input" type="search" name="search"',
-  b'                    placeholder="Search GFpedia" aria-label="Search GFpedia"',
-  b'                    autocapitalize="sentences" title="Search GFpedia" id="searchInput"',
-  b'                    autocomplete="off"',
-  b'                    oninput="showSearches(this)"',
-  b'                    onkeypress="searchInputOnKeyPress(event)"',
-  b'                    onkeydown="searchInputOnKeyDown(event)">',
-  b'             <img class="search-box-button" src="search.svg">',
-  b'             <table class="search-box-results" id="searchResults"></table>',
-  b'         </form>',
-  b'     </div>',
-  b'     <div class="gp-panel">',
-  b'         <img class="gp-logo" src="gp-logo.svg">',
-  b'         <div class="gp-panel-section">',
-  b'           <table>'
-  ]
+def prelude(qid,lang,edit):
+  yield b'<html>'
+  yield b' <title>GFpedia</title>'
+  yield b' <head>'
+  yield b'     <link rel="stylesheet" type="text/css" href="gf-wikidata.css">'
+  yield b'     <script src="gf-wikidata.js"></script>'
+  yield b' </head>'
+  yield b' <body>'
+  yield b'     <div class="gp-head">'
+
+  if qid:
+    yield b'<ul class="gp-navigation">'
+    if edit:
+        yield b'<li><a href="index.wsgi?id='+bytes(qid,"utf-8")+b'&lang='+bytes(lang,"utf-8")+b'">Page</a></li><li class="selected">Edit</li>'
+    else:
+        yield b'<li class="selected">Page</li><li><a href="index.wsgi?id='+bytes(qid,"utf-8")+b'&lang='+bytes(lang,"utf-8")+b'&edit=1">Edit</a></li>'  
+    yield b'</ul>'
+
+  yield b'          <form class="search-box">'
+  yield b'             <input class="search-box-input" type="search" name="search"'
+  yield b'                    placeholder="Search GFpedia" aria-label="Search GFpedia"'
+  yield b'                    autocapitalize="sentences" title="Search GFpedia" id="searchInput"'
+  yield b'                    autocomplete="off"'
+  yield b'                    oninput="showSearches(this)"'
+  yield b'                    onkeypress="searchInputOnKeyPress(event)"'
+  yield b'                    onkeydown="searchInputOnKeyDown(event)">'
+  yield b'             <img class="search-box-button" src="search.svg">'
+  yield b'             <table class="search-box-results" id="searchResults"></table>'
+  yield b'         </form>'
+  yield b'     </div>'
+  yield b'     <div class="gp-panel">'
+  yield b'         <img class="gp-logo" src="gp-logo.svg">'
+  yield b'         <div class="gp-panel-section">'
+  yield b'           <table>'
+
+  if qid:
+    yield b'             <tr><td><a href="https://cloud.grammaticalframework.org/wikidata">Main page</a></td></tr>'
+    yield b'             <tr><td><a href="https://www.wikidata.org/wiki/'+bytes(qid,"utf8")+b'">Wikidata item</a></td></tr>'
+
+  yield b'           </table>'
+  yield b'         </div>'
 
 langs = {
   "af": ("Afrikaans", "ParseAfr"),
@@ -94,15 +109,10 @@ def application(env, start_response):
     if lang not in langs:
         lang="en"
 
-    for line in prelude:
+    edit = query.get("edit",["0"])[0]=="1"
+
+    for line in prelude(qid,lang,edit):
         yield line
-
-    if qid:
-        yield b'             <tr><td><a href="https://cloud.grammaticalframework.org/wikidata">Main page</a></td></tr>'
-        yield b'             <tr><td><a href="https://www.wikidata.org/wiki/'+bytes(qid,"utf8")+b'">Wikidata item</a></td></tr>'
-
-    yield b'           </table>'
-    yield b'         </div>'
 
     yield b'         <div class="gp-panel-section">'
     yield b'           <h3>Languages</h3>'
@@ -124,15 +134,33 @@ def application(env, start_response):
         u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
         result = json.loads(u2.read())
         entity = result["entities"][qid]
-        cnc = gr.languages[langs[lang][1]]
+        cnc = ConcrHelper(gr.languages[langs[lang][1]],db,lang,edit)
 
-        lex_fun = get_lex_fun(db, qid)
+        lex_fun = cnc.get_lex_fun(qid,link=False)
+        if not lex_fun:
+            given_names  = cnc.get_lexemes("P735",entity,qual=False,link=False)
+            family_names = cnc.get_lexemes("P734",entity,qual=False,link=False)
+            if given_names:
+                if family_names:
+                    lex_fun=w.FullName(given_names[0],family_names[0])
+                else:
+                    lex_fun=w.GivenName(given_names[0])
+            else:
+                if family_names:
+                    lex_fun=w.Surname(family_names[0])
+
         if lex_fun:
-            for s in render(db,lex_fun,cnc,entity):
+            for s in render(cnc,lex_fun,entity):
                 yield bytes(s,"utf8")
         else:
             yield bytes("<h1>"+qid+"</h1>","utf8")
             yield bytes("<p>There is no NLG for this item yet.</p>","utf8")
+
+        if cnc.exprs:
+            yield b'<div class="gp-dump">'
+            for e in cnc.exprs:
+                yield bytes("<p>"+str(e)+"</p>","utf8")
+            yield b"</div>"
     else:
         for line in home:
             yield line

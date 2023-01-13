@@ -3,17 +3,14 @@ import pgf
 import nlg.country
 import nlg.capital
 import nlg.city
+import nlg.human
 from nlg.util import *
 
-def render(db, lex_fun, cnc, entity): 
-	class_qids = []
-	for value in entity["claims"]["P31"]:
-		class_qid = value["mainsnak"]["datavalue"]["value"]["id"]
-		class_qids.append(class_qid)
+def render(cnc, lex_expr,entity): 
+	class_qids = get_items("P31",entity,qual=False)
 
-	lex_expr = pgf.ExprFun(lex_fun)
 	s=cnc.linearize(lex_expr).title()
-	yield "<h1>"+escape(s)+"</h1>"
+	yield "<h1>"+s+"</h1>"
 	
 	if "Q6256" in class_qids:
 		renderer = nlg.country.render
@@ -22,11 +19,13 @@ def render(db, lex_fun, cnc, entity):
 	elif "Q1549591" in class_qids:
 		renderer = nlg.city.render
 	elif "Q515" in class_qids:
-		renderer = nlh.city.render
+		renderer = nlg.city.render
+	elif "Q5" in class_qids:
+		renderer = nlg.human.render
 	else:
 		renderer = None
 		yield "<p>Define a renderer for at least one of the following classes: "+", ".join(class_qids)+"</p>"
 		
 	if renderer:
-		for s in renderer(db,lex_expr,cnc,entity):
+		for s in renderer(cnc,lex_expr,entity):
 			yield s
