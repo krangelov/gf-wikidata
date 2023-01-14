@@ -1,6 +1,7 @@
 import json
 import urllib.request
 from urllib.parse import parse_qs
+from urllib.request import Request
 from daison import *
 
 import pgf
@@ -13,25 +14,51 @@ from nlg.util import *
 
 db = openDB("/usr/local/www/gf-wordnet/semantics.db")
 
+def autorize(code, start_response):
+  import os
+  path = os.path.dirname(os.path.abspath(__file__))
+  with open(path+"/SECRET") as f:
+	  secret = f.read().strip()
+  req = Request("https://github.com/login/oauth/access_token?client_id=3b54eb78b27f94e182d0&client_secret="+secret+"&code="+code,
+                headers={"Accept": "application/json"})
+  with urllib.request.urlopen(req) as response:
+    res=json.loads(response.read())
+    token=res["access_token"]
+  req = Request("https://api.github.com/user",
+                headers={"UserAgent": "GF Wikidata",
+                         "Authorization": "token "+token})
+  with urllib.request.urlopen(req) as response:
+    res=json.loads(response.read())
+    user = res["login"]
+    name = res["name"]
+    email = res["email"]
+    author = name+" <"+email+">"
+  path="/wikidata/index.wsgi"
+  start_response('302 REDIRECT',
+                 [('Location',path)
+                 ,('Set-Cookie', 'user='+user)
+                 ,('Set-Cookie', 'author='+author)
+                 ,('Set-Cookie', 'token='+token)
+                 ])
+  yield b''
+
 def prelude(qid,lang,edit):
   yield b'<html>'
   yield b' <title>GFpedia</title>'
   yield b' <head>'
   yield b'     <link rel="stylesheet" type="text/css" href="../wordnet/gf-wordnet.css">'
   yield b'     <link rel="stylesheet" type="text/css" href="gf-wikidata.css">'
-  yield b'     <script src="/js/support.js"></script>'
-  yield b'     <script src="https://unpkg.com/vis-network@9.0.4/standalone/umd/vis-network.min.js"></script>'
-  yield b'     <script src="../wordnet/js/gf-wordnet.js"></script>'
-  yield b'     <script src="../wordnet/js/wordcloud2.js"></script>'
-  yield b'     <script src="gf-wikidata.js"></script>'
   yield b' </head>'
   if edit:
     yield b' <body onload="init_editor()">'
   else:
     yield b' <body>'
   yield b'     <div class="gp-head">'
-
-  yield b'        <div id="p-personal"><a href="https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=3b54eb78b27f94e182d0">Log In</a></div>'
+  yield b'        <div id="p-personal">'
+  yield b'           <a id="logIn" href="https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=3b54eb78b27f94e182d0">Log In</a>'
+  yield b'&nbsp;&nbsp;'
+  yield b'           <a id="commit" href="javascript:gfwordnet.commit(this)" style="display: none">Commit</a>'
+  yield b'        </div>'
 
   yield b'        <div id="right-navigation">'
   if qid:
@@ -105,14 +132,19 @@ home = [
 
 epilogue = [
   b'     </div>',
+  b'     <script src="/js/support.js"></script>',
+  b'     <script src="https://unpkg.com/vis-network@9.0.4/standalone/umd/vis-network.min.js"></script>',
+  b'     <script src="../wordnet/js/gf-wordnet.js"></script>',
+  b'     <script src="../wordnet/js/wordcloud2.js"></script>',
+  b'     <script src="../wordnet/js/cookies.js"></script>',
+  b'     <script src="gf-wikidata.js"></script>',
   b' </body>',
   b'</html>'
   ]
 
-def application(env, start_response):
+def render_page(query, start_response):
     start_response('200 OK', [('Content-Type','text/html; charset=utf-8')])
-    query = parse_qs(env["QUERY_STRING"])
-    
+
     qid   = query.get("id",[None])[0]
     if qid != None and (qid[0] != "Q" or not qid[1:].isdigit()):
         qid = None
@@ -189,3 +221,12 @@ def application(env, start_response):
 
     for line in epilogue:
         yield line
+
+def application(env, start_response):
+    query = parse_qs(env["QUERY_STRING"])
+
+    code  = query.get("code",[None])[0]
+    if code != None:
+        return autorize(code, start_response)
+    else:
+        return render_page(query, start_response)

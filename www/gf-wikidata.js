@@ -193,7 +193,7 @@ function edit_lex(span,event,lexical_id, lang) {
 		if (!hit) {
 			let e = event.target;
 			while (e != null) {
-				if (e == popup) {
+				if (e.className == "result" || e.className == "editor") {
 					hit = true;
 					break;
 				}
@@ -225,3 +225,28 @@ function edit_lex(span,event,lexical_id, lang) {
 	}
 	gfwordnet.sense_call("lexical_ids="+encodeURIComponent(lexical_id),helper);
 }
+
+
+function logOut() {
+	gfwordnet.set_user(null,null,null,0,element('result'),null);
+	logIn.innerHTML = "Log In";
+	logIn.href = "https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=3b54eb78b27f94e182d0";
+	commit.style.display = "none";
+	deleteCookie("user");
+	deleteCookie("author");
+	deleteCookie("token");
+}
+
+var user   = getCookie("user");
+var author = getCookie("author");
+var token  = getCookie("token");
+if (user != null && author != 0) {
+	var logIn      = element('logIn');
+	var commit     = element('commit');
+	logIn.innerHTML = "Log Out "+user;
+	logIn.href = "javascript:logOut()"
+
+	gfwordnet.set_user(user,author,token,0,null,commit);
+	commit.style.display = "inline";
+}
+
