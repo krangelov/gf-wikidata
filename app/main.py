@@ -8,7 +8,7 @@ gr = pgf.readNGF("/usr/local/share/x86_64-linux-ghc-8.0.2/gf-4.0.0/www/Parse.ngf
 gr.embed("wordnet")
 import wordnet as w
 from wordnet.api import *
-from nlg import render
+from nlg import render, render_list
 from nlg.util import *
 
 db = openDB("/usr/local/www/gf-wordnet/semantics.db")
@@ -166,6 +166,9 @@ def application(env, start_response):
 
         if lex_fun:
             for s in render(cnc,lex_fun,entity):
+                yield bytes(s,"utf8")
+        elif qid == "Q11750":
+            for s in render_list(cnc,qid):
                 yield bytes(s,"utf8")
         else:
             yield bytes('<h1 class="gp-page-title">'+qid+"</h1>","utf8")

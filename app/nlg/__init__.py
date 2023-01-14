@@ -1,6 +1,7 @@
 import pgf
 
 import nlg.country
+import nlg.country_list
 import nlg.capital
 import nlg.city
 import nlg.human
@@ -29,3 +30,6 @@ def render(cnc, lex_expr,entity):
 	if renderer:
 		for s in renderer(cnc,lex_expr,entity):
 			yield s
+
+def render_list(cnc,qid):
+	return nlg.country_list.render(cnc)
