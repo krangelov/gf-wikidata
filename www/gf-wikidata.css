@@ -87,19 +87,19 @@ a:hover {
     color: #fff;
 }
 
-h1 {
+h1.gp-page-title {
     font-size: 1.8em;
 }
 
-h2 {
+h2.gp-page-title {
     font-size: 1.5em;
 }
 
-h3 {
+h3.gp-page-title {
     font-size: 0.75em;
 }
 
-h1, h2, h3 {
+.gp-page-title {
     margin-bottom: 0.6em;
     border-bottom: 1px solid #a2a9b1;
 }
@@ -124,4 +124,22 @@ table.infobox td {
 .guessed {
 	text-decoration: underline dotted red;
 	text-decoration-thickness: 3px;
+}
+
+span.checked:hover, span.unchecked:hover, span.guessed:hover {
+	background: #bdf;
+	cursor: pointer;
+}
+
+span.selected-lexeme {
+	background: #66c;
+	color: white;
+	padding-left: 0.4em;
+	padding-right: 0.4em;
+	font-weight: bold;
+}
+
+span.selected-lexeme:hover {
+	background: #66c;
+	cursor: auto;
 }

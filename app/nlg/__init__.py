@@ -10,7 +10,7 @@ def render(cnc, lex_expr,entity):
 	class_qids = get_items("P31",entity,qual=False)
 
 	s=cnc.linearize(lex_expr).title()
-	yield "<h1>"+s+"</h1>"
+	yield '<h1 class="gp-page-title">'+s+'</h1>'
 	
 	if "Q6256" in class_qids:
 		renderer = nlg.country.render

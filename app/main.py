@@ -17,10 +17,18 @@ def prelude(qid,lang,edit):
   yield b'<html>'
   yield b' <title>GFpedia</title>'
   yield b' <head>'
+  yield b'     <link rel="stylesheet" type="text/css" href="../wordnet/gf-wordnet.css">'
   yield b'     <link rel="stylesheet" type="text/css" href="gf-wikidata.css">'
+  yield b'     <script src="/js/support.js"></script>'
+  yield b'     <script src="https://unpkg.com/vis-network@9.0.4/standalone/umd/vis-network.min.js"></script>'
+  yield b'     <script src="../wordnet/js/gf-wordnet.js"></script>'
+  yield b'     <script src="../wordnet/js/wordcloud2.js"></script>'
   yield b'     <script src="gf-wikidata.js"></script>'
   yield b' </head>'
-  yield b' <body>'
+  if edit:
+    yield b' <body onload="init_editor()">'
+  else:
+    yield b' <body>'
   yield b'     <div class="gp-head">'
 
   if qid:
@@ -83,7 +91,7 @@ langs = {
   }
 
 home = [
-  b'<h1>GF Pedia</h1>',
+  b'<h1 class="gp-page-title">GF Pedia</h1>',
   b'<p>This is an experiment to see to what extend we can generate encyclopedic articles ',
   b'based on information from <a href="https://www.wikidata.org/">Wikidata</a> and by using ',
   b'the resource grammars in <a href="http://www.grammaticalframework.org/">GF</a> plus ',
@@ -115,16 +123,23 @@ def application(env, start_response):
         yield line
 
     yield b'         <div class="gp-panel-section">'
-    yield b'           <h3>Languages</h3>'
+    yield b'           <h3 class="gp-page-title">Languages</h3>'
     yield b'           <table id="from">'
     for code,(name,cnc) in langs.items():
+        yield b'             <tr>'
         if code != lang:
             if qid != None:
-                yield bytes('             <tr><td><a href="index.wsgi?id='+qid+'&lang='+code+'">'+name+'</a></td></tr>','utf8')
+                if edit:
+                    yield bytes('<td><a href="index.wsgi?id='+qid+'&lang='+code+'&edit=1">'+name+'</a></td>','utf8')
+                else:
+                    yield bytes('<td><a href="index.wsgi?id='+qid+'&lang='+code+'">'+name+'</a></td>','utf8')
             else:
-                yield bytes('             <tr><td><a href="index.wsgi?lang='+code+'">'+name+'</a></td></tr>','utf8')
+                yield bytes('<td><a href="index.wsgi?lang='+code+'">'+name+'</a></td>','utf8')
         else:
-            yield bytes('             <tr><td><b>'+name+'</b></td></tr>','utf8')
+            yield bytes('<td><b>'+name+'</b></td>','utf8')
+        if edit:
+            yield bytes('<td><input type="checkbox" name="'+cnc+'" onchange="select_language()"></td>','utf8')
+        yield b'</tr>'
     yield b'         </table>'
     yield b'       </div>'
     yield b'     </div>'
@@ -153,7 +168,7 @@ def application(env, start_response):
             for s in render(cnc,lex_fun,entity):
                 yield bytes(s,"utf8")
         else:
-            yield bytes("<h1>"+qid+"</h1>","utf8")
+            yield bytes('<h1 class="gp-page-title">'+qid+"</h1>","utf8")
             yield bytes("<p>There is no NLG for this item yet.</p>","utf8")
 
         if cnc.exprs:

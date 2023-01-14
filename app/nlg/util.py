@@ -22,7 +22,9 @@ class ConcrHelper:
 				break
 		else:
 			status = Status.Checked
-		self.links[lexeme.lex_fun] = (qid,status)
+		info = (qid,lexeme.lex_fun,status)
+		self.links[lexeme.lex_fun] = info
+		return info
 
 	def removeLink(self,fun):
 		del self.links[fun]
@@ -43,7 +45,7 @@ class ConcrHelper:
 						text += " "
 					if info:
 						if self.edit:
-							text += '<span class="'+info[1].name.lower()+'" lang='+self.lang+'">'
+							text += '<span class="'+info[2].name.lower()+'" lang="'+self.lang+'" onclick="edit_lex(this,event,\''+info[1]+'\',\''+self.lang+'\')">'
 						else:
 							text += '<a href="index.wsgi?id='+info[0]+'&lang='+self.lang+'">'
 						info = None
@@ -55,7 +57,7 @@ class ConcrHelper:
 						with self.db.run("r") as t:
 							for lexeme_id in t.cursor(lexemes_fun, x.fun):
 								for lexeme in t.cursor(lexemes, lexeme_id):
-									self.addLink(lexeme, None)
+									info = self.addLink(lexeme, None)
 					tmp  = info
 
 					flatten(x.children)
