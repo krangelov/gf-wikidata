@@ -31,6 +31,9 @@ def prelude(qid,lang,edit):
     yield b' <body>'
   yield b'     <div class="gp-head">'
 
+  yield b'        <div id="p-personal"><a href="https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=3b54eb78b27f94e182d0">Log In</a></div>'
+
+  yield b'        <div id="right-navigation">'
   if qid:
     yield b'<ul class="gp-navigation">'
     if edit:
@@ -50,6 +53,7 @@ def prelude(qid,lang,edit):
   yield b'             <img class="search-box-button" src="search.svg">'
   yield b'             <table class="search-box-results" id="searchResults"></table>'
   yield b'         </form>'
+  yield b'       </div>'
   yield b'     </div>'
   yield b'     <div class="gp-panel">'
   yield b'         <img class="gp-logo" src="gp-logo.svg">'

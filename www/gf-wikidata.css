@@ -2,7 +2,6 @@ body {
     background-color: #f6f6f6;
 }
 .gp-head {
-    padding-top: 1em;
     margin-left: 11em;
 }
 .gp-panel {
@@ -26,6 +25,13 @@ body {
 .gp-panel-section {
     padding-top: 2em;
     padding-left: 1em;
+}
+#p-personal {
+	display: flex;
+	justify-content: flex-end
+}
+#right-navigation {
+    padding-top: 1em;
 }
 .gp-navigation {
 	display: inline-block;
