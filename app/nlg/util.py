@@ -85,13 +85,19 @@ class ConcrHelper:
 		items = []
 		if qual:
 			for value in entity["claims"].get(prop,[]):
-				qid = value["mainsnak"]["datavalue"]["value"]["id"]
+				try:
+					qid = value["mainsnak"]["datavalue"]["value"]["id"]
+				except KeyError:
+					continue
 				fun = self.get_lex_fun(qid,link)
 				if fun:
 					items.append((fun,value.get("qualifiers",{})))
 		else:
 			for value in entity["claims"].get(prop,[]):
-				qid = value["mainsnak"]["datavalue"]["value"]["id"]
+				try:
+					qid = value["mainsnak"]["datavalue"]["value"]["id"]
+				except KeyError:
+					continue
 				fun = self.get_lex_fun(qid,link)
 				if fun:
 					items.append(fun)
