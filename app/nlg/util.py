@@ -45,7 +45,7 @@ class ConcrHelper:
 						text += " "
 					if info:
 						if self.edit:
-							text += '<span class="'+info[2].name.lower()+'" lang="'+self.lang+'" onclick="edit_lex(this,event,\''+info[1]+'\',\''+self.lang+'\')">'
+							text += '<span class="'+info[2].name.lower()+'" lang="'+self.lang+'" onclick="edit_lex(this,event,\''+escape(info[1])+'\',\''+self.lang+'\')">'
 						else:
 							text += '<a href="index.wsgi?id='+info[0]+'&lang='+self.lang+'">'
 						info = None
