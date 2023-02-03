@@ -107,10 +107,16 @@ def get_items(prop,entity,qual=True):
 	items = []
 	if qual:
 		for value in entity["claims"].get(prop,[]):
-			items.append((value["mainsnak"]["datavalue"]["value"]["id"],value.get("qualifiers",{})))
+			try:
+				items.append((value["mainsnak"]["datavalue"]["value"]["id"],value.get("qualifiers",{})))
+			except KeyError:
+				continue
 	else:
 		for value in entity["claims"].get(prop,[]):
-			items.append(value["mainsnak"]["datavalue"]["value"]["id"])
+			try:
+				items.append(value["mainsnak"]["datavalue"]["value"]["id"])
+			except KeyError:
+				continue
 	return items
 
 def get_quantities(prop,entity):
@@ -138,10 +144,16 @@ def get_medias(prop,entity):
 
 def get_item_qualifier(prop,quals):
 	for value in quals.get(prop,[]):
-		return value["datavalue"]["value"]["id"]
+		try:
+			return value["datavalue"]["value"]["id"]
+		except KeyError:
+			continue
 	return None
 
 def get_time_qualifier(prop,quals):
 	for value in quals.get(prop,[]):
-		return value["datavalue"]["value"]["time"]
+		try:
+			return value["datavalue"]["value"]["time"]
+		except KeyError:
+			continue
 	return None
