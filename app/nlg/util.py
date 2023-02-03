@@ -71,7 +71,18 @@ class ConcrHelper:
 		flatten(self.cnc.bracketedLinearize(e))
 		return text[0].upper()+text[1:]
 
+	lex_hacks = {
+		"Q6452640": pgf.ExprFun("southeast_1_N"),
+		"Q2381698": pgf.ExprFun("southwest_1_N"),
+		"Q6497686": pgf.ExprFun("northeast_1_N"),
+		"Q5491373": pgf.ExprFun("northwest_3_N"),
+		"Q865":     pgf.ExprFun("taiwan_2_PN")
+	}
+
 	def get_lex_fun(self, qid, link=True):
+		fun = self.lex_hacks.get(qid)
+		if fun:
+			return fun
 		with self.db.run("r") as t:
 			for synset_id in t.cursor(synsets_qid, qid):
 				for lexeme_id in t.cursor(lexemes_synset, synset_id):
