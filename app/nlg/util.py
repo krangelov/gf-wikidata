@@ -71,7 +71,9 @@ class ConcrHelper:
 				elif isinstance(x,pgf.BIND):
 					bind = True
 		flatten(self.cnc.bracketedLinearize(e))
-		return text[0].upper()+text[1:]
+		if len(text) > 0:
+			text = text[0].upper()+text[1:]
+		return text
 
 	lex_hacks = {
 		"Q6452640": pgf.ExprFun("southeast_1_N"),
