@@ -198,7 +198,10 @@ def render_page(query, start_response):
                     lex_fun=w.GivenName(given_names[0])
             else:
                 if family_names:
-                    lex_fun=w.Surname(family_names[0])
+                    if "Q6581072" in get_items("P21",entity):
+                        lex_fun=w.FemaleSurname(family_names[0])
+                    else:
+                        lex_fun=w.MaleSurname(family_names[0])
 
         if lex_fun:
             for s in render(cnc,lex_fun,entity):
