@@ -29,7 +29,7 @@ class ConcrHelper:
 	def removeLink(self,fun):
 		del self.links[fun]
 
-	def linearize(self,e):
+	def linearize(self,e,title=False):
 		if self.edit:
 			self.exprs.append(e)
 		text = ""
@@ -39,6 +39,8 @@ class ConcrHelper:
 			nonlocal text, bind, info
 			for x in xs:
 				if isinstance(x,str):
+					if title:
+						x = x.title();
 					if bind:
 						bind = False
 					else:
