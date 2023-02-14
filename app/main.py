@@ -28,10 +28,17 @@ def autorize(code, start_response):
                 headers={"UserAgent": "GF Wikidata",
                          "Authorization": "token "+token})
   with urllib.request.urlopen(req) as response:
-    res=json.loads(response.read())
+    txt = response.read()
+    with open("/usr/local/www/gf-wikidata/text.txt", "wb") as f:
+        f.write(txt)
+    res=json.loads(txt)
     user = res["login"]
-    name = res["name"]
-    email = res["email"]
+    name = res.get("name")  # if name is missing or if we get "null" value from GitHub
+    if not name:
+        name = user
+    email = res.get("email")  # if email is missing or if we get "null" value from GitHub
+    if not email:
+        email = user+"@github.com"
     author = name+" <"+email+">"
   path="/wikidata/index.wsgi"
   start_response('302 REDIRECT',
