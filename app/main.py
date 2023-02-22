@@ -5,14 +5,9 @@ from urllib.request import Request
 from daison import *
 
 import pgf
-gr = pgf.readNGF("/usr/local/share/x86_64-linux-ghc-8.0.2/gf-4.0.0/www/Parse.ngf")
-gr.embed("wordnet")
-import wordnet as w
-from wordnet.api import *
-from nlg import render, render_list
-from nlg.util import *
 
-db = openDB("/usr/local/www/gf-wordnet/semantics.db")
+gr = None
+db = None
 
 def autorize(code, start_response):
   import os
@@ -188,6 +183,10 @@ def render_page(query, start_response):
     yield b'     </div>'
     yield b'     <div class="gp-body" id="content" data-lang="'+bytes(lang,"utf8")+b'">'
 
+    import wordnet as w
+    from nlg import render, render_list
+    from nlg.util import ConcrHelper
+
     if qid != None:
         u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
         result = json.loads(u2.read())
@@ -233,6 +232,15 @@ def render_page(query, start_response):
         yield line
 
 def application(env, start_response):
+    global db, gr
+	
+    if not db:
+        db = openDB(env["SEMANTICS_DB_PATH"])
+
+    if not gr:
+        gr = pgf.readNGF(env["PARSE_GRAMMAR_PATH"])
+        gr.embed("wordnet")
+
     query = parse_qs(env["QUERY_STRING"])
 
     code  = query.get("code",[None])[0]
@@ -240,3 +248,10 @@ def application(env, start_response):
         return autorize(code, start_response)
     else:
         return render_page(query, start_response)
+
+if __name__ == "__main__":
+    import os
+    def start_response(*args):
+        pass
+    for line in application(os.environ, start_response):
+        print(line.decode("utf-8"))
