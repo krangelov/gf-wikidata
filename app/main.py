@@ -233,7 +233,7 @@ def render_page(query, start_response):
 
 def application(env, start_response):
     global db, gr
-	
+
     if not db:
         db = openDB(env["SEMANTICS_DB_PATH"])
 
