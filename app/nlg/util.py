@@ -81,7 +81,8 @@ class ConcrHelper:
 		"Q6497686": pgf.ExprFun("northeast_1_N"),
 		"Q5491373": pgf.ExprFun("northwest_3_N"),
 		"Q865":     pgf.ExprFun("taiwan_2_PN"),
-		"Q869":     pgf.ExprFun("thailand_PN")
+		"Q869":     pgf.ExprFun("thailand_PN"),
+		"Q801":     pgf.ExprFun("israel_1_PN")
 	}
 
 	def get_lex_fun(self, qid, link=True):
