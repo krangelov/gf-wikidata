@@ -76,26 +76,31 @@ class ConcrHelper:
 		return text
 
 	lex_hacks = {
-		"Q6452640": pgf.ExprFun("southeast_1_N"),
-		"Q2381698": pgf.ExprFun("southwest_1_N"),
-		"Q6497686": pgf.ExprFun("northeast_1_N"),
-		"Q5491373": pgf.ExprFun("northwest_3_N"),
-		"Q865":     pgf.ExprFun("taiwan_2_PN"),
-		"Q869":     pgf.ExprFun("thailand_PN"),
-		"Q801":     pgf.ExprFun("israel_1_PN")
+		"Q6452640": "southeast_1_N",
+		"Q2381698": "southwest_1_N",
+		"Q6497686": "northeast_1_N",
+		"Q5491373": "northwest_3_N",
+		"Q865":     "taiwan_2_PN",
+		"Q869":     "thailand_PN",
+		"Q801":     "israel_1_PN"
 	}
 
 	def get_lex_fun(self, qid, link=True):
-		fun = self.lex_hacks.get(qid)
-		if fun:
-			return fun
 		with self.db.run("r") as t:
-			for synset_id in t.cursor(synsets_qid, qid):
-				for lexeme_id in t.cursor(lexemes_synset, synset_id):
+			fun = self.lex_hacks.get(qid)
+			if fun:
+				for lexeme_id in t.cursor(lexemes_fun, fun):
 					for lexeme in t.cursor(lexemes, lexeme_id):
 						if link:
 							self.addLink(lexeme, qid)
 						return pgf.ExprFun(lexeme.lex_fun)
+			else:
+				for synset_id in t.cursor(synsets_qid, qid):
+					for lexeme_id in t.cursor(lexemes_synset, synset_id):
+						for lexeme in t.cursor(lexemes, lexeme_id):
+							if link:
+								self.addLink(lexeme, qid)
+							return pgf.ExprFun(lexeme.lex_fun)
 		return None
 
 	def get_lexemes(self,prop,entity,qual=True,link=True):
