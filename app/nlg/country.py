@@ -110,6 +110,7 @@ def render(cnc, lexeme, entity):
 		population = population_list[0][0]
 		cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkDigits(int(population)),w.inhabitant_1_N)))
 	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
+	#print(phr)
 	yield cnc.linearize(phr)
 	
 	# list neighbours
