@@ -87,20 +87,20 @@ class ConcrHelper:
 
 	def get_lex_fun(self, qid, link=True):
 		with self.db.run("r") as t:
-            fun = self.lex_hacks.get(qid)
-            if fun:
-                for lexeme_id in t.cursor(lexemes_fun, fun):
-                    for lexeme in t.cursor(lexemes, lexeme_id):
-                        if link:
-                            self.addLink(lexeme, qid)
-                        return pgf.ExprFun(lexeme.lex_fun)
-            else:
-                for synset_id in t.cursor(synsets_qid, qid):
-                    for lexeme_id in t.cursor(lexemes_synset, synset_id):
-                        for lexeme in t.cursor(lexemes, lexeme_id):
-                            if link:
-                                self.addLink(lexeme, qid)
-                            return pgf.ExprFun(lexeme.lex_fun)
+			fun = self.lex_hacks.get(qid)
+			if fun:
+				for lexeme_id in t.cursor(lexemes_fun, fun):
+					for lexeme in t.cursor(lexemes, lexeme_id):
+						if link:
+							self.addLink(lexeme, qid)
+						return pgf.ExprFun(lexeme.lex_fun)
+			else:
+				for synset_id in t.cursor(synsets_qid, qid):
+					for lexeme_id in t.cursor(lexemes_synset, synset_id):
+						for lexeme in t.cursor(lexemes, lexeme_id):
+							if link:
+								self.addLink(lexeme, qid)
+							return pgf.ExprFun(lexeme.lex_fun)
 		return None
 
 	def get_lexemes(self,prop,entity,qual=True,link=True):
