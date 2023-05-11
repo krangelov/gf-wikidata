@@ -123,7 +123,10 @@ def render(cnc, lexeme, entity):
 			if direction_qid:
 				direction = cnc.get_lex_fun(direction_qid)
 				if direction:
-					neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(the_Det,direction)))
+					if cnc.name in ["ParseBul"]:
+						neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(aSg_Det,direction)))
+					else:
+						neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(the_Det,direction)))
 			neighbours.append(neighbour_expr)
 	if neighbours:
 		if cnc.name in ["ParseSpa"]: #ProDrop
