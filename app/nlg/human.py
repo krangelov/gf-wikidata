@@ -32,5 +32,10 @@ def render(cnc, lexeme, entity):
 	else:
 		description = occupations
 
+	birthday = get_date("P569",entity)
+	if birthday:
+		description = mkCN(mkAP(mkVPSlash(mkVPSlash(w.bear_2_V2),birthday)),description)
+	print(description)
+
 	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,description)))),fullStopPunct)
 	yield cnc.linearize(phr)

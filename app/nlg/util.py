@@ -1,10 +1,10 @@
 import pgf
 from daison import *
+import wordnet as w
 from wordnet.semantics import *
 from html import escape
 import hashlib
-
-import pgf
+import re
 
 class ConcrHelper:
 	def __init__(self,cnc,db,lang,edit):
@@ -191,6 +191,71 @@ def get_medias(prop,entity):
 		img = "https://upload.wikimedia.org/wikipedia/commons/"+h[0]+"/"+h[0:2]+"/"+img
 		medias.append((img,value.get("qualifiers",{})))
 	return medias
+
+iso8601_regex = re.compile(r"^(?P<era>\+|-)?(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})(T| )(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})(?P<offset>(Z|(?P<offset_op>\+|-)?(?P<offset_hour>\d{2}):?(?P<offset_minute>\d{2})))?$")
+
+def get_date(prop,entity):
+	for value in entity["claims"].get(prop,[]):
+		try:
+			match = iso8601_regex.match(value["mainsnak"]["datavalue"]["value"]["time"])
+			if match:
+				break
+		except KeyError:
+			continue
+	else:
+		return None
+
+	year = int(match.group("year"))
+	if year == 0:
+		return None
+
+	match match.group("era"):
+		case "-":
+			year *= -1
+		case _:
+			year = year
+	year = w.intYear(pgf.ExprLit(year))
+	match int(match.group("month")):
+		case 0:
+			month = None
+		case 1:
+			month = w.january_Month
+		case 2:
+			month = w.february_Month
+		case 3:
+			month = w.march_Month
+		case 4:
+			month = w.april_Month
+		case 5:
+			month = w.may_Month
+		case 6:
+			month = w.june_Month
+		case 7:
+			month = w.july_Month
+		case 8:
+			month = w.august_Month
+		case 9:
+			month = w.september_Month
+		case 10:
+			month = w.october_Month
+		case 11:
+			month = w.november_Month
+		case 12:
+			month = w.december_Month
+
+	match int(match.group("day")):
+		case 0:
+			day = None
+		case d:
+			day = w.intMonthday(pgf.ExprLit(d))
+
+	if month:
+		if day:
+			return w.dayMonthYearAdv(day, month, year)
+		else:
+			return w.monthYearAdv(month, year)
+	else:
+		return w.yearAdv(year)
 
 def get_item_qualifier(prop,quals):
 	for value in quals.get(prop,[]):
