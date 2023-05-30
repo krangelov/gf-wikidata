@@ -125,6 +125,34 @@ class ConcrHelper:
 					items.append(fun)
 		return items
 
+	def get_demonyms(self,prop,entity,link=True):
+		adjs = []
+		pns  = []
+		all_adjs = True
+		with self.db.run("r") as t:
+			for value in entity["claims"].get(prop,[]):
+				try:
+					qid = value["mainsnak"]["datavalue"]["value"]["id"]
+				except KeyError:
+					continue
+
+				for synset_id in t.cursor(synsets_qid, qid):
+					for lexeme_id in t.cursor(lexemes_synset, synset_id):
+						for lexeme in t.cursor(lexemes, lexeme_id):
+							if link:
+								self.addLink(lexeme, qid)
+							pns.append(pgf.ExprFun(lexeme.lex_fun))
+							for sym,target_id in lexeme.lex_pointers:
+								if sym == Derived():
+									for adj in t.cursor(lexemes, target_id):
+										if link:
+											self.addLink(adj, qid)
+										adjs.append(pgf.ExprFun(adj.lex_fun))
+								else:
+									all_adjs = False
+
+		return (all_adjs, adjs if all_adjs else pns)
+
 def get_items(prop,entity,qual=True):
 	items = []
 	if qual:
