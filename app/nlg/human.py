@@ -45,13 +45,23 @@ def render(cnc, lexeme, entity):
 	else:
 		pron = w.he_Pron
 
+	advisors = []
+	for advisor in get_entities(["P184"],entity,qual=False):
+		name = cnc.get_person_name(advisor)
+		if name:
+			advisors.append(mkNP(name))
+	if advisors:
+		num = singularNum if len(advisors) == 1 else pluralNum
+		advisors = mkNP(w.and_Conj,advisors)
+		yield " "+cnc.linearize(mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(mkDet(pron,num),mkCN(w.doctoral_1_A, w.adviserMasc_N)),advisors))),fullStopPunct))
+
 	students = []
 	for student in get_entities(["P802","P185"],entity,qual=False):
 		name = cnc.get_person_name(student)
 		if name:
 			students.append(mkNP(name))
-	students = mkNP(w.and_Conj,students)
-	
-	phr = mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisor_1_N),students))))),fullStopPunct)
-	yield " "+cnc.linearize(phr)
+	if students:
+		students = mkNP(w.and_Conj,students)	
+		phr = mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisor_1_N),students))))),fullStopPunct)
+		yield " "+cnc.linearize(phr)
 
