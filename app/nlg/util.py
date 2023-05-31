@@ -5,6 +5,8 @@ from wordnet.semantics import *
 from html import escape
 import hashlib
 import re
+import json
+import urllib.request
 
 class ConcrHelper:
 	def __init__(self,cnc,db,lang,edit):
@@ -153,6 +155,23 @@ class ConcrHelper:
 
 		return (all_adjs, adjs if all_adjs else pns)
 
+	def get_person_name(self, entity):
+		given_names  = self.get_lexemes("P735",entity,qual=False,link=False)
+		family_names = self.get_lexemes("P734",entity,qual=False,link=False)
+		if given_names:
+			if family_names:
+				return w.FullName(given_names[0],family_names[0])
+			else:
+				return w.GivenName(given_names[0])
+		else:
+			if family_names:
+				if "Q6581072" in get_items("P21",entity):
+					return w.FemaleSurname(family_names[0])
+				else:
+					return w.MaleSurname(family_names[0])
+
+		return None
+
 def get_items(prop,entity,qual=True):
 	items = []
 	if qual:
@@ -168,6 +187,41 @@ def get_items(prop,entity,qual=True):
 			except KeyError:
 				continue
 	return items
+
+def get_entities(prop,entity,qual=True):
+	if isinstance(prop,list):
+		props = prop
+	else:
+		props = [prop]
+
+	items = set()
+	for prop in props:
+		for value in entity["claims"].get(prop,[]):
+			try:
+				items.add(value["mainsnak"]["datavalue"]["value"]["id"])
+			except KeyError:
+				continue
+
+	if not items:
+		return []
+
+	u2 = urllib.request.urlopen("https://www.wikidata.org/w/api.php?action=wbgetentities&ids="+"|".join(items)+"&languages=en&format=json")
+	result = json.loads(u2.read())["entities"]
+
+	entities = []
+	if qual:
+		for item in items:
+			try:
+				entities.append((result[item],value.get("qualifiers",{})))
+			except KeyError:
+				continue
+	else:
+		for item in items:
+			try:
+				entities.append(result[item])
+			except KeyError:
+				continue
+	return entities
 
 def get_quantities(prop,entity):
 	quantities = []
@@ -272,3 +326,8 @@ def get_time_qualifier(prop,quals):
 		except KeyError:
 			continue
 	return None
+
+def get_entity(qid):
+	u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
+	result = json.loads(u2.read())
+	return result["entities"][qid]

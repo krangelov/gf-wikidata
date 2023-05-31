@@ -185,29 +185,15 @@ def render_page(query, start_response):
 
     import wordnet as w
     from nlg import render, render_list
-    from nlg.util import ConcrHelper
+    from nlg.util import get_entity, ConcrHelper
 
     if qid != None:
-        u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
-        result = json.loads(u2.read())
-        entity = result["entities"][qid]
+        entity = get_entity(qid)
         cnc = ConcrHelper(gr.languages[langs[lang][1]],db,lang,edit)
 
         lex_fun = cnc.get_lex_fun(qid,link=False)
         if not lex_fun:
-            given_names  = cnc.get_lexemes("P735",entity,qual=False,link=False)
-            family_names = cnc.get_lexemes("P734",entity,qual=False,link=False)
-            if given_names:
-                if family_names:
-                    lex_fun=w.FullName(given_names[0],family_names[0])
-                else:
-                    lex_fun=w.GivenName(given_names[0])
-            else:
-                if family_names:
-                    if "Q6581072" in get_items("P21",entity):
-                        lex_fun=w.FemaleSurname(family_names[0])
-                    else:
-                        lex_fun=w.MaleSurname(family_names[0])
+            lex_fun = cnc.get_person_name(entity)
 
         if lex_fun:
             for s in render(cnc,lex_fun,entity):

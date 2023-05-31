@@ -8,10 +8,11 @@ def render(cnc, lexeme, entity):
 	for media,qual in get_medias("P18",entity):
 		yield "<tr><td><img src='"+escape(media)+"' width=250/></td></tr>"
 	yield "</table>"
+	
+	gender = get_items("P21",entity,qual=False)
 
 	occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False)])
 	if not occupations:
-		gender = get_items("P21",entity,qual=False)
 		if get_items("P184",entity):
 			occupations = mkCN(w.scientist_N)
 		elif "Q6581097" in gender:
@@ -35,7 +36,22 @@ def render(cnc, lexeme, entity):
 	birthday = get_date("P569",entity)
 	if birthday:
 		description = mkCN(mkAP(mkVPSlash(mkVPSlash(w.bear_2_V2),birthday)),description)
-	print(description)
 
 	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,description)))),fullStopPunct)
 	yield cnc.linearize(phr)
+
+	if "Q6581072" in gender:
+		pron = w.she_Pron
+	else:
+		pron = w.he_Pron
+
+	students = []
+	for student in get_entities(["P802","P185"],entity,qual=False):
+		name = cnc.get_person_name(student)
+		if name:
+			students.append(mkNP(name))
+	students = mkNP(w.and_Conj,students)
+	
+	phr = mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisor_1_N),students))))),fullStopPunct)
+	yield " "+cnc.linearize(phr)
+
