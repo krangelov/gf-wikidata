@@ -19,17 +19,22 @@ class ConcrHelper:
 		self.exprs = []
 
 	def addLink(self,lexeme,qid):
-		for lang,status in lexeme.status:
-			if lang == self.cnc.name:
-				break
+		if isinstance(lexeme,Lexeme):
+			for lang,status in lexeme.status:
+				if lang == self.cnc.name:
+					break
+			else:
+				status = Status.Checked
+			expr = pgf.ExprFun(lexeme.lex_fun)
+			info = (qid,expr,status)
+			self.links[expr] = info
+			return info
 		else:
-			status = Status.Checked
-		info = (qid,lexeme.lex_fun,status)
-		self.links[lexeme.lex_fun] = info
-		return info
+			info = (qid,lexeme,Status.Checked)
+			self.links[lexeme] = info
 
-	def removeLink(self,fun):
-		del self.links[fun]
+	def removeLink(self,lexeme):
+		del self.links[lexeme]
 
 	def linearize(self,e,title=False):
 		if self.edit:
@@ -49,27 +54,74 @@ class ConcrHelper:
 						text += " "
 					if info:
 						if self.edit:
-							text += '<span class="'+info[2].name.lower()+'" lang="'+self.lang+'" onclick="edit_lex(this,event,\''+escape(info[1])+'\',\''+self.lang+'\')">'
+							text += '<span class="'+info[2].name.lower()+'" lang="'+self.lang+'" onclick="edit_lex(this,event,\''+escape(info[1].name)+'\',\''+self.lang+'\')">'
 						else:
 							text += '<a href="index.wsgi?id='+info[0]+'&lang='+self.lang+'">'
 						info = None
 					text += escape(x)
 				elif isinstance(x,pgf.Bracket):
-					info = self.links.get(x.fun)
-					if self.edit and info == None:
-						self.links[x.fun] = False
-						with self.db.run("r") as t:
-							for lexeme_id in t.cursor(lexemes_fun, x.fun):
-								for lexeme in t.cursor(lexemes, lexeme_id):
-									info = self.addLink(lexeme, None)
-					tmp  = info
-
-					flatten(x.children)
-					if tmp:
-						if self.edit:
-							text += '</span>'
-						else:
+					if x.fun == "FullName" and len(x.children) == 2:
+						expr = w.FullName(pgf.ExprFun(x.children[0].fun),
+						                  pgf.ExprFun(x.children[1].fun))
+						info = self.links.get(expr)
+						tmp  = info
+						if info:
+							text += ' <a href="index.wsgi?id='+info[0]+'&lang='+self.lang+'">'
+							info = None
+						bind = True
+						flatten(x.children)
+						if tmp:
 							text += '</a>'
+					elif x.fun == "GivenName" and len(x.children) == 1:
+						expr = w.GivenName(pgf.ExprFun(x.children[0].fun))
+						info = self.links.get(expr)
+						tmp  = info
+						if info:
+							text += ' <a href="index.wsgi?id='+info[0]+'&lang='+self.lang+'">'
+							info = None
+						bind = True
+						flatten(x.children)
+						if tmp:
+							text += '</a>'
+					elif x.fun == "MaleSurname" and len(x.children) == 1:
+						expr = w.MaleSurname(pgf.ExprFun(x.children[0].fun))
+						info = self.links.get(expr)
+						tmp  = info
+						if info:
+							text += ' <a href="index.wsgi?id='+info[0]+'&lang='+self.lang+'">'
+							info = None
+						bind = True
+						flatten(x.children)
+						if tmp:
+							text += '</a>'
+					elif x.fun == "FemaleSurname" and len(x.children) == 1:
+						expr = w.MaleSurname(pgf.ExprFun(x.children[0].fun))
+						info = self.links.get(expr)
+						tmp  = info
+						if info:
+							text += ' <a href="index.wsgi?id='+info[0]+'&lang='+self.lang+'">'
+							info = None
+						bind = True
+						flatten(x.children)
+						if tmp:
+							text += '</a>'
+					else:
+						expr = pgf.ExprFun(x.fun)
+						info = self.links.get(expr)
+						if self.edit and info == None:
+							self.links[expr] = False
+							with self.db.run("r") as t:
+								for lexeme_id in t.cursor(lexemes_fun, x.fun):
+									for lexeme in t.cursor(lexemes, lexeme_id):
+										info = self.addLink(lexeme, None)
+						tmp  = info
+
+						flatten(x.children)
+						if tmp:
+							if self.edit:
+								text += '</span>'
+							else:
+								text += '</a>'
 				elif isinstance(x,pgf.BIND):
 					bind = True
 		flatten(self.cnc.bracketedLinearize(e))
@@ -160,15 +212,23 @@ class ConcrHelper:
 		family_names = self.get_lexemes("P734",entity,qual=False,link=False)
 		if given_names:
 			if family_names:
-				return w.FullName(given_names[0],family_names[0])
+				expr = w.FullName(given_names[0],family_names[0])
+				self.addLink(expr,entity["id"])
+				return expr
 			else:
-				return w.GivenName(given_names[0])
+				expr = w.GivenName(given_names[0])
+				self.addLink(expr,entity["id"])
+				return expr
 		else:
 			if family_names:
 				if "Q6581072" in get_items("P21",entity):
-					return w.FemaleSurname(family_names[0])
+					expr = w.FemaleSurname(family_names[0])
+					self.addLink(expr,entity["id"])
+					return expr
 				else:
-					return w.MaleSurname(family_names[0])
+					expr = w.MaleSurname(family_names[0])
+					self.addLink(expr,entity["id"])
+					return expr
 
 		return None
 
