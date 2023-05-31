@@ -180,8 +180,8 @@ class ConcrHelper:
 		return items
 
 	def get_demonyms(self,prop,entity,link=True):
-		adjs = []
-		pns  = []
+		adjs = set()
+		pns  = set()
 		all_adjs = True
 		with self.db.run("r") as t:
 			for value in entity["claims"].get(prop,[]):
@@ -195,13 +195,13 @@ class ConcrHelper:
 						for lexeme in t.cursor(lexemes, lexeme_id):
 							if link:
 								self.addLink(lexeme, qid)
-							pns.append(pgf.ExprFun(lexeme.lex_fun))
+							pns.add(pgf.ExprFun(lexeme.lex_fun))
 							for sym,target_id in lexeme.lex_pointers:
 								if sym == Derived():
 									for adj in t.cursor(lexemes, target_id):
 										if link:
 											self.addLink(adj, qid)
-										adjs.append(pgf.ExprFun(adj.lex_fun))
+										adjs.add(pgf.ExprFun(adj.lex_fun))
 								else:
 									all_adjs = False
 

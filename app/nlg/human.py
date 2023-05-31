@@ -55,6 +55,16 @@ def render(cnc, lexeme, entity):
 		advisors = mkNP(w.and_Conj,advisors)
 		yield " "+cnc.linearize(mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(mkDet(pron,num),mkCN(w.doctoral_1_A, w.adviserMasc_N)),advisors))),fullStopPunct))
 
+	teachers = []
+	for teacher in get_entities(["P1066"],entity,qual=False):
+		name = cnc.get_person_name(teacher)
+		if name:
+			teachers.append(mkNP(name))
+	if teachers:
+		num = singularNum if len(teachers) == 1 else pluralNum
+		teachers = mkNP(w.and_Conj,teachers)
+		yield " "+cnc.linearize(mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(pron),mkNP(aSg_Det,w.PossNP(mkCN(w.studentMasc_1_N),teachers))))),fullStopPunct))
+
 	students = []
 	for student in get_entities(["P802","P185"],entity,qual=False):
 		name = cnc.get_person_name(student)
