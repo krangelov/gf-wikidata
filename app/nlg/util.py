@@ -72,7 +72,7 @@ class ConcrHelper:
 						flatten(x.children)
 						if tmp:
 							text += '</a>'
-					elif x.fun == "GivenName" and len(x.children) == 1 and self.edit:
+					elif x.fun == "GivenName" and len(x.children) == 1 and not self.edit:
 						expr = w.GivenName(pgf.ExprFun(x.children[0].fun))
 						info = self.links.get(expr)
 						tmp  = info
@@ -83,7 +83,7 @@ class ConcrHelper:
 						flatten(x.children)
 						if tmp:
 							text += '</a>'
-					elif x.fun == "MaleSurname" and len(x.children) == 1 and self.edit:
+					elif x.fun == "MaleSurname" and len(x.children) == 1 and not self.edit:
 						expr = w.MaleSurname(pgf.ExprFun(x.children[0].fun))
 						info = self.links.get(expr)
 						tmp  = info
@@ -94,7 +94,7 @@ class ConcrHelper:
 						flatten(x.children)
 						if tmp:
 							text += '</a>'
-					elif x.fun == "FemaleSurname" and len(x.children) == 1 and self.edit:
+					elif x.fun == "FemaleSurname" and len(x.children) == 1 and not self.edit:
 						expr = w.MaleSurname(pgf.ExprFun(x.children[0].fun))
 						info = self.links.get(expr)
 						tmp  = info
