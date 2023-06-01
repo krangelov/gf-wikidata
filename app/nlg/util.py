@@ -60,7 +60,7 @@ class ConcrHelper:
 						info = None
 					text += escape(x)
 				elif isinstance(x,pgf.Bracket):
-					if x.fun == "FullName" and len(x.children) == 2 and self.edit:
+					if x.fun == "FullName" and len(x.children) == 2 and not self.edit:
 						expr = w.FullName(pgf.ExprFun(x.children[0].fun),
 						                  pgf.ExprFun(x.children[1].fun))
 						info = self.links.get(expr)
