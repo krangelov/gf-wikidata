@@ -462,32 +462,38 @@ def render(cnc, lexeme, entity):
 	#for student in get_entities("P802",entity,qual=False):
 	#name = cnc.get_person_name(student)
 
-	monarch = False
-	#office_head = get_items("P1906", entity)
-	for qid, quad in get_items("P1906", entity):
-		print('OFFICE_HEAD: ', qid)
-		entity_office = get_entity(qid)
-		if "P279" in entity_office['claims']: # P270 = subclass of
-			print('YEEEEEEEEEEEES')
-			monarch = any(subclass_qid == 'Q116' for subclass_qid, quad in get_items("P279", entity_office))
-			#president = 
-
-			#for subclass_qid, quad in get_items("P279", entity_office):
-			#	if subclass_qid == 'Q116':
-			#		monarch = True
-			#	else:
-			#		monarch = False
-
-			#for subclass_qid, quad in get_items("P279", entity_office):
-			#	if subclass_qid == 'Q116':
-			#		monarch = True
-			#	else:
-			#		monarch = False
-		else:
-			print('NOOOOOOOOPE')
+	position = False
+	office_head = get_items("P1906", entity)
+	if office_head:
+		for qid, quad in office_head: 
+			print('OFFICE_HEAD: ', qid)
+			entity_office = get_entity(qid)
+			if "P279" in entity_office['claims']: # P270 = subclass of
+				for subclass_qid, quad in get_items("P279", entity_office): 
+					if subclass_qid == 'Q15995642' and subclass_qid == 'Q611644': #religious leader / Catholic bishop #maybe place it before monarch
+						position = mkCN(w.pope_1_N)
+						break
+					elif subclass_qid == 'Q30461' or subclass_qid == 'Q248577': #president / president of the republic--> 4. the chief executive of a republic
+						position = "president"
+						break
+					elif subclass_qid == 'Q43292': #sultan --> place before monarch
+						position = mkCN(w.sultan_N)
+						break
+					elif subclass_qid == 'Q7645115': #supreme leader
+						position = mkCN(w.supreme_2_A, w.leader_1_N)
+						break
+					elif subclass_qid == 'Q166382': #emir
+						position = mkCN(w.emir_N)
+						break
+					elif subclass_qid == 'Q39018': #emperor
+						position = mkCN(w.emperor_1_N)
+						break
+					elif subclass_qid == 'Q116' or subclass_qid == 'Q12097' or subclass_qid == 'Q16511993': #monarch / king / queen
+						position = "monarch"
+						#position = mkCN(w.king_1_N)
 			
-	#print('HEEEEEELL YES') if any(subclass_qid == 'Q116' for subclass_qid, quad in get_items("P279", entity_office)) else w.
-
+			
+	print('POSITION: ', position)
 #king_1_N
 
 #queen_2_N
@@ -495,7 +501,7 @@ def render(cnc, lexeme, entity):
 # POPE - vatican city
 # President of the United Arab Emirates (Q955006)
 # Sultan of Brunei (Q889927)
-# Presidency of Bosnia and Herzegovina (Q844944)
+# Presidency of Bosnia and Herzegovina (Q844944) -- subclass is just head of state
 # Prince of Lichtenstein (Q63415597) -- monarch
 # Chairman of the Transitional Military Council (Q63107773) -- president
 # Governor-General of Antigua and Barbuda (Q602280) -- Governor-general --> ciudado con esto porque también hay monarch
@@ -504,14 +510,14 @@ def render(cnc, lexeme, entity):
 # Supreme Leader of Iran (Q332486)
 # King of Eswatini (Q29570674)
 # Sultan of Oman (Q28478447)
-# Captain Regent of San Marino (Q258045)
+# Captain Regent of San Marino (Q258045) -- subclass of head of state/government only
 # Emir of the State of Qatar (Q25711499)
 # Prince of Monaco (Q2457774) -- monarch
 # Emperor of Japan (Q208233)
 # Amir al-Mu'minin (Q2081829) -- Afghanistan
 # French co-prince of Andorra (Q19808845) --> parliamentary coprincipality (check form of gov)
 # Episcopal Co-Prince (Q19808790)
-# Yang di-Pertuan Agong (Q174156) -- Malaysia
+# Yang di-Pertuan Agong (Q174156) -- Malaysia -- king
 # Emperor of Austria (Q166877) -- emperor
 # Governor-General of Jamaica (Q1472951) -- not subclass!
 # King of Jordan (Q14625123)
@@ -519,7 +525,7 @@ def render(cnc, lexeme, entity):
 # military leader (Q1402561) -- Burkina Faso
 # O le Ao o le Malo (Q1258128)
 # Member of the Swiss Federal Council (Q11811941) -- Switzerland 
-# Chairman of the Presidential Council (Q102181806) -- Lybia
+# Chairman of the Presidential Council (Q102181806) -- Libya
 # emir of Kuwait (Q100877419)
 
 
@@ -567,9 +573,11 @@ def render(cnc, lexeme, entity):
 
 
 	# Getting the head of state:
-	name_date_head = {}
+	#name_date_head = {}
+	name_date_head = []
 	current_head_state = None
 	father_name = None
+	mother_name = None
 	prev_head_state = None
 	property_head = get_items("P35", entity)
 	if property_head:
@@ -587,19 +595,37 @@ def render(cnc, lexeme, entity):
 					for father_qid, quad in get_items("P22", head_entity):
 						father_entity = get_entity(father_qid)
 						father_name = cnc.get_person_name(father_entity)
+				
+				if "P25" in head_entity['claims']: # Checking if there is a 'mother' property (P25)
+					for mother_qid, quad in get_items("P25", head_entity):
+						mother_entity = get_entity(mother_qid)
+						mother_name = cnc.get_person_name(mother_entity)
 				#else:
 				#	father_name = None
 
 
 			if 'P582' in qual: # End date == previous heads of state
+				gender_prev = w.he_Pron if any(name_qid == "Q6581097" for name_qid, qual in get_items("P21", head_entity)) else w.she_Pron
+				#print('GENDER_PREV: ', gender_prev)
 				# Creating a dict {name : date}
-				date = get_time_qualifier("P580",qual) # Checking start date
-				name_date_head[name_head_state] = date
+				date = get_time_qualifier("P582",qual) # Checking start date --> MAYBE USE THE END DATE TO AVOID THIS ISSUE WITH THE UK
+				#name_date_head[name_head_state] = date
+				name_date_head.append((name_head_state, date, gender_prev))
+				#print('NAME_DATE_HEAD: ', name_date_head)
 
 	# Sorting dict by dates 
 	if name_date_head:
-		sorted_dates_head = dict(sorted(name_date_head.items(), key=lambda x: x[1], reverse=True))
-		prev_head_state = next(iter(sorted_dates_head.keys()))
+		#print('NAME_DATE_HEAD: ', name_date_head)
+		#sorted_dates_head = dict(sorted(name_date_head.items(), key=lambda x: x[1], reverse=True))
+		sorted_dates_head = sorted(name_date_head, key=lambda x: x[1], reverse=True)
+		#print('SORTED_DATES_HEAD: ', sorted_dates_head)
+		#prev_head_state = next(iter(sorted_dates_head.keys()))
+		#print('PREV_HEAD_STATE: ', prev_head_state)
+		gender_prev_head = sorted_dates_head[0][-1]
+		print('GENDER_PREV_HEAD: ', gender_prev_head)
+		prev_head_state = sorted_dates_head[0][0]
+		print('PREV_HEAD_STATE: ', prev_head_state)
+
 	#else:
 	#	prev_head_state = None
 
@@ -610,14 +636,26 @@ def render(cnc, lexeme, entity):
 		yield " "+cnc.linearize(phr)
 
 
-	# He/She succeeded [his/her father] William II **as King of England** mkAdv(as_Prep, ...)
-	if father_name:
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(prev_head_state))))),fullStopPunct)
-		yield " "+cnc.linearize(phr)
-	elif prev_head_state and prev_head_state == father_name:
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(w.father_1_N, mkNP(prev_head_state))))))),fullStopPunct)
-		yield " "+cnc.linearize(phr)
 
+	# He/She succeeded [his/her father] William II **as King of England** mkAdv(as_Prep, ...)
+	#if prev_head_state and prev_head_state == father_name:
+	if prev_head_state:
+		if prev_head_state == mother_name and position == "monarch" and gender_prev_head == w.she_Pron:
+			print('REEEEEEEEEEEEEEEEEEEEEEEEEEEEEINA')
+			position = mkCN(w.queen_2_N)
+			phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(position, mkNP(prev_head_state))))))))),fullStopPunct)		
+			yield " "+cnc.linearize(phr)
+			
+		elif prev_head_state == father_name and position == "monarch" and gender_prev_head == w.he_Pron:
+			print('REEEEEEEEEEEEEEEEEEEEEEEEYYYYYYYYYYYY')
+			position = mkCN(w.king_1_N)
+			phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(position, mkNP(prev_head_state))))))))),fullStopPunct)		
+			yield " "+cnc.linearize(phr)
+		
+		else:
+			print('NO HAY FAMILIAR')
+			phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(prev_head_state))))),fullStopPunct)
+			yield " "+cnc.linearize(phr)
 
 
 			
