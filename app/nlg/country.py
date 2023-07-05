@@ -197,8 +197,13 @@ def render(cnc, lexeme, entity):
 
 		for qid, expectancy, region in top:
 			if life_expectancy == expectancy:
+				# [Country name] has the highest life expectancy in [continent / the world], with an average of [XX] years.
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
 				      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
+				
+				#test = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(mkCN(mkNP(mkNP(a_Quant), mkAdv(w.of_1_Prep, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
+				      #mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))))))), fullStopPunct)
+				
 				yield " " + cnc.linearize(phr)
 				top_or_bottom = True
 				break
@@ -206,6 +211,7 @@ def render(cnc, lexeme, entity):
 		if not top_or_bottom:
 			for qid, expectancy, region in bottom:
 				if life_expectancy == expectancy:
+					# [Country name] has the lowest life expectancy in [continent / the world], with an average of [XX] years.
 					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
 					      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
 					yield " " + cnc.linearize(phr)
@@ -231,6 +237,20 @@ def render(cnc, lexeme, entity):
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(theSg_Det,cn)))),fullStopPunct)
 			yield cnc.linearize(phr)
 	
+
+	# Stating the official religion
+	religion = False
+	property_religion = get_items("P3075", entity)
+	if property_religion:
+		for qid, quad in property_religion: 
+			if qid == 'Q432': # Islam
+				religion = mkCN(w.islam_2_N)
+				break
+	
+	if religion:
+		# The official religion is [religion].
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
+		yield cnc.linearize(phr)
 	
 
 	# State basic form of government
@@ -431,6 +451,7 @@ def render(cnc, lexeme, entity):
 				if prev_head_state == father_name:
 					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(mkCN(w.king_1_N), mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
+						#test = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,cn), mkNP(current_head_state), mkSC(mkQS(pastTense, mkQCl(w.whoSg_IP, mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state))))))))))),fullStopPunct)
 						yield " "+cnc.linearize(phr)
 					else:
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(position_state, mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
