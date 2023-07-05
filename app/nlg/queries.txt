@@ -1,0 +1,48 @@
+# Query used to get property "P1906" (office held by head of state) for every sovereign country:
+SELECT ?country ?countryLabel ?head ?headLabel
+WITH {
+  SELECT DISTINCT *
+  WHERE {
+    ?country wdt:P31/wdt:P279* wd:Q3624078 .
+    ?country wdt:P1906 ?head .
+  }
+  ORDER BY DESC(?head)
+  LIMIT 300
+} AS %i
+WHERE {
+  INCLUDE %i
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" .
+    ?head rdfs:label ?headLabel .
+    ?head wdt:P1906 ?head .
+    ?country rdfs:label ?countryLabel .
+    ?country wdt:Q3624078 ?country .
+  }
+}
+ORDER BY DESC(?head)
+
+
+
+# Query used to get property "P1313" (office held by head of government) for every sovereign country:
+SELECT ?country ?countryLabel ?head ?headLabel
+WITH {
+  SELECT DISTINCT *
+  WHERE {
+    ?country wdt:P31/wdt:P279* wd:Q3624078 .
+    ?country wdt:P1313 ?head .
+  }
+  ORDER BY DESC(?head)
+  LIMIT 300
+} AS %i
+WHERE {
+  INCLUDE %i
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" .
+    ?head rdfs:label ?headLabel .
+    ?head wdt:P1313 ?head .
+    ?country rdfs:label ?countryLabel .
+    ?country wdt:Q3624078 ?country .
+    
+  }
+}
+ORDER BY DESC(?head)
