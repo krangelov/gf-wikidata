@@ -46,3 +46,29 @@ WHERE {
   }
 }
 ORDER BY DESC(?head)
+
+
+
+# Query used to get property "P3075" (official religion) for every sovereign country:
+SELECT ?country ?countryLabel ?religion ?religionLabel
+WITH {
+  SELECT DISTINCT *
+  WHERE {
+    ?country wdt:P31/wdt:P279* wd:Q3624078 .
+    ?country wdt:P3075 ?religion .
+  }
+  ORDER BY DESC(?religion)
+  LIMIT 300
+} AS %i
+WHERE {
+  INCLUDE %i
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" .
+    ?religion rdfs:label ?religionLabel .
+    ?religion wdt:P3075 ?religion .
+    ?country rdfs:label ?countryLabel .
+    ?country wdt:Q3624078 ?country .
+    
+  }
+}
+ORDER BY DESC(?religion)
