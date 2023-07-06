@@ -230,7 +230,6 @@ def render(cnc, lexeme, entity):
 	for city_qid, city_pop, country_qid in largest_cities:
 		if entity["id"] == country_qid:
 			city_name = cnc.get_lex_fun(city_qid)
-			#print('CITY_NAME: ', city_name)
 			city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
 			city_population = mkAdv(w.with_Prep,mkNP(mkDigits(int(city_pop)),w.inhabitant_1_N))
 			cn = mkCN(mkCN(mkAP(mkOrd(w.large_1_A)), city), city_population)
@@ -246,11 +245,37 @@ def render(cnc, lexeme, entity):
 			if qid == 'Q432': # Islam
 				religion = mkCN(w.islam_2_N)
 				break
-	
+			elif qid == 'Q5043': # Christianity
+				religion = mkCN(w.christianity_1_N)
+				break
+			elif qid == 'Q9268': # Judaism
+				religion = mkCN(w.judaism_2_N)
+				break
+			elif qid == 'Q748': # Buddhism
+				religion = mkCN(w.buddhism_1_N)
+				break
+			elif qid == 'Q752470': # Finnish Orthodox Church --> Eastern Orthodox Christianity
+				religion = mkCN(w.eastern_4_A, mkCN(w.orthodox_3_A, w.christianity_1_N))
+				break
+			elif qid == 'Q9592' or qid == 'Q1841': # Catholic Church / Catholicism
+				religion = mkCN(w.catholicism_N)
+				break
+			# elif qid == 'Q163943': # Druze
+			# 	religion = mkCN(druze) # not in Wikidata
+			# 	break
+			# elif qid == 'Q728697': # Laicism
+			# 	religion = mkCN(laicism) # not in Wikidata
+			# 	break
+			# elif qid == 'Q1379849': # Evangelical Lutheran Church of Finland
+			# 	religion = mkCN(lutheranism) #not in Wikidata
+			# 	brek
+			
+
 	if religion:
 		# The official religion is [religion].
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
 		yield cnc.linearize(phr)
+		# Future work: allowing multiple religious simultaneously.
 	
 
 	# State basic form of government
@@ -369,6 +394,7 @@ def render(cnc, lexeme, entity):
 	name_date_state = {}
 	#name_date_state = []
 	current_head_state = False
+	prev_head_state = False
 	father_name = False
 	mother_name = False
 	
@@ -379,6 +405,7 @@ def render(cnc, lexeme, entity):
 			name_head_state = cnc.get_person_name(head_entity)
 			if 'P582' not in qual: # No end date == current head of state
 				current_head_state = name_head_state
+				print('CURRENT: ', current_head_state)
 
 				# Checking gender
 				gender = w.he_Pron if any(name_qid == "Q6581097" for name_qid, qual in get_items("P21", head_entity)) else w.she_Pron
@@ -410,6 +437,7 @@ def render(cnc, lexeme, entity):
 		#print('sorted_dates_state: ', sorted_dates_state)
 		#sorted_dates_state = sorted(name_date_state, key=lambda x: x[1], reverse=True)
 		prev_head_state = next(iter(sorted_dates_state.keys()))
+		print('PREV_HEAD: ', prev_head_state)
 		#gender_prev_head = sorted_dates_state[0][-1]
 		#prev_head_state = sorted_dates_state[0][0]
 
@@ -451,8 +479,8 @@ def render(cnc, lexeme, entity):
 				if prev_head_state == father_name:
 					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(mkCN(w.king_1_N), mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
-						#test = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,cn), mkNP(current_head_state), mkSC(mkQS(pastTense, mkQCl(w.whoSg_IP, mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state))))))))))),fullStopPunct)
-						yield " "+cnc.linearize(phr)
+						test = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,cn), mkNP(current_head_state), mkSC(mkQS(pastTense, mkQCl(w.whoSg_IP, mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state))))))))))),fullStopPunct)
+						yield " "+cnc.linearize(test)
 					else:
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(position_state, mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
 						yield " "+cnc.linearize(phr)
@@ -468,6 +496,7 @@ def render(cnc, lexeme, entity):
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkCN(position_state, mkNP(mkNP(prev_head_state), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N))))))))),fullStopPunct)
 						yield " "+cnc.linearize(phr)
 					else:
+		
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkNP(prev_head_state), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N))))))),fullStopPunct)
 						yield " "+cnc.linearize(phr)
 
