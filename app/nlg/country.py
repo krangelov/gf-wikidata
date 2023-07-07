@@ -184,7 +184,6 @@ def render(cnc, lexeme, entity):
 		yield " "+cnc.linearize(phr)
 
 
-	print(' ')
 	yield "<h2>Demographics</h2>"
 
 	# state life expectancy
@@ -200,10 +199,6 @@ def render(cnc, lexeme, entity):
 				# [Country name] has the highest life expectancy in [continent / the world], with an average of [XX] years.
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
 				      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
-				
-				#test = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(mkCN(mkNP(mkNP(a_Quant), mkAdv(w.of_1_Prep, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
-				      #mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))))))), fullStopPunct)
-				
 				yield " " + cnc.linearize(phr)
 				top_or_bottom = True
 				break
@@ -267,106 +262,101 @@ def render(cnc, lexeme, entity):
 			# 	break
 			# elif qid == 'Q1379849': # Evangelical Lutheran Church of Finland
 			# 	religion = mkCN(lutheranism) #not in Wikidata
-			# 	brek
+			# 	break
 			
 
 	if religion:
 		# The official religion is [religion].
+		# Future work: allowing multiple religions simultaneously.
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
 		yield cnc.linearize(phr)
-		# Future work: allowing multiple religions simultaneously.
+		
 	
-
 	# State basic form of government
 	basic_form = get_items("P122", entity, qual=False)
 	if basic_form:
 		for qid in form_of_government:
 			if basic_form[0] == qid[0]:
 				bfog = qid[1]
-				#cn = qid[1]
 				
 	
 
 	# Property: office held by HEAD OF STATE
+	# Future work:
+	# Presidency of Bosnia and Herzegovina (Q844944) --> The presidency is divided between three people, one Serb, one Croatian and one Bosnian president
+	# French co-prince of Andorra (Q19808845) --> parliamentary coprincipality (check form of gov)
+	# Episcopal Co-Prince (Q19808790) --> Andorra (two heads of state)
+	# Member of the Swiss Federal Council (Q11811941) --> Switzerland: special case, the head of state is a federal council with 7 members
+	# O le Ao o le Malo (Q1258128) --> Samoan for "head of state"
 	position_state = False
 	office_state = get_items("P1906", entity)
 	if office_state:
 		for qid, quad in office_state: 
 			if qid == 'Q844944':
 				# no 'chairwoman' in WordNet
-				position_state = mkCN(w.chairman_N, mkAdv(w.of_1_Prep, mkNP(the_Det, w.presidency_2_N))) # chairman of the presidency
+				position_state = mkCN(w.chairman_N, mkAdv(w.of_1_Prep, mkNP(the_Det, w.presidency_2_N))) # Bosnia and Herzegovina
 				break
+			elif qid == 'Q955006': # United Arab Emirates
+				position_state = "president"
+				break
+			elif qid == 'Q25711499': # State of Qatar
+				position_state = mkCN(w.emir_N)
+				break
+			elif qid == 'Q63415597' or qid == 'Q2457774': # Lichtenstein / Monaco
+				position_state = mkCN(w.prince_N)
+				break
+			elif qid == 'Q258045': # San Marino
+				position_state = mkCN((w.CompoundN(w.captain_1_N, w.regent_1_N)))
+				break
+			elif qid == 'Q2081829': # Afghanistan
+				position_state = mkCN(w.amir_N)
+				break
+			elif qid == 'Q1402561': # Burkina Faso
+				position_state = mkCN(w.military_2_A, w.leader_1_N)
+				break
+			elif qid == 'Q1472951': # Jamaica
+				position_state = mkCN(w.governor_general_N)
+				break
+			elif qid == 'Q102181806': # Libya
+				position_state = mkCN(w.chairman_N, mkAdv(w.of_1_Prep, mkNP(the_Det, mkCN(w.presidential_1_A, w.council_1_N))))
+				break
+			elif qid == 'Q63107773': # Sudan
+				position_state = mkCN(w.chairman_N, mkAdv(w.of_1_Prep, mkNP(the_Det, mkCN(w.transitional_A, mkCN(w.military_2_A, w.council_1_N)))))
+				break
+			
 			entity_office = get_entity(qid)
 			if "P279" in entity_office['claims']: # P270 = subclass of
 				for subclass_qid, quad in get_items("P279", entity_office):
-					if subclass_qid == 'Q15995642' or subclass_qid == 'Q611644': #religious leader / Catholic bishop
+					if subclass_qid == 'Q15995642' or subclass_qid == 'Q611644': # religious leader / Catholic bishop
 						position_state = mkCN(w.pope_1_N)
 						break
-					elif subclass_qid == 'Q30461' or subclass_qid == 'Q248577': #president / president of the republic
+					elif subclass_qid == 'Q30461' or subclass_qid == 'Q248577': # president / president of the republic
 						position_state = "president"
 						break
-					elif subclass_qid == 'Q43292': #sultan
+					elif subclass_qid == 'Q43292': # sultan
 						position_state = mkCN(w.sultan_N)
 						break
-					elif subclass_qid == 'Q7645115': #supreme leader
+					elif subclass_qid == 'Q7645115': # supreme leader
 						position_state = mkCN(w.supreme_2_A, w.leader_1_N)
 						break
-					elif subclass_qid == 'Q166382': #emir
+					elif subclass_qid == 'Q166382': # emir
 						position_state = mkCN(w.emir_N)
 						break
-					elif subclass_qid == 'Q39018': #emperor
+					elif subclass_qid == 'Q39018': # emperor
 						position_state = mkCN(w.emperor_1_N)
+						break
+					elif subclass_qid == 'Q382844': # governor-general
+						position_state = mkCN(w.governor_general_N)
 						break
 					elif subclass_qid == 'Q116' or subclass_qid == 'Q12097' or subclass_qid == 'Q16511993': #monarch / king / queen
 						position_state = "monarch"
+						break
 					
-					#match subclass_qid:
-					#	case 'Q15995642' | 'Q611644':
-					#		position_state = w.pope_1_N
-					#		break
-					#	case 'Q30461' | 'Q248577':
-					#		position_state = "president"
-					#		break
-	
-
-# HEAD OF STATE
-# President of the United Arab Emirates (Q955006)
-# Sultan of Brunei (Q889927)
-# Presidency of Bosnia and Herzegovina (Q844944) -- subclass is just head of state
-# Prince of Lichtenstein (Q63415597) -- monarch
-# Chairman of the Transitional Military Council (Q63107773) -- president
-# Governor-General of Antigua and Barbuda (Q602280) -- Governor-general --> ciudado con esto porque también hay monarch
-# Supreme Leader of North Korea (Q56876342)
-# King of Lesotho (Q41542585)
-# Supreme Leader of Iran (Q332486)
-# King of Eswatini (Q29570674)
-# Sultan of Oman (Q28478447)
-# Captain Regent of San Marino (Q258045) -- subclass of head of state/government only
-# Emir of the State of Qatar (Q25711499)
-# Prince of Monaco (Q2457774) -- monarch
-# Emperor of Japan (Q208233)
-# Amir al-Mu'minin (Q2081829) -- Afghanistan
-# French co-prince of Andorra (Q19808845) --> parliamentary coprincipality (check form of gov)
-# Episcopal Co-Prince (Q19808790)
-# Yang di-Pertuan Agong (Q174156) -- Malaysia -- king
-# Emperor of Austria (Q166877) -- emperor
-# Governor-General of Jamaica (Q1472951) -- not subclass!
-# King of Jordan (Q14625123)
-# King of Morocco (Q14566719)
-# military leader (Q1402561) -- Burkina Faso
-# O le Ao o le Malo (Q1258128)
-# Member of the Swiss Federal Council (Q11811941) -- Switzerland 
-# Chairman of the Presidential Council (Q102181806) -- Libya
-# emir of Kuwait (Q100877419)
-
-
-
-
-
-
-
+					
 
 	# Property: office held by HEAD OF GOVERNMENT
+	# Future work: consider the possibility of multiple HOG as in Afghanistan OR even multiple positions (P1906) 
+	# as in Jamaica or Antigua and Barbuda
 	position_gov = False
 	office_gov = get_items("P1313", entity)
 	if office_gov:
@@ -409,7 +399,7 @@ def render(cnc, lexeme, entity):
 					elif subclass_qid == 'Q56022' or subclass_qid == 'Q373085': # Chancellor of Germany / chancellor
 						position_gov = mkCN(w.chancellor_2_N)
 						break
-					elif subclass_qid == 'Q1670755':
+					elif subclass_qid == 'Q1670755': # chief minister
 						position_gov = mkCN((w.CompoundN(w.chief_1_N, w.minister_2_N)))
 						break
 					elif subclass_qid == 'Q14212' or subclass_qid == 'Q58869896' or subclass_qid == 'Q2632935': # prime minister / Head of Government of Liechtenstein / minister of state
@@ -418,14 +408,11 @@ def render(cnc, lexeme, entity):
 
 
 
-
-
-# Special condition if the head of state and the head of government is the same person as in Oman
+# Future work: special condition if the head of state and the head of government is the same person as in Oman
 
 
 	# State current head of state (HOS), previous HOS, HOS' gender and kinship:
 	name_date_state = {}
-	#name_date_state = []
 	current_head_state = False
 	prev_head_state = False
 	father_name = False
@@ -454,26 +441,18 @@ def render(cnc, lexeme, entity):
 						mother_name = cnc.get_person_name(mother_entity)
 				
 			if 'P582' in qual: # End date == previous heads of state
-				#gender_prev = w.he_Pron if any(name_qid == "Q6581097" for name_qid, qual in get_items("P21", head_entity)) else w.she_Pron
-				#print('GENDER_PREV: ', gender_prev)
+
 				# Creating a dict {name : date}
 				date = get_time_qualifier("P582",qual) # Checking end date
 				name_date_state[name_head_state] = date
-				#name_date_state.append((name_head_state, date, gender_prev))
-				#print('name_date_state: ', name_date_state)
 
 
 	# Sorting dict by dates 
 	if name_date_state:
 		sorted_dates_state = dict(sorted(name_date_state.items(), key=lambda x: x[1], reverse=True))
-		#print('sorted_dates_state: ', sorted_dates_state)
-		#sorted_dates_state = sorted(name_date_state, key=lambda x: x[1], reverse=True)
 		prev_head_state = next(iter(sorted_dates_state.keys()))
-		#gender_prev_head = sorted_dates_state[0][-1]
-		#prev_head_state = sorted_dates_state[0][0]
 
-	
-	print(' ')
+
 	yield "<h2>Politics</h2>"
 
 	# Linearizing:
@@ -635,11 +614,5 @@ def render(cnc, lexeme, entity):
 					yield " "+cnc.linearize(phr)
 		
 	
-			
-	
-
-
-	
-
 
 	yield "</p>"
