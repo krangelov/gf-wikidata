@@ -225,7 +225,6 @@ def render(cnc, lexeme, entity):
 
 	
 	# State largest city in the country
-	# The largest city in Spain / The country's largest city... is Madrid with a population of...
 	# [Tokyo] is the largest city in [Japan] with a population of [00000] inhabitants.
 	for city_qid, city_pop, country_qid in largest_cities:
 		if entity["id"] == country_qid:
@@ -275,7 +274,7 @@ def render(cnc, lexeme, entity):
 		# The official religion is [religion].
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
 		yield cnc.linearize(phr)
-		# Future work: allowing multiple religious simultaneously.
+		# Future work: allowing multiple religions simultaneously.
 	
 
 	# State basic form of government
@@ -330,6 +329,42 @@ def render(cnc, lexeme, entity):
 					#		break
 	
 
+# HEAD OF STATE
+# President of the United Arab Emirates (Q955006)
+# Sultan of Brunei (Q889927)
+# Presidency of Bosnia and Herzegovina (Q844944) -- subclass is just head of state
+# Prince of Lichtenstein (Q63415597) -- monarch
+# Chairman of the Transitional Military Council (Q63107773) -- president
+# Governor-General of Antigua and Barbuda (Q602280) -- Governor-general --> ciudado con esto porque también hay monarch
+# Supreme Leader of North Korea (Q56876342)
+# King of Lesotho (Q41542585)
+# Supreme Leader of Iran (Q332486)
+# King of Eswatini (Q29570674)
+# Sultan of Oman (Q28478447)
+# Captain Regent of San Marino (Q258045) -- subclass of head of state/government only
+# Emir of the State of Qatar (Q25711499)
+# Prince of Monaco (Q2457774) -- monarch
+# Emperor of Japan (Q208233)
+# Amir al-Mu'minin (Q2081829) -- Afghanistan
+# French co-prince of Andorra (Q19808845) --> parliamentary coprincipality (check form of gov)
+# Episcopal Co-Prince (Q19808790)
+# Yang di-Pertuan Agong (Q174156) -- Malaysia -- king
+# Emperor of Austria (Q166877) -- emperor
+# Governor-General of Jamaica (Q1472951) -- not subclass!
+# King of Jordan (Q14625123)
+# King of Morocco (Q14566719)
+# military leader (Q1402561) -- Burkina Faso
+# O le Ao o le Malo (Q1258128)
+# Member of the Swiss Federal Council (Q11811941) -- Switzerland 
+# Chairman of the Presidential Council (Q102181806) -- Libya
+# emir of Kuwait (Q100877419)
+
+
+
+
+
+
+
 
 	# Property: office held by HEAD OF GOVERNMENT
 	position_gov = False
@@ -383,8 +418,6 @@ def render(cnc, lexeme, entity):
 
 
 
-	#print('POSITION_STATE: ', position_state)
-	#print('POSITION_GOV: ', position_gov)
 
 
 # Special condition if the head of state and the head of government is the same person as in Oman
@@ -405,7 +438,6 @@ def render(cnc, lexeme, entity):
 			name_head_state = cnc.get_person_name(head_entity)
 			if 'P582' not in qual: # No end date == current head of state
 				current_head_state = name_head_state
-				print('CURRENT: ', current_head_state)
 
 				# Checking gender
 				gender = w.he_Pron if any(name_qid == "Q6581097" for name_qid, qual in get_items("P21", head_entity)) else w.she_Pron
@@ -437,7 +469,6 @@ def render(cnc, lexeme, entity):
 		#print('sorted_dates_state: ', sorted_dates_state)
 		#sorted_dates_state = sorted(name_date_state, key=lambda x: x[1], reverse=True)
 		prev_head_state = next(iter(sorted_dates_state.keys()))
-		print('PREV_HEAD: ', prev_head_state)
 		#gender_prev_head = sorted_dates_state[0][-1]
 		#prev_head_state = sorted_dates_state[0][0]
 
@@ -452,65 +483,74 @@ def render(cnc, lexeme, entity):
 	# He/She took office after [position] [name].
 	# GOAL: The current head of government is Prime Minister Pedro Sanchez, *who* assumed/took office after Mariano Rajoy.
 	# phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,cn), mkNP(current_head_state), mkSC(mkQS(pastTense, mkQCl(w.whoSg_IP, mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state))))))))))),fullStopPunct)
-
+	# We need to consider keeping the long sentence into two simple sentences for cases like the United Arab Emirates,
+	# where there is no data for the previous head of government!
+	
+	# FIRST SENTENCE
 	if basic_form:
 		if current_head_state:
-			if position_state == 'monarch':
-				if gender == w.he_Pron:
+			if position_state:
+				if position_state == 'monarch' and gender == w.he_Pron:
 					position_state = mkCN(w.king_1_N)
-				elif gender == w.she_Pron:
+				elif position_state == 'monarch' and gender == w.she_Pron:
 					position_state = mkCN(w.queen_2_N)
-			elif position_state == 'president':
-				if gender == w.he_Pron:
+				elif position_state == 'president' and gender == w.he_Pron:
 					position_state = mkCN(w.presidentMasc_3_N)
-				elif gender == w.she_Pron:
+				elif position_state == 'president' and gender == w.she_Pron:
 					position_state = mkCN(w.presidentFem_3_N)
-			elif not position_state:
+				# [Country name] is a [basic form of government], with [position] [name] as head of state. 
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, mkCN(bfog, mkAdv(w.with_Prep, mkNP(mkCN(mkCN(position_state, mkNP(current_head_state)), mkAdv(w.as_Prep, mkNP(mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.state_1_N))))))))))))), fullStopPunct)
+				yield " "+cnc.linearize(phr)
+			else:
 				# There is BFOG and HOS but not POSITION
+				# [Country name] is a [basic form of government], with [name] as head of state.
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, mkCN(bfog, mkAdv(w.with_Prep, mkNP(mkNP(current_head_state), mkAdv(w.as_Prep, mkNP(mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.state_1_N)))))))))))), fullStopPunct)
 				yield " "+cnc.linearize(phr)
-			
-			#FIRST SENTENCE
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, mkCN(bfog, mkAdv(w.with_Prep, mkNP(mkCN(mkCN(position_state, mkNP(current_head_state)), mkAdv(w.as_Prep, mkNP(mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.state_1_N))))))))))))), fullStopPunct)
-			yield " "+cnc.linearize(phr)
 
-			#SECOND SENTENCE
+			# SECOND SENTENCE
 			if prev_head_state:
 				if prev_head_state == father_name:
 					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
+						# He/She succeeded his/her father king [name] in the position.
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(mkCN(w.king_1_N), mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
-						test = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,cn), mkNP(current_head_state), mkSC(mkQS(pastTense, mkQCl(w.whoSg_IP, mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state))))))))))),fullStopPunct)
-						yield " "+cnc.linearize(test)
+						yield " "+cnc.linearize(phr)
 					else:
+						# He/She succeeded his/her father [position] [name] in the position.
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(position_state, mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
 						yield " "+cnc.linearize(phr)
+
 				elif prev_head_state == mother_name:
 					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
+						# He/She succeeded his/her mother queen [name] in the position.
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(mkCN(mkCN(w.queen_2_N), mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
 						yield " "+cnc.linearize(phr)
 					else:
+						# He/She succeeded his/her mother [position] [name] in the position.
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(mkCN(position_state, mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
 						yield " "+cnc.linearize(phr)
+				
 				else:
 					if position_state:
+						# He/She succeeded [position] [name] in the position.
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkCN(position_state, mkNP(mkNP(prev_head_state), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N))))))))),fullStopPunct)
 						yield " "+cnc.linearize(phr)
 					else:
-		
+						# He/She succeeded [name] in the position.
 						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkNP(prev_head_state), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N))))))),fullStopPunct)
 						yield " "+cnc.linearize(phr)
-
+		
 		else:
-			# If there is basic form of gov but not head of state:
+			# [Country name] is a [basic form of government]. 
+			# There is BFOG but not HOS
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, bfog)))), fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
 
 	
-
 	# State current head of government (HOG), previous HOG, HOG' gender and kinship:
 	name_date_gov = {}
 	current_head_gov = False
+	prev_head_gov = False
 	property_head_gov = get_items("P6", entity)
 	if property_head_gov:
 		for head_government, qual in property_head_gov:
@@ -570,7 +610,7 @@ def render(cnc, lexeme, entity):
 					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(mkQuant(gender), mkCN(w.mother_1_N, mkNP(mkCN(position_gov, mkNP(prev_head_gov)))))))))))),fullStopPunct)
 					yield " "+cnc.linearize(phr)
 				else:
-					# [He/She] took office after [position] [name].
+					# He/She took office after [position] [name].
 					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(mkCN(position_gov, mkNP(prev_head_gov)))))))))),fullStopPunct)
 					yield " "+cnc.linearize(phr)
 
@@ -582,13 +622,15 @@ def render(cnc, lexeme, entity):
 
 			if prev_head_gov:
 				if prev_head_gov == father_name:
+					# He/She took office after his/her father [name].
 					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(mkQuant(gender), mkCN(w.father_1_N, mkNP(prev_head_gov)))))))))),fullStopPunct)
 					yield " "+cnc.linearize(phr)
 				elif prev_head_gov == mother_name:
+					# He/She took office after his/her mother [name].
 					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(mkQuant(gender), mkCN(w.mother_1_N, mkNP(prev_head_gov)))))))))),fullStopPunct)
 					yield " "+cnc.linearize(phr)
 				else:
-					# [He/She] took office after [prev head of gov].
+					# He/She took office after [name].
 					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(prev_head_gov)))))))),fullStopPunct)
 					yield " "+cnc.linearize(phr)
 		
