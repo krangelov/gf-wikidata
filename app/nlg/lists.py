@@ -462,80 +462,80 @@ insular_oceania = mkNP(w.insular_oceania_PN)
 # Top 5 highest life expectancies per continent / the world
 top = [
 	("Q238", 85.41707, the_world),        # San Marino
-	("Q17", 83.98488, the_world),         # Japan
-	("Q16", 83.62, the_world),            # Canada
-	("Q183", 80.8, the_world),            # Germany
-	("Q39", 82.89756, the_world),         # Switzerland
+	#("Q17", 83.98488, the_world),         # Japan
+	#("Q16", 83.62, the_world),            # Canada
+	#("Q183", 80.8, the_world),            # Germany
+	#("Q39", 82.89756, the_world),         # Switzerland
 	("Q238", 85.41707, europe),           # San Marino
-	("Q183", 83.3, europe),               # Germany
-	("Q39", 82.89756, europe),            # Switzerland
-	("Q347", 82.6561, europe),            # Liechtenstein
-	("Q38", 82.5439, europe),             # Italy
+	#("Q183", 83.3, europe),               # Germany
+	#("Q39", 82.89756, europe),            # Switzerland
+	#("Q347", 82.6561, europe),            # Liechtenstein
+	#("Q38", 82.5439, europe),             # Italy
 	("Q17", 83.98488, asia),              # Japan
-	("Q334", 82.79512, asia),             # Singapore
-	("Q801", 82.6, asia),                 # Israel
-	("Q884", 82.02439, asia),             # South Korea
-	("Q229", 80.508, asia),               # Cyprus
+	#("Q334", 82.79512, asia),             # Singapore
+	#("Q801", 82.6, asia),                 # Israel
+	#("Q884", 82.02439, asia),             # South Korea
+	#("Q229", 80.508, asia),               # Cyprus
 	("Q262", 76.078, africa),             # Algeria
-	("Q1028", 75.821, africa),            # Morocco
-	("Q948", 75.731, africa),             # Tunisia
-	("Q1027", 74.39488, africa),          # Mauritius
-	("Q1042", 74.30976, africa),          # Seychelles
+	#("Q1028", 75.821, africa),            # Morocco
+	#("Q948", 75.731, africa),             # Tunisia
+	#("Q1027", 74.39488, africa),          # Mauritius
+	#("Q1042", 74.30976, africa),          # Seychelles
 	("Q16", 83.62, north_america),        # Canada
-	("Q800", 79.831, north_america),      # Costa Rica
-	("Q241", 79.742, north_america),      # Cuba
-	("Q30", 78.69024, north_america),     # United States
-	("Q804", 78.001, north_america),      # Panama
+	#("Q800", 79.831, north_america),      # Costa Rica
+	#("Q241", 79.742, north_america),      # Cuba
+	#("Q30", 78.69024, north_america),     # United States
+	#("Q804", 78.001, north_america),      # Panama
 	("Q298", 80, south_america),          # Chile
-	("Q77", 77.493, south_america),       # Uruguay
-	("Q414", 76.577, south_america),      # Argentina
-	("Q736", 76.327, south_america),      # Ecuador
-	("Q155", 75.723, south_america),      # Brazil
+	#("Q77", 77.493, south_america),       # Uruguay
+	#("Q414", 76.577, south_america),      # Argentina
+	#("Q736", 76.327, south_america),      # Ecuador
+	#("Q155", 75.723, south_america),      # Brazil
 	("Q408", 82.5, insular_oceania),      # Australia
-	("Q664", 81.61244, insular_oceania),  # New Zealand
-	("Q683", 75.013, insular_oceania),    # Samoa
-	("Q252", 73.515, insular_oceania),    # Indonesia
-	("Q678", 73.029, insular_oceania)     # Tonga
+	#("Q664", 81.61244, insular_oceania),  # New Zealand
+	#("Q683", 75.013, insular_oceania),    # Samoa
+	#("Q252", 73.515, insular_oceania),    # Indonesia
+	#("Q678", 73.029, insular_oceania)     # Tonga
 	]
 
 
 # Top 5 lowest life expectancies per continent / the world
 bottom = [ # sorted from lower to higher life expectancy
 	("Q1044", 51.835, the_world),         # Sierra Leone
-	("Q929", 52.171, the_world),          # Central African Republic
-	("Q657", 52.903, the_world),          # Chad
-	("Q1033", 53.428, the_world),         # Nigeria
-	("Q1008", 53.582, the_world),         # Ivory Coast
+	#("Q929", 52.171, the_world),          # Central African Republic
+	#("Q657", 52.903, the_world),          # Chad
+	#("Q1033", 53.428, the_world),         # Nigeria
+	#("Q1008", 53.582, the_world),         # Ivory Coast
 	("Q212", 71.47634, europe),           # Ukraine
-	("Q159", 71.59293, europe),           # Russia
-	("Q217", 71.61, europe),              # Moldova
-	("Q227", 72.026, europe),             # Azerbaijan
-	("Q232", 72.3, europe),               # Kazakhstan
+	#("Q159", 71.59293, europe),           # Russia
+	#("Q217", 71.61, europe),              # Moldova
+	#("Q227", 72.026, europe),             # Azerbaijan
+	#("Q232", 72.3, europe),               # Kazakhstan
 	("Q889", 63.673, asia),               # Afghanistan
-	("Q805", 64.953, asia),               # Yemen
-	("Q819", 66, asia),                   # Laos
-	("Q874", 67.835, asia),               # Turkmenistan
-	("Q574", 68.881, asia),               # East Timor
+	#("Q805", 64.953, asia),               # Yemen
+	#("Q819", 66, asia),                   # Laos
+	#("Q874", 67.835, asia),               # Turkmenistan
+	#("Q574", 68.881, asia),               # East Timor
 	("Q1044", 51.835, africa),            # Sierra Leone
-	("Q929", 52.171, africa),             # Central African Republic
-	("Q657", 52.903, africa),             # Chad
-	("Q1033", 53.428, africa),            # Nigeria
-	("Q1008", 53.582, africa),            # Ivory Coast
+	#("Q929", 52.171, africa),             # Central African Republic
+	#("Q657", 52.903, africa),             # Chad
+	#("Q1033", 53.428, africa),            # Nigeria
+	#("Q1008", 53.582, africa),            # Ivory Coast
 	("Q790", 63.33, north_america),       # Haiti
-	("Q242", 70.384, north_america),      # Belize
-	("Q754", 70.673, north_america),      # Trinidad and Tobago
-	("Q763", 71.33659, north_america),    # Saint Kitts and Nevis	
-	("Q757", 73.179, north_america),      # Saint Vincent and the Grenadines
+	#("Q242", 70.384, north_america),      # Belize
+	#("Q754", 70.673, north_america),      # Trinidad and Tobago
+	#("Q763", 71.33659, north_america),    # Saint Kitts and Nevis	
+	#("Q757", 73.179, north_america),      # Saint Vincent and the Grenadines
 	("Q734", 66.65, south_america),       # Guyana
-	("Q750", 69.125, south_america),      # Bolivia
-	("Q730", 71.405, south_america),      # Suriname
-	("Q733", 73.12, south_america),       # Paraguay
-	("Q739", 74.381, south_america),      # Colombia
+	#("Q750", 69.125, south_america),      # Bolivia
+	#("Q730", 71.405, south_america),      # Suriname
+	#("Q733", 73.12, south_america),       # Paraguay
+	#("Q739", 74.381, south_america),      # Colombia
 	("Q709", 65.23902, insular_oceania),  # Marshall Islands
-	("Q691", 65.544, insular_oceania),    # Papua New Guinea
-	("Q710", 68.46, insular_oceania),     # Kiribati
-	("Q695", 69.12927, insular_oceania),  # Palau
-	("Q702", 69.195, insular_oceania)     # Federated States of Micronesia
+	#("Q691", 65.544, insular_oceania),    # Papua New Guinea
+	#("Q710", 68.46, insular_oceania),     # Kiribati
+	#("Q695", 69.12927, insular_oceania),  # Palau
+	#("Q702", 69.195, insular_oceania)     # Federated States of Micronesia
 	]
 
 
