@@ -458,13 +458,6 @@ def render(cnc, lexeme, entity):
 	# Linearizing:
 	# [Country name] is a [basic form of government], with [position] [name] as head of state. 
 	# He/She succeeded [his/her father/mother] [position] [name] in the position. 
-	# The current head of government is [position] [name]. 
-	# He/She took office after [position] [name].
-	# GOAL: The current head of government is Prime Minister Pedro Sanchez, *who* assumed/took office after Mariano Rajoy.
-	# phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,cn), mkNP(current_head_state), mkSC(mkQS(pastTense, mkQCl(w.whoSg_IP, mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state))))))))))),fullStopPunct)
-	# We need to consider keeping the long sentence into two simple sentences for cases like the United Arab Emirates,
-	# where there is no data for the previous head of government!
-	
 	# FIRST SENTENCE
 	if basic_form:
 		if current_head_state:
@@ -566,6 +559,12 @@ def render(cnc, lexeme, entity):
 	# Linearizing:
 	# The current head of government is [position] [name].
 	# He/She took office after [position] [name].
+	# GOAL: The current head of government is Prime Minister Pedro Sanchez, *who* assumed/took office after Mariano Rajoy.
+	# ANOTHER EXAMPLE: The current head of gov who is Pedro took office after Mariano
+	# cn = mkCN(w.current_A, mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.government_1_N))))
+	# test = mkPhr(mkUtt(mkNP(the_Det,mkCN(cn, mkRS(pastTense, mkRCl(which_RP(mkNP(current_head_state)), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state)))))))))),fullStopPunct)
+	# We need to consider keeping the long sentence into two simple sentences for cases like the United Arab Emirates,
+	# where there is no data for the previous head of government!
 	if current_head_gov:
 		if position_gov:
 			if position_gov == 'president':
