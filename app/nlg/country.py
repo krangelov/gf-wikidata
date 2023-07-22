@@ -184,7 +184,7 @@ def render(cnc, lexeme, entity):
 		yield " "+cnc.linearize(phr)
 
 
-	yield "<h2>Demographics</h2>"
+    yield '<h2 class="gp-page-title">'+cnc.linearize(w.demographic_N)+'</h2>'
 
 	# state life expectancy
 	# [Country name] has the highest/lowest life expectancy in [continent / the world], with an average of [XX] years.
@@ -453,7 +453,7 @@ def render(cnc, lexeme, entity):
 		prev_head_state = next(iter(sorted_dates_state.keys()))
 
 
-	yield "<h2>Politics</h2>"
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.politics_2_N)+'</h2>'
 
 	# Linearizing:
 	# [Country name] is a [basic form of government], with [position] [name] as head of state. 
