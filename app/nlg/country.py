@@ -1,35 +1,11 @@
+from os import name
 import pgf
 import wordnet as w
 from wordnet.api import *
 from nlg.util import *
+from nlg.lists import *
 
-adjectives = [
-     ("Q52062",  w.nordic_2_A),
-     ("Q39731",  w.baltic_2_A),
-     ("Q4412",   w.west_african_A),
-     ("Q27433",  w.central_african_A),
-     ("Q31945",  w.arabic_A),
-     ("Q143487", w.arabic_A),
-     ("Q779924", w.muslim_A)
-    ]
 
-regions = [
-     "Q21195",      # Scandinavia
-     "Q7204",	    # Middle East
-     "Q27275",	    # Central Asia
-     "Q27394",	    # Southern Africa
-     "Q27407",	    # East Africa
-     "Q27381",	    # North Africa
-     "Q27509",      # Central Europe
-     "Q27496",      # Western Europe
-     "Q27468",      # Eastern Europe
-     "Q27449",      # Southern Europe
-     "Q18869",	    # Caucasus
-     "Q35942",	    # Polynesia
-     "Q37394",	    # Melanesia
-     "Q3359409",	# Micronesia
-     "Q664609"      # Caribbean
-    ]
 
 def render(cnc, lexeme, entity):
 	yield "<table class='infobox' border=1>"
@@ -110,7 +86,6 @@ def render(cnc, lexeme, entity):
 		population = population_list[0][0]
 		cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkDigits(int(population)),w.inhabitant_1_N)))
 	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
-	#print(phr)
 	yield cnc.linearize(phr)
 	
 	# list neighbours
@@ -207,5 +182,436 @@ def render(cnc, lexeme, entity):
 			my_det = theSg_Det
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(my_det,mkCN(w.spoken_A,mkCN(w.language_1_N))),mkNP(w.and_Conj,other_langs)))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
+
+
+	yield "<h2>Demographics</h2>"
+
+	# state life expectancy
+	# [Country name] has the highest/lowest life expectancy in [continent / the world], with an average of [XX] years.
+	# GOAL: [Norway] has the (second/third/...) highest/lowest life expectancy (in Europe / in the world), with an average of XX years.
+	expectancy_list = sorted(((life_expectancy,get_time_qualifier("P585",quals)) for life_expectancy,quals in get_quantities("P2250",entity)),key=lambda p: p[1],reverse=True)
+	if expectancy_list:
+		life_expectancy = expectancy_list[0][0]
+		top_or_bottom = False
+
+		for qid, expectancy, region in top:
+			if life_expectancy == expectancy:
+				# [Country name] has the highest life expectancy in [continent / the world], with an average of [XX] years.
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
+				      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
+				yield " " + cnc.linearize(phr)
+				top_or_bottom = True
+				break
+
+		if not top_or_bottom:
+			for qid, expectancy, region in bottom:
+				if life_expectancy == expectancy:
+					# [Country name] has the lowest life expectancy in [continent / the world], with an average of [XX] years.
+					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
+					      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
+					yield " " + cnc.linearize(phr)
+					top_or_bottom = True
+					break
+
+		if not top_or_bottom:
+			# The life expectancy is [XX] years.
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.life_1_N,w.expectancy_1_N)), mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
+
+	
+	# State largest city in the country
+	# [Tokyo] is the largest city in [Japan] with a population of [00000] inhabitants.
+	for city_qid, city_pop, country_qid in largest_cities:
+		if entity["id"] == country_qid:
+			city_name = cnc.get_lex_fun(city_qid)
+			city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
+			city_population = mkAdv(w.with_Prep,mkNP(mkDigits(int(city_pop)),w.inhabitant_1_N))
+			cn = mkCN(mkCN(mkAP(mkOrd(w.large_1_A)), city), city_population)
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(theSg_Det,cn)))),fullStopPunct)
+			yield cnc.linearize(phr)
+	
+
+	# Stating the official religion
+	religion = False
+	property_religion = get_items("P3075", entity)
+	if property_religion:
+		for qid, quad in property_religion: 
+			if qid == 'Q432': # Islam
+				religion = mkCN(w.islam_2_N)
+				break
+			elif qid == 'Q5043': # Christianity
+				religion = mkCN(w.christianity_1_N)
+				break
+			elif qid == 'Q9268': # Judaism
+				religion = mkCN(w.judaism_2_N)
+				break
+			elif qid == 'Q748': # Buddhism
+				religion = mkCN(w.buddhism_1_N)
+				break
+			elif qid == 'Q752470': # Finnish Orthodox Church --> Eastern Orthodox Christianity
+				religion = mkCN(w.eastern_4_A, mkCN(w.orthodox_3_A, w.christianity_1_N))
+				break
+			elif qid == 'Q9592' or qid == 'Q1841': # Catholic Church / Catholicism
+				religion = mkCN(w.catholicism_N)
+				break
+			# elif qid == 'Q163943': # Druze
+			# 	religion = mkCN(druze) # not in Wikidata
+			# 	break
+			# elif qid == 'Q728697': # Laicism
+			# 	religion = mkCN(laicism) # not in Wikidata
+			# 	break
+			# elif qid == 'Q1379849': # Evangelical Lutheran Church of Finland
+			# 	religion = mkCN(lutheranism) #not in Wikidata
+			# 	break
+			
+
+	if religion:
+		# The official religion is [religion].
+		# Future work: allowing multiple religions simultaneously.
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
+		yield cnc.linearize(phr)
+		
+	
+	# State basic form of government
+	basic_form = get_items("P122", entity, qual=False)
+	if basic_form:
+		for qid in form_of_government:
+			if basic_form[0] == qid[0]:
+				bfog = qid[1]
+				
+	
+
+	# Property: office held by HEAD OF STATE
+	# Future work:
+	# Presidency of Bosnia and Herzegovina (Q844944) --> The presidency is divided between three people, one Serb, one Croatian and one Bosnian president
+	# French co-prince of Andorra (Q19808845) --> parliamentary coprincipality (check form of gov)
+	# Episcopal Co-Prince (Q19808790) --> Andorra (two heads of state)
+	# Member of the Swiss Federal Council (Q11811941) --> Switzerland: special case, the head of state is a federal council with 7 members
+	# O le Ao o le Malo (Q1258128) --> Samoan for "head of state"
+	position_state = False
+	office_state = get_items("P1906", entity)
+	if office_state:
+		for qid, quad in office_state: 
+			if qid == 'Q844944':
+				# no 'chairwoman' in WordNet
+				position_state = mkCN(w.chairman_N, mkAdv(w.of_1_Prep, mkNP(the_Det, w.presidency_2_N))) # Bosnia and Herzegovina
+				break
+			elif qid == 'Q955006': # United Arab Emirates
+				position_state = "president"
+				break
+			elif qid == 'Q25711499': # State of Qatar
+				position_state = mkCN(w.emir_N)
+				break
+			elif qid == 'Q63415597' or qid == 'Q2457774': # Lichtenstein / Monaco
+				position_state = mkCN(w.prince_N)
+				break
+			elif qid == 'Q258045': # San Marino
+				position_state = mkCN((w.CompoundN(w.captain_1_N, w.regent_1_N)))
+				break
+			elif qid == 'Q2081829': # Afghanistan
+				position_state = mkCN(w.amir_N)
+				break
+			elif qid == 'Q1402561': # Burkina Faso
+				position_state = mkCN(w.military_2_A, w.leader_1_N)
+				break
+			elif qid == 'Q1472951': # Jamaica
+				position_state = mkCN(w.governor_general_N)
+				break
+			elif qid == 'Q102181806': # Libya
+				position_state = mkCN(w.chairman_N, mkAdv(w.of_1_Prep, mkNP(the_Det, mkCN(w.presidential_1_A, w.council_1_N))))
+				break
+			elif qid == 'Q63107773': # Sudan
+				position_state = mkCN(w.chairman_N, mkAdv(w.of_1_Prep, mkNP(the_Det, mkCN(w.transitional_A, mkCN(w.military_2_A, w.council_1_N)))))
+				break
+			
+			entity_office = get_entity(qid)
+			if "P279" in entity_office['claims']: # P270 = subclass of
+				for subclass_qid, quad in get_items("P279", entity_office):
+					if subclass_qid == 'Q15995642' or subclass_qid == 'Q611644': # religious leader / Catholic bishop
+						position_state = mkCN(w.pope_1_N)
+						break
+					elif subclass_qid == 'Q30461' or subclass_qid == 'Q248577': # president / president of the republic
+						position_state = "president"
+						break
+					elif subclass_qid == 'Q43292': # sultan
+						position_state = mkCN(w.sultan_N)
+						break
+					elif subclass_qid == 'Q7645115': # supreme leader
+						position_state = mkCN(w.supreme_2_A, w.leader_1_N)
+						break
+					elif subclass_qid == 'Q166382': # emir
+						position_state = mkCN(w.emir_N)
+						break
+					elif subclass_qid == 'Q39018': # emperor
+						position_state = mkCN(w.emperor_1_N)
+						break
+					elif subclass_qid == 'Q382844': # governor-general
+						position_state = mkCN(w.governor_general_N)
+						break
+					elif subclass_qid == 'Q116' or subclass_qid == 'Q12097' or subclass_qid == 'Q16511993': #monarch / king / queen
+						position_state = "monarch"
+						break
+					
+					
+
+	# Property: office held by HEAD OF GOVERNMENT
+	# Future work: consider the possibility of multiple HOG as in Afghanistan OR even multiple positions (P1906) 
+	# as in Jamaica or Antigua and Barbuda
+	position_gov = False
+	office_gov = get_items("P1313", entity)
+	if office_gov:
+		for qid, quad in office_gov: 
+			if qid == 'Q2387238': # President of the Pontifical Commission for the Vatican City State
+				position_gov = mkCN(w.presidentMasc_3_N, mkAdv(w.of_1_Prep, mkNP(the_Det, mkCN(w.pontifical_1_A, w.commission_1_N)))) 
+				break
+			elif qid == 'Q7240364' or qid == 'Q702650': # North Korea / Taiwan
+				position_gov = mkCN(w.premier_2_N)
+				break
+			elif qid == 'Q191827': # Ireland
+				position_gov = mkCN(w.taoiseach_N)
+				break
+			elif qid == 'Q258045': # San Marino
+				position_gov = mkCN((w.CompoundN(w.captain_1_N, w.regent_1_N)))
+				break
+			elif qid == 'Q23747483' or qid == 'Q105234803': # Myanmar
+				position_gov = mkCN((w.CompoundN(w.state_1_N, w.counsellor_1_N)))
+				break
+			elif qid == 'Q16020744': # Bosnia and Herzegovina
+				# no 'chairwoman' in WordNet
+				position_gov = mkCN(w.chairman_N, mkAdv(w.of_1_Prep, mkNP(the_Det, mkCN(w.council_1_N, mkAdv(w.of_1_Prep, mkNP(w.minister_2_N))))))
+				break
+
+			entity_office = get_entity(qid)
+			if "P279" in entity_office['claims']: # P270 = subclass of
+				for subclass_qid, quad in get_items("P279", entity_office):
+					if subclass_qid == 'Q959664': # premier
+						position_gov = mkCN(w.premier_2_N)	
+						break
+					elif subclass_qid == 'Q30461' or subclass_qid == 'Q248577': #president / president of the republic
+						position_gov = "president"
+						break
+					elif subclass_qid == 'Q43292': # sultan
+						position_gov = mkCN(w.sultan_N)
+						break
+					elif subclass_qid == 'Q484876': # chief executive officer
+						position_gov = mkCN(mkCN(w.chief_1_N), mkNP(mkCN(w.executive_A, w.officer_2_N)))
+						break
+					elif subclass_qid == 'Q56022' or subclass_qid == 'Q373085': # Chancellor of Germany / chancellor
+						position_gov = mkCN(w.chancellor_2_N)
+						break
+					elif subclass_qid == 'Q1670755': # chief minister
+						position_gov = mkCN((w.CompoundN(w.chief_1_N, w.minister_2_N)))
+						break
+					elif subclass_qid == 'Q14212' or subclass_qid == 'Q58869896' or subclass_qid == 'Q2632935': # prime minister / Head of Government of Liechtenstein / minister of state
+						position_gov = mkCN(w.prime_1_A, w.minister_2_N)	
+						break
+
+
+
+# Future work: special condition if the head of state and the head of government is the same person as in Oman
+
+
+	# State current head of state (HOS), previous HOS, HOS' gender and kinship:
+	name_date_state = {}
+	current_head_state = False
+	prev_head_state = False
+	father_name = False
+	mother_name = False
+	
+	property_head_state = get_items("P35", entity)
+	if property_head_state:
+		for head_state, qual in property_head_state:
+			head_entity = get_entity(head_state)
+			name_head_state = cnc.get_person_name(head_entity)
+			if 'P582' not in qual: # No end date == current head of state
+				current_head_state = name_head_state
+
+				# Checking gender
+				gender = w.he_Pron if any(name_qid == "Q6581097" for name_qid, qual in get_items("P21", head_entity)) else w.she_Pron
+
+				# Checking kinship
+				if "P22" in head_entity['claims']: # Checking if there is a 'father' property (P22)
+					for father_qid, quad in get_items("P22", head_entity):
+						father_entity = get_entity(father_qid)
+						father_name = cnc.get_person_name(father_entity)
+				
+				if "P25" in head_entity['claims']: # Checking if there is a 'mother' property (P25)
+					for mother_qid, quad in get_items("P25", head_entity):
+						mother_entity = get_entity(mother_qid)
+						mother_name = cnc.get_person_name(mother_entity)
+				
+			if 'P582' in qual: # End date == previous heads of state
+
+				# Creating a dict {name : date}
+				date = get_time_qualifier("P582",qual) # Checking end date
+				name_date_state[name_head_state] = date
+
+
+	# Sorting dict by dates 
+	if name_date_state:
+		sorted_dates_state = dict(sorted(name_date_state.items(), key=lambda x: x[1], reverse=True))
+		prev_head_state = next(iter(sorted_dates_state.keys()))
+
+
+	yield "<h2>Politics</h2>"
+
+	# Linearizing:
+	# [Country name] is a [basic form of government], with [position] [name] as head of state. 
+	# He/She succeeded [his/her father/mother] [position] [name] in the position. 
+	# FIRST SENTENCE
+	if basic_form:
+		if current_head_state:
+			if position_state:
+				if position_state == 'monarch' and gender == w.he_Pron:
+					position_state = mkCN(w.king_1_N)
+				elif position_state == 'monarch' and gender == w.she_Pron:
+					position_state = mkCN(w.queen_2_N)
+				elif position_state == 'president' and gender == w.he_Pron:
+					position_state = mkCN(w.presidentMasc_3_N)
+				elif position_state == 'president' and gender == w.she_Pron:
+					position_state = mkCN(w.presidentFem_3_N)
+				# [Country name] is a [basic form of government], with [position] [name] as head of state. 
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, mkCN(bfog, mkAdv(w.with_Prep, mkNP(mkCN(mkCN(position_state, mkNP(current_head_state)), mkAdv(w.as_Prep, mkNP(mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.state_1_N))))))))))))), fullStopPunct)
+				yield " "+cnc.linearize(phr)
+			else:
+				# There is BFOG and HOS but not POSITION
+				# [Country name] is a [basic form of government], with [name] as head of state.
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, mkCN(bfog, mkAdv(w.with_Prep, mkNP(mkNP(current_head_state), mkAdv(w.as_Prep, mkNP(mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.state_1_N)))))))))))), fullStopPunct)
+				yield " "+cnc.linearize(phr)
+
+			# SECOND SENTENCE
+			if prev_head_state:
+				if prev_head_state == father_name:
+					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
+						# He/She succeeded his/her father king [name] in the position.
+						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(mkCN(w.king_1_N), mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
+						yield " "+cnc.linearize(phr)
+					else:
+						# He/She succeeded his/her father [position] [name] in the position.
+						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(position_state, mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
+						yield " "+cnc.linearize(phr)
+
+				elif prev_head_state == mother_name:
+					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
+						# He/She succeeded his/her mother queen [name] in the position.
+						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(mkCN(mkCN(w.queen_2_N), mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
+						yield " "+cnc.linearize(phr)
+					else:
+						# He/She succeeded his/her mother [position] [name] in the position.
+						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkQuant (gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(mkCN(position_state, mkNP(prev_head_state)), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))))))),fullStopPunct)
+						yield " "+cnc.linearize(phr)
+				
+				else:
+					if position_state:
+						# He/She succeeded [position] [name] in the position.
+						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkCN(position_state, mkNP(mkNP(prev_head_state), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N))))))))),fullStopPunct)
+						yield " "+cnc.linearize(phr)
+					else:
+						# He/She succeeded [name] in the position.
+						phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.succeed_V2, mkNP(mkNP(prev_head_state), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N))))))),fullStopPunct)
+						yield " "+cnc.linearize(phr)
+		
+		else:
+			# [Country name] is a [basic form of government]. 
+			# There is BFOG but not HOS
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, bfog)))), fullStopPunct)
+			yield " " + cnc.linearize(phr)
+
+
+	
+	# State current head of government (HOG), previous HOG, HOG' gender and kinship:
+	name_date_gov = {}
+	current_head_gov = False
+	prev_head_gov = False
+	property_head_gov = get_items("P6", entity)
+	if property_head_gov:
+		for head_government, qual in property_head_gov:
+			head_entity = get_entity(head_government)
+			name_head_gov = cnc.get_person_name(head_entity)
+			if 'P582' not in qual: # No end date == current head of government
+				current_head_gov = name_head_gov
+
+				# Checking gender
+				gender = w.he_Pron if any(name_qid == "Q6581097" for name_qid, qual in get_items("P21", head_entity)) else w.she_Pron
+
+				# Checking kinship
+				if "P22" in head_entity['claims']: # Checking if there is a 'father' property (P22)
+					for father_qid, quad in get_items("P22", head_entity):
+						father_entity = get_entity(father_qid)
+						father_name = cnc.get_person_name(father_entity)
+				
+				if "P25" in head_entity['claims']: # Checking if there is a 'mother' property (P25)
+					for mother_qid, quad in get_items("P25", head_entity):
+						mother_entity = get_entity(mother_qid)
+						mother_name = cnc.get_person_name(mother_entity)
+
+			if 'P582' in qual: # End date == previous heads of government
+				# Creating a dict {name : date}
+				date = get_time_qualifier("P582",qual) # Checking end date
+				name_date_gov[name_head_gov] = date
+
+	# Sorting dict by dates
+	if name_date_gov:
+		sorted_dates_gov = dict(sorted(name_date_gov.items(), key=lambda x: x[1], reverse=True))
+		prev_head_gov = next(iter(sorted_dates_gov.keys()))
+
+
+	# Linearizing:
+	# The current head of government is [position] [name].
+	# He/She took office after [position] [name].
+	# GOAL: The current head of government is Prime Minister Pedro Sanchez, *who* assumed/took office after Mariano Rajoy.
+	# ANOTHER EXAMPLE: The current head of gov who is Pedro took office after Mariano
+	# cn = mkCN(w.current_A, mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.government_1_N))))
+	# test = mkPhr(mkUtt(mkNP(the_Det,mkCN(cn, mkRS(pastTense, mkRCl(which_RP(mkNP(current_head_state)), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state)))))))))),fullStopPunct)
+	# We need to consider keeping the long sentence into two simple sentences for cases like the United Arab Emirates,
+	# where there is no data for the previous head of government!
+	if current_head_gov:
+		if position_gov:
+			if position_gov == 'president':
+				if gender == w.he_Pron:
+					position_gov = mkCN(w.presidentMasc_3_N)
+				elif gender == w.she_Pron:
+					position_gov = mkCN(w.presidentFem_3_N)
+
+			# The current head of gov is [position] [name].
+			cn = mkCN(w.current_A, mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.government_1_N))))
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,cn), mkNP(mkCN(position_gov, mkNP(current_head_gov)))))),fullStopPunct)
+			yield " "+cnc.linearize(phr)
+
+			if prev_head_gov:
+				if prev_head_gov == father_name:
+					# He/She took office after his/her father [position] [name].
+					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(mkQuant(gender), mkCN(w.father_1_N, mkNP(mkCN(position_gov, mkNP(prev_head_gov)))))))))))),fullStopPunct)
+					yield " "+cnc.linearize(phr)
+				elif prev_head_gov == mother_name:
+					# He/She took office after his/her mother [position] [name].
+					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(mkQuant(gender), mkCN(w.mother_1_N, mkNP(mkCN(position_gov, mkNP(prev_head_gov)))))))))))),fullStopPunct)
+					yield " "+cnc.linearize(phr)
+				else:
+					# He/She took office after [position] [name].
+					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(mkCN(position_gov, mkNP(prev_head_gov)))))))))),fullStopPunct)
+					yield " "+cnc.linearize(phr)
+
+		else:
+			# The current head of gov is [name].
+			cn = mkCN(w.current_A, mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.government_1_N))))
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,cn), mkNP(current_head_gov)))),fullStopPunct)
+			yield " "+cnc.linearize(phr)
+
+			if prev_head_gov:
+				if prev_head_gov == father_name:
+					# He/She took office after his/her father [name].
+					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(mkQuant(gender), mkCN(w.father_1_N, mkNP(prev_head_gov)))))))))),fullStopPunct)
+					yield " "+cnc.linearize(phr)
+				elif prev_head_gov == mother_name:
+					# He/She took office after his/her mother [name].
+					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(mkQuant(gender), mkCN(w.mother_1_N, mkNP(prev_head_gov)))))))))),fullStopPunct)
+					yield " "+cnc.linearize(phr)
+				else:
+					# He/She took office after [name].
+					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep, mkNP(prev_head_gov)))))))),fullStopPunct)
+					yield " "+cnc.linearize(phr)
+		
+	
 
 	yield "</p>"
