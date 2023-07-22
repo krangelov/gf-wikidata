@@ -149,12 +149,11 @@ class ConcrHelper:
 							self.addLink(lexeme, qid)
 						return pgf.ExprFun(lexeme.lex_fun)
 			else:
-				for synset_id in t.cursor(synsets_qid, qid):
-					for lexeme_id in t.cursor(lexemes_synset, synset_id):
-						for lexeme in t.cursor(lexemes, lexeme_id):
-							if link:
-								self.addLink(lexeme, qid)
-							return pgf.ExprFun(lexeme.lex_fun)
+				for lexeme_id in t.cursor(lexemes_qid, qid):
+					for lexeme in t.cursor(lexemes, lexeme_id):
+						if link:
+							self.addLink(lexeme, qid)
+						return pgf.ExprFun(lexeme.lex_fun)
 		return None
 
 	def get_lexemes(self,prop,entity,qual=True,link=True):
@@ -190,20 +189,19 @@ class ConcrHelper:
 				except KeyError:
 					continue
 
-				for synset_id in t.cursor(synsets_qid, qid):
-					for lexeme_id in t.cursor(lexemes_synset, synset_id):
-						for lexeme in t.cursor(lexemes, lexeme_id):
-							if link:
-								self.addLink(lexeme, qid)
-							pns.add(pgf.ExprFun(lexeme.lex_fun))
-							for sym,target_id in lexeme.lex_pointers:
-								if sym == Derived():
-									for adj in t.cursor(lexemes, target_id):
-										if link:
-											self.addLink(adj, qid)
-										adjs.add(pgf.ExprFun(adj.lex_fun))
-								else:
-									all_adjs = False
+                for lexeme_id in t.cursor(lexemes_qid, qid):
+                    for lexeme in t.cursor(lexemes, lexeme_id):
+                        if link:
+                            self.addLink(lexeme, qid)
+                        pns.add(pgf.ExprFun(lexeme.lex_fun))
+                        for sym,target_id in lexeme.lex_pointers:
+                            if sym == Derived():
+                                for adj in t.cursor(lexemes, target_id):
+                                    if link:
+                                        self.addLink(adj, qid)
+                                    adjs.add(pgf.ExprFun(adj.lex_fun))
+                            else:
+                                all_adjs = False
 
 		return (all_adjs, adjs if all_adjs else pns)
 
