@@ -184,7 +184,7 @@ def render(cnc, lexeme, entity):
 		yield " "+cnc.linearize(phr)
 
 
-    yield '<h2 class="gp-page-title">'+cnc.linearize(w.demographic_N)+'</h2>'
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.demographic_N)+'</h2>'
 
 	# state life expectancy
 	# [Country name] has the highest/lowest life expectancy in [continent / the world], with an average of [XX] years.
@@ -228,7 +228,7 @@ def render(cnc, lexeme, entity):
 			city_population = mkAdv(w.with_Prep,mkNP(mkDigits(int(city_pop)),w.inhabitant_1_N))
 			cn = mkCN(mkCN(mkAP(mkOrd(w.large_1_A)), city), city_population)
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(theSg_Det,cn)))),fullStopPunct)
-			yield cnc.linearize(phr)
+			yield " " + cnc.linearize(phr)
 	
 
 	# Stating the official religion
@@ -269,7 +269,7 @@ def render(cnc, lexeme, entity):
 		# The official religion is [religion].
 		# Future work: allowing multiple religions simultaneously.
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
-		yield cnc.linearize(phr)
+		yield " " + cnc.linearize(phr)
 		
 	
 	# State basic form of government
