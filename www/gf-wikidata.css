@@ -110,14 +110,21 @@ h3.gp-page-title {
     border-bottom: 1px solid #a2a9b1;
 }
 
-table.infobox {
+div.infobox {
+	float: right;
+	padding-left: 1em;
+	padding-bottom: 1em;
+	background-color: #ffffff;
+}
+
+div.infobox > table {
 	float: right;
     border: 1px solid #a2a9b1;
     border-collapse: collapse;
     background-color: #f8f9fa;
 }
 
-table.infobox td {
+.infobox td {
    padding: 0.3em;
    text-align: center;
 }
