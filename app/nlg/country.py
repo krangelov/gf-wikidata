@@ -474,16 +474,16 @@ def render(cnc, lexeme, entity):
 			if prev_head_state:
 				if prev_head_state_qid == father_qid:
 					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
-						# He/She succeeded his/her father king [name] in the position.
-						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(w.king_1_N), prev_head_state)))
+						# his/her father king [name]
+						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(w.king_1_N), prev_head_state))))
 					else:
 						# his/her father [position] [name]
-						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(position_state), prev_head_state)))
+						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(position_state, prev_head_state))))
 
 				elif prev_head_state_qid == mother_qid:
 					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
 						# his/her mother queen [name]
-						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(w.queen_2_N), prev_head_state)))
+						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(mkCN(w.queen_2_N), prev_head_state))))
 					else:
 						# his/her mother [position] [name]
 						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(position_state), prev_head_state)))
@@ -567,10 +567,10 @@ def render(cnc, lexeme, entity):
 		if prev_head_gov:
 			if prev_head_gov_qid == father_qid:
 				# his/her father [name].
-				prev_head_gov = mkNP(mkQuant(gender), mkCN(w.father_1_N, prev_head_gov))
+				prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), prev_head_gov))
 			elif prev_head_gov_qid == mother_qid:
 				# He/She took office after his/her mother [name].
-				prev_head_gov = mkNP(mkQuant(gender), mkCN(w.mother_1_N, prev_head_gov))
+				prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
 			current_head_gov = w.ExtRelNP(current_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_12_V2, mkNP(w.office_4_N)), mkAdv(w.after_Prep, prev_head_gov)))))
 
 		phr = mkPhr(mkUtt(mkS(mkCl(subj, current_head_gov))),fullStopPunct)
