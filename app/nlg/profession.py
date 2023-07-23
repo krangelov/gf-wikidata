@@ -4,10 +4,10 @@ from wordnet.api import *
 from nlg.util import *
 
 def render(cnc, lexeme, entity):
-	yield "<table class='infobox' border=1>"
+	yield "<div class='infobox'><table border=1>"
 	for media,qual in get_medias("P18",entity):
 		yield "<tr><td><img src='"+escape(media)+"' width=250/></td></tr>"
-	yield "</table>"
+	yield "</table></div>"
 
 	superclasses = mkCN(w.and_Conj,[mkCN(superclass) for superclass in cnc.get_lexemes("P279", entity, qual=False)])
 	if superclasses:
