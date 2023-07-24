@@ -413,28 +413,11 @@ def render(cnc, lexeme, entity):
 
 	# State current head of state (HOS), previous HOS, HOS' gender and kinship:
 	name_date_state = []
-	current_head_state = False
-	prev_head_state = False
-	father_qid = False
-	mother_qid = False
+	curr_head_state_qid = False
+	prev_head_state_qid = False
 	for head_state, qual in get_items("P35", entity):
 		if 'P582' not in qual: # No end date == current head of state
-			head_entity = get_entity(head_state)
-			name_head_state = cnc.get_person_name(head_entity)
-			current_head_state = mkNP(name_head_state)
-
-			# Checking gender
-			gender = w.he_Pron if any(gender_qid == "Q6581097" for gender_qid, qual in get_items("P21", head_entity)) else w.she_Pron
-
-			# Checking kinship
-			# Checking if there is a 'father' property (P22)
-			for father_qid, quad in get_items("P22", head_entity):
-				break
-
-			# Checking if there is a 'mother' property (P25)
-			for mother_qid, quad in get_items("P25", head_entity):
-				break
-
+			curr_head_state_qid = head_state
 		else: # End date == previous heads of state
 			date = get_time_qualifier("P582",qual) # Checking end date
 			name_date_state.append((head_state,date))
@@ -443,9 +426,24 @@ def render(cnc, lexeme, entity):
 	if name_date_state:
 		name_date_state.sort(key=lambda x: x[1], reverse=True)
 		prev_head_state_qid = name_date_state[0][0]
-		head_entity = get_entity(prev_head_state_qid)
-		name_head_state = cnc.get_person_name(head_entity)
-		prev_head_state = mkNP(name_head_state)
+
+	# State current head of government (HOG), previous HOG, HOG' gender and kinship:
+	name_date_gov = []
+	curr_head_gov_qid = False
+	prev_head_gov_qid = False
+	for head_government, qual in get_items("P6", entity):
+		if 'P582' not in qual: # No end date == current head of government
+			curr_head_gov_qid = head_government
+		else: # End date == previous heads of government
+			date = get_time_qualifier("P582",qual) # Checking end date
+			name_date_gov.append((head_government,date))
+
+	# Sorting by dates
+	if name_date_gov:
+		name_date_gov.sort(key=lambda x: x[1], reverse=True)
+		prev_head_gov_qid = name_date_gov[0][0]
+
+	entities = get_entity([curr_head_state_qid,prev_head_state_qid,curr_head_gov_qid,prev_head_gov_qid])
 
 	yield '<h2 class="gp-page-title">'+cnc.linearize(w.politics_2_N)+'</h2>'
 
@@ -454,7 +452,26 @@ def render(cnc, lexeme, entity):
 	# He/She succeeded [his/her father/mother] [position] [name] in the position. 
 	# FIRST SENTENCE
 	if basic_form:
-		if current_head_state:
+		if curr_head_state_qid:
+			head_entity = entities[curr_head_state_qid]
+			name_head_state = cnc.get_person_name(head_entity)
+			current_head_state = mkNP(name_head_state)
+
+			# Checking gender
+			gender = w.he_Pron if any(gender_qid == "Q6581097" for gender_qid, qual in get_items("P21", head_entity)) else w.she_Pron
+
+			# Checking kinship
+			father_qid = False
+			mother_qid = False
+
+			# Checking if there is a 'father' property (P22)
+			for father_qid, quad in get_items("P22", head_entity):
+				break
+
+			# Checking if there is a 'mother' property (P25)
+			for mother_qid, quad in get_items("P25", head_entity):
+				break
+
 			if position_state:
 				if position_state == 'monarch' and gender == w.he_Pron:
 					position_state = mkCN(w.king_1_N)
@@ -471,7 +488,11 @@ def render(cnc, lexeme, entity):
 			yield " "+cnc.linearize(phr)
 
 			# SECOND SENTENCE
-			if prev_head_state:
+			if prev_head_state_qid:
+				head_entity = entities[prev_head_state_qid]
+				name_head_state = cnc.get_person_name(head_entity)
+				prev_head_state = mkNP(name_head_state)
+
 				if prev_head_state_qid == father_qid:
 					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
 						# his/her father king [name]
@@ -503,44 +524,6 @@ def render(cnc, lexeme, entity):
 			yield " " + cnc.linearize(phr)
 
 
-	
-	# State current head of government (HOG), previous HOG, HOG' gender and kinship:
-	name_date_gov = []
-	current_head_gov = False
-	prev_head_gov = False
-	father_qid = False
-	mother_qid = False
-	for head_government, qual in get_items("P6", entity):
-		if 'P582' not in qual: # No end date == current head of government
-			head_entity = get_entity(head_government)
-			name_head_gov = cnc.get_person_name(head_entity)
-			current_head_gov = mkNP(name_head_gov)
-
-			# Checking gender
-			gender = w.he_Pron if any(gender_qid == "Q6581097" for gender_qid, qual in get_items("P21", head_entity)) else w.she_Pron
-
-			# Checking kinship
-			# Checking if there is a 'father' property (P22)
-			for father_qid, quad in get_items("P22", head_entity):
-				break
-			
-			# Checking if there is a 'mother' property (P25)
-			for mother_qid, quad in get_items("P25", head_entity):
-				break
-
-		else: # End date == previous heads of government
-			date = get_time_qualifier("P582",qual) # Checking end date
-			name_date_gov.append((head_government,date))
-
-	# Sorting by dates
-	if name_date_gov:
-		name_date_gov.sort(key=lambda x: x[1], reverse=True)
-		prev_head_gov_qid = name_date_gov[0][0]
-		head_entity = get_entity(prev_head_gov_qid)
-		name_head_state = cnc.get_person_name(head_entity)
-		prev_head_gov = mkNP(name_head_state)
-
-
 	# Linearizing:
 	# The current head of government is [position] [name], who took office after [position] [name].
 	# GOAL: The current head of government is Prime Minister Pedro Sanchez, *who* assumed/took office after Mariano Rajoy.
@@ -549,7 +532,26 @@ def render(cnc, lexeme, entity):
 	# test = mkPhr(mkUtt(mkNP(the_Det,mkCN(cn, mkRS(pastTense, mkRCl(which_RP(mkNP(current_head_state)), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state)))))))))),fullStopPunct)
 	# We need to consider keeping the long sentence into two simple sentences for cases like the United Arab Emirates,
 	# where there is no data for the previous head of government!
-	if current_head_gov:
+	if curr_head_gov_qid:
+		head_entity = entities[curr_head_gov_qid]
+		name_head_gov = cnc.get_person_name(head_entity)
+		curr_head_gov = mkNP(name_head_gov)
+
+		# Checking gender
+		gender = w.he_Pron if any(gender_qid == "Q6581097" for gender_qid, qual in get_items("P21", head_entity)) else w.she_Pron
+
+		# Checking kinship
+		father_qid = False
+		mother_qid = False
+
+		# Checking if there is a 'father' property (P22)
+		for father_qid, quad in get_items("P22", head_entity):
+			break
+		
+		# Checking if there is a 'mother' property (P25)
+		for mother_qid, quad in get_items("P25", head_entity):
+			break
+
 		subj = mkNP(the_Det,mkCN(w.current_A, w.PossNP(mkCN(w.head_4_N),mkNP(w.gen_Quant,mkCN(w.government_1_N)))))
 		if position_gov:
 			if position_gov == 'president':
@@ -559,21 +561,25 @@ def render(cnc, lexeme, entity):
 					position_gov = mkCN(w.presidentFem_3_N)
 
 			# [position] [name].
-			current_head_gov = mkNP(mkCN(position_gov, current_head_gov))
+			curr_head_gov = mkNP(mkCN(position_gov, curr_head_gov))
 
-			if prev_head_gov:
+		if prev_head_gov_qid:
+			head_entity = entities[prev_head_gov_qid]
+			name_head_state = cnc.get_person_name(head_entity)
+			prev_head_gov = mkNP(name_head_state)
+
+			if position_gov:
 				prev_head_gov = mkNP(mkCN(position_gov, prev_head_gov))
 
-		if prev_head_gov:
 			if prev_head_gov_qid == father_qid:
 				# his/her father [name].
 				prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), prev_head_gov))
 			elif prev_head_gov_qid == mother_qid:
 				# He/She took office after his/her mother [name].
 				prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
-			current_head_gov = w.ExtRelNP(current_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_12_V2, mkNP(w.office_4_N)), mkAdv(w.after_Prep, prev_head_gov)))))
+			curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_12_V2, mkNP(w.office_4_N)), mkAdv(w.after_Prep, prev_head_gov)))))
 
-		phr = mkPhr(mkUtt(mkS(mkCl(subj, current_head_gov))),fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
 
 	yield "</p>"

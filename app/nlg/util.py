@@ -386,6 +386,15 @@ def get_time_qualifier(prop,quals):
 	return None
 
 def get_entity(qid):
-	u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
-	result = json.loads(u2.read())
-	return result["entities"][qid]
+	if isinstance(qid,str):
+		u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
+		result = json.loads(u2.read())
+		return result["entities"][qid]
+	elif not qid:
+		return []
+	else:
+		items = set(qid)
+		items.discard(None)
+		u2 = urllib.request.urlopen("https://www.wikidata.org/w/api.php?action=wbgetentities&ids="+"|".join(items)+"&languages=en&format=json")
+		result = json.loads(u2.read())["entities"]
+		return result
