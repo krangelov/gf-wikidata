@@ -403,7 +403,7 @@ def render(cnc, lexeme, entity):
 						position_gov = mkCN((w.CompoundN(w.chief_1_N, w.minister_2_N)))
 						break
 					elif subclass_qid == 'Q14212' or subclass_qid == 'Q58869896' or subclass_qid == 'Q2632935': # prime minister / Head of Government of Liechtenstein / minister of state
-						position_gov = mkCN(w.prime_1_A, w.minister_2_N)	
+						position_gov = mkCN(w.prime_minister_2_N)
 						break
 
 
