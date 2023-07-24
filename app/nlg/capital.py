@@ -4,7 +4,7 @@ from wordnet.api import *
 from nlg.util import *
 
 def render(cnc, lexeme, entity):
-	yield "<table class='infobox' border=1>"
+	yield "<div class='infobox'><table border=1>"
 	# show the flag and the coat of arms if available
 	for media,qual in get_medias("P18",entity):
 		yield "<tr><td><img src='"+escape(media)+"' width=250/></td></tr>"
@@ -13,7 +13,7 @@ def render(cnc, lexeme, entity):
 	for media,qual in get_medias("P242",entity):
 		yield "<tr><td><img src='"+escape(media)+"' width=250></td></tr>"
 		break
-	yield "</table>"
+	yield "</table></div>"
 
 	cn = mkCN(w.capital_3_N)
 	for country_qid, qual in get_items("P17", entity):
