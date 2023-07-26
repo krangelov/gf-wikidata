@@ -578,6 +578,16 @@ def render(cnc, lexeme, entity):
 		phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
 
+	organizations = []
+	for org in cnc.get_lexemes("P463",entity,qual=False):
+		if org != w.european_union_NP:
+			org = mkNP(org)
+		organizations.append(org)
+	organizations = mkNP(w.and_Conj, organizations)
+	if organizations:
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.country_1_N), mkNP(aSg_Det,w.PossNP(mkCN(w.member_4_N), organizations))))),fullStopPunct)
+		yield " "+cnc.linearize(phr)	
+
 	yield "</p>"
 
 	yield '<h2 class="gp-page-title">'+cnc.linearize(w.economy_1_N)+'</h2>'
