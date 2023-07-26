@@ -84,7 +84,7 @@ def render(cnc, lexeme, entity):
 	population_list = sorted(((population,get_time_qualifier("P585",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
 	if population_list:
 		population = population_list[0][0]
-		cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkDigits(int(population)),w.inhabitant_1_N)))
+		cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(int(population)),w.inhabitant_1_N)))
 	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
 	yield cnc.linearize(phr)
 	
@@ -92,7 +92,7 @@ def render(cnc, lexeme, entity):
 	neighbours = []
 	for neighbour_qid,qual in get_items("P47",entity):
 		neighbour_expr = cnc.get_lex_fun(neighbour_qid)
-		if neighbour_expr != None and "P582" not in qual:
+		if neighbour_expr != None and neighbour_expr != w.european_union_NP and "P582" not in qual:
 			neighbour_expr = mkNP(neighbour_expr)
 			direction_qid = get_item_qualifier("P654",qual)
 			if direction_qid:
@@ -273,10 +273,10 @@ def render(cnc, lexeme, entity):
 		
 	
 	# State basic form of government
-	basic_form = get_items("P122", entity, qual=False)
-	if basic_form:
+	bfog = None
+	for basic_form in get_items("P122", entity, qual=False):
 		for qid in form_of_government:
-			if basic_form[0] == qid[0]:
+			if basic_form == qid[0]:
 				bfog = qid[1]
 				
 	
@@ -451,7 +451,7 @@ def render(cnc, lexeme, entity):
 	# [Country name] is a [basic form of government], with [position] [name] as head of state. 
 	# He/She succeeded [his/her father/mother] [position] [name] in the position. 
 	# FIRST SENTENCE
-	if basic_form:
+	if bfog:
 		if curr_head_state_qid:
 			head_entity = entities[curr_head_state_qid]
 			curr_head_state = cnc.get_person_name(head_entity)
@@ -471,7 +471,7 @@ def render(cnc, lexeme, entity):
 			for mother_qid, quad in get_items("P25", head_entity):
 				break
 
-			if position_state:
+			if position_state and curr_head_state:
 				if position_state == 'monarch' and gender == w.he_Pron:
 					position_state = mkCN(w.king_1_N)
 				elif position_state == 'monarch' and gender == w.she_Pron:
@@ -482,8 +482,11 @@ def render(cnc, lexeme, entity):
 					position_state = mkCN(w.presidentFem_3_N)
 				# [position] [name]
 				curr_head_state = mkNP(mkCN(position_state, curr_head_state))
+				
+			if curr_head_state:
+				bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(w.head_of_state_N)))))
 			# [Country name] is a [basic form of government], with [curr_head_state] as head of state.
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(w.PossNP(mkCN(w.head_4_N),mkNP(w.state_4_N))))))))))), fullStopPunct)
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, bfog)))), fullStopPunct)
 			yield " "+cnc.linearize(phr)
 
 			# SECOND SENTENCE
@@ -491,29 +494,30 @@ def render(cnc, lexeme, entity):
 				head_entity = entities[prev_head_state_qid]
 				prev_head_state = cnc.get_person_name(head_entity)
 
-				if prev_head_state_qid == father_qid:
-					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
-						# his/her father king [name]
-						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(w.king_1_N), prev_head_state))))
-					else:
-						# his/her father [position] [name]
-						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(position_state, prev_head_state))))
+				if curr_head_state and prev_head_state:
+					if prev_head_state_qid == father_qid:
+						if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
+							# his/her father king [name]
+							prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(mkCN(w.king_1_N), prev_head_state))))
+						else:
+							# his/her father [position] [name]
+							prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), mkNP(mkCN(position_state, prev_head_state))))
 
-				elif prev_head_state_qid == mother_qid:
-					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
-						# his/her mother queen [name]
-						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(mkCN(w.queen_2_N), prev_head_state))))
-					else:
-						# his/her mother [position] [name]
-						prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(position_state), prev_head_state)))
+					elif prev_head_state_qid == mother_qid:
+						if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
+							# his/her mother queen [name]
+							prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(mkCN(w.queen_2_N), prev_head_state))))
+						else:
+							# his/her mother [position] [name]
+							prev_head_state = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), mkNP(mkCN(position_state), prev_head_state)))
 
-				elif position_state:
-					# [position] [name]
-					prev_head_state = mkNP(mkCN(position_state, prev_head_state))
+					elif position_state:
+						# [position] [name]
+						prev_head_state = mkNP(mkCN(position_state, prev_head_state))
 
-				# He/She succeeded [prev_head_state] in the position.
-				phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(mkVP(w.succeed_V2, prev_head_state), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))),fullStopPunct)
-				yield " " + cnc.linearize(phr)
+					# He/She succeeded [prev_head_state] in the position.
+					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(mkVP(w.succeed_V2, prev_head_state), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))),fullStopPunct)
+					yield " " + cnc.linearize(phr)
 		
 		else:
 			# [Country name] is a [basic form of government]. 
@@ -534,49 +538,50 @@ def render(cnc, lexeme, entity):
 		head_entity = entities[curr_head_gov_qid]
 		curr_head_gov = cnc.get_person_name(head_entity)
 
-		# Checking gender
-		gender = w.he_Pron if any(gender_qid == "Q6581097" for gender_qid, qual in get_items("P21", head_entity)) else w.she_Pron
+		if curr_head_gov:
+			# Checking gender
+			gender = w.he_Pron if any(gender_qid == "Q6581097" for gender_qid, qual in get_items("P21", head_entity)) else w.she_Pron
 
-		# Checking kinship
-		father_qid = False
-		mother_qid = False
+			# Checking kinship
+			father_qid = False
+			mother_qid = False
 
-		# Checking if there is a 'father' property (P22)
-		for father_qid, quad in get_items("P22", head_entity):
-			break
-		
-		# Checking if there is a 'mother' property (P25)
-		for mother_qid, quad in get_items("P25", head_entity):
-			break
+			# Checking if there is a 'father' property (P22)
+			for father_qid, quad in get_items("P22", head_entity):
+				break
+			
+			# Checking if there is a 'mother' property (P25)
+			for mother_qid, quad in get_items("P25", head_entity):
+				break
 
-		subj = mkNP(the_Det,mkCN(w.current_A, w.PossNP(mkCN(w.head_4_N),mkNP(w.gen_Quant,mkCN(w.government_1_N)))))
-		if position_gov:
-			if position_gov == 'president':
-				if gender == w.he_Pron:
-					position_gov = mkCN(w.presidentMasc_3_N)
-				elif gender == w.she_Pron:
-					position_gov = mkCN(w.presidentFem_3_N)
-
-			# [position] [name].
-			curr_head_gov = mkNP(mkCN(position_gov, curr_head_gov))
-
-		if prev_head_gov_qid:
-			head_entity = entities[prev_head_gov_qid]
-			prev_head_gov = cnc.get_person_name(head_entity)
-
+			subj = mkNP(the_Det,mkCN(w.current_A, w.PossNP(mkCN(w.head_4_N),mkNP(w.gen_Quant,mkCN(w.government_1_N)))))
 			if position_gov:
-				prev_head_gov = mkNP(mkCN(position_gov, prev_head_gov))
+				if position_gov == 'president':
+					if gender == w.he_Pron:
+						position_gov = mkCN(w.presidentMasc_3_N)
+					elif gender == w.she_Pron:
+						position_gov = mkCN(w.presidentFem_3_N)
 
-			if prev_head_gov_qid == father_qid:
-				# his/her father [name].
-				prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), prev_head_gov))
-			elif prev_head_gov_qid == mother_qid:
-				# He/She took office after his/her mother [name].
-				prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
-			curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_12_V2, mkNP(w.office_4_N)), mkAdv(w.after_Prep, prev_head_gov)))))
+				# [position] [name].
+				curr_head_gov = mkNP(mkCN(position_gov, curr_head_gov))
 
-		phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
-		yield " "+cnc.linearize(phr)
+			if prev_head_gov_qid:
+				head_entity = entities[prev_head_gov_qid]
+				prev_head_gov = cnc.get_person_name(head_entity)
+
+				if position_gov:
+					prev_head_gov = mkNP(mkCN(position_gov, prev_head_gov))
+
+				if prev_head_gov_qid == father_qid:
+					# his/her father [name].
+					prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), prev_head_gov))
+				elif prev_head_gov_qid == mother_qid:
+					# He/She took office after his/her mother [name].
+					prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
+				curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_12_V2, mkNP(w.office_4_N)), mkAdv(w.after_Prep, prev_head_gov)))))
+
+			phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
+			yield " "+cnc.linearize(phr)
 
 	organizations = []
 	for org in cnc.get_lexemes("P463",entity,qual=False):
@@ -586,7 +591,50 @@ def render(cnc, lexeme, entity):
 	organizations = mkNP(w.and_Conj, organizations)
 	if organizations:
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.country_1_N), mkNP(aSg_Det,w.PossNP(mkCN(w.member_4_N), organizations))))),fullStopPunct)
-		yield " "+cnc.linearize(phr)	
+		yield " "+cnc.linearize(phr)
+	
+	democracy_list = sorted(((democracy,get_time_qualifier("P585",quals)) for democracy,quals in get_quantities("P8328",entity)),key=lambda p: p[1],reverse=True)
+	if democracy_list:
+		democracy_index = float(democracy_list[0][0])
+		adv = mkAdv(w.with_Prep, mkNP(mkNP(a_Quant,w.CompoundN(w.democracy_2_N,w.index_2_N)), mkAdv(w.of_1_Prep, mkNP(mkNum(democracy_index),w.point_10_N))))
+		if democracy_index >= 9:
+			quality = mkNP(a_Quant,mkCN(w.full_3_A,w.democracy_2_N))
+		elif democracy_index >= 6:
+			quality = mkNP(a_Quant,mkCN(w.democracy_2_N,mkAdv(w.with_Prep,mkNP(aPl_Det,w.flaw_3_N))))
+		elif democracy_index >= 4:
+			quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.regime_1_N))
+		else:
+			quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.regime_1_N))
+		phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), mkVP(passiveVP(mkVPSlash(w.rank_2_V2)),mkAdv(w.as_Prep,quality)))))), fullStopPunct)
+		yield " "+cnc.linearize(phr)
+
+	pol = positivePol
+	for quality in get_items("P1552",entity,qual=False):
+		if quality == "Q3174312":
+			quality = mkNP(aSg_Det,mkCN(w.free_1_A,w.country_1_N))
+			break
+		elif quality == "Q47185282":
+			quality = mkNP(aSg_Det,mkCN(w.free_1_A,w.country_1_N))
+			pol     = negativePol
+			break
+		elif quality == "Q47185145":
+			quality = mkNP(aSg_Det,mkCN(mkAP(w.partly_AdA,w.free_1_A),w.country_1_N))
+			break
+		elif quality == "Q7174":
+			quality = mkNP(aSg_Det,mkCN(w.democratic_1_A,w.country_1_N))
+			break
+		quality = None
+	phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(mkNP(w.freedom_1_N), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.world_5_N))), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
+	yield " "+cnc.linearize(phr)
+
+	agents = []
+	for agent, qual in cnc.get_lexemes("P3461",entity):
+		if "P582" not in qual:
+			agents.append(mkNP(agent))
+	agents = mkNP(w.and_Conj, agents)
+	if agents:
+		phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.it_Pron),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.terrorist_N))),agents)))), fullStopPunct)
+		yield " "+cnc.linearize(phr)
 
 	yield "</p>"
 
