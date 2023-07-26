@@ -413,8 +413,8 @@ def render(cnc, lexeme, entity):
 
 	# State current head of state (HOS), previous HOS, HOS' gender and kinship:
 	name_date_state = []
-	curr_head_state_qid = False
-	prev_head_state_qid = False
+	curr_head_state_qid = None
+	prev_head_state_qid = None
 	for head_state, qual in get_items("P35", entity):
 		if 'P582' not in qual: # No end date == current head of state
 			curr_head_state_qid = head_state
@@ -429,8 +429,8 @@ def render(cnc, lexeme, entity):
 
 	# State current head of government (HOG), previous HOG, HOG' gender and kinship:
 	name_date_gov = []
-	curr_head_gov_qid = False
-	prev_head_gov_qid = False
+	curr_head_gov_qid = None
+	prev_head_gov_qid = None
 	for head_government, qual in get_items("P6", entity):
 		if 'P582' not in qual: # No end date == current head of government
 			curr_head_gov_qid = head_government
@@ -454,8 +454,7 @@ def render(cnc, lexeme, entity):
 	if basic_form:
 		if curr_head_state_qid:
 			head_entity = entities[curr_head_state_qid]
-			name_head_state = cnc.get_person_name(head_entity)
-			current_head_state = mkNP(name_head_state)
+			curr_head_state = cnc.get_person_name(head_entity)
 
 			# Checking gender
 			gender = w.he_Pron if any(gender_qid == "Q6581097" for gender_qid, qual in get_items("P21", head_entity)) else w.she_Pron
@@ -482,16 +481,15 @@ def render(cnc, lexeme, entity):
 				elif position_state == 'president' and gender == w.she_Pron:
 					position_state = mkCN(w.presidentFem_3_N)
 				# [position] [name]
-				current_head_state = mkNP(mkCN(position_state, current_head_state))
-			# [Country name] is a [basic form of government], with [current_head_state] as head of state.
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, mkCN(bfog, mkAdv(w.with_Prep, mkNP(current_head_state, mkAdv(w.as_Prep, mkNP(w.PossNP(mkCN(w.head_4_N),mkNP(w.state_4_N))))))))))), fullStopPunct)
+				curr_head_state = mkNP(mkCN(position_state, curr_head_state))
+			# [Country name] is a [basic form of government], with [curr_head_state] as head of state.
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(w.PossNP(mkCN(w.head_4_N),mkNP(w.state_4_N))))))))))), fullStopPunct)
 			yield " "+cnc.linearize(phr)
 
 			# SECOND SENTENCE
 			if prev_head_state_qid:
 				head_entity = entities[prev_head_state_qid]
-				name_head_state = cnc.get_person_name(head_entity)
-				prev_head_state = mkNP(name_head_state)
+				prev_head_state = cnc.get_person_name(head_entity)
 
 				if prev_head_state_qid == father_qid:
 					if position_state == mkCN(w.king_1_N) or position_state == mkCN(w.queen_2_N):
@@ -529,13 +527,12 @@ def render(cnc, lexeme, entity):
 	# GOAL: The current head of government is Prime Minister Pedro Sanchez, *who* assumed/took office after Mariano Rajoy.
 	# ANOTHER EXAMPLE: The current head of gov who is Pedro took office after Mariano
 	# cn = mkCN(w.current_A, mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.government_1_N))))
-	# test = mkPhr(mkUtt(mkNP(the_Det,mkCN(cn, mkRS(pastTense, mkRCl(which_RP(mkNP(current_head_state)), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state)))))))))),fullStopPunct)
+	# test = mkPhr(mkUtt(mkNP(the_Det,mkCN(cn, mkRS(pastTense, mkRCl(which_RP(mkNP(curr_head_state)), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state)))))))))),fullStopPunct)
 	# We need to consider keeping the long sentence into two simple sentences for cases like the United Arab Emirates,
 	# where there is no data for the previous head of government!
 	if curr_head_gov_qid:
 		head_entity = entities[curr_head_gov_qid]
-		name_head_gov = cnc.get_person_name(head_entity)
-		curr_head_gov = mkNP(name_head_gov)
+		curr_head_gov = cnc.get_person_name(head_entity)
 
 		# Checking gender
 		gender = w.he_Pron if any(gender_qid == "Q6581097" for gender_qid, qual in get_items("P21", head_entity)) else w.she_Pron
@@ -565,8 +562,7 @@ def render(cnc, lexeme, entity):
 
 		if prev_head_gov_qid:
 			head_entity = entities[prev_head_gov_qid]
-			name_head_state = cnc.get_person_name(head_entity)
-			prev_head_gov = mkNP(name_head_state)
+			prev_head_gov = cnc.get_person_name(head_entity)
 
 			if position_gov:
 				prev_head_gov = mkNP(mkCN(position_gov, prev_head_gov))
