@@ -83,8 +83,10 @@ def render(cnc, lexeme, entity):
 	# add the number of inhabitants
 	population_list = sorted(((population,get_time_qualifier("P585",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
 	if population_list:
-		population = population_list[0][0]
-		cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(int(population)),w.inhabitant_1_N)))
+		population = int(population_list[0][0])
+		cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(population),w.inhabitant_1_N)))
+	else:
+		population = None
 	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
 	yield cnc.linearize(phr)
 	
@@ -270,8 +272,47 @@ def render(cnc, lexeme, entity):
 		# Future work: allowing multiple religions simultaneously.
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
-		
 	
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_1_N)+'</h2>'
+
+	literacy_list = sorted(((literacy,get_time_qualifier("P585",quals)) for literacy,quals in get_quantities("P6897",entity)),key=lambda p: p[1],reverse=True)
+	if literacy_list:
+		literacy_rate = float(literacy_list[0][0])
+		literacy_rate = mkNP(literacy_rate,w.percent_MU)
+	else:
+		literacy_rate = None
+
+	min_age = False
+	max_age = False
+	obj = mkCN(w.age_1_N)
+	min_age_list = sorted(((literacy,get_time_qualifier("P585",quals) or "X") for literacy,quals in get_quantities("P3270",entity)),key=lambda p: p[1],reverse=True)
+	if min_age_list:
+		min_age = int(min_age_list[0][0])
+		obj = mkCN(obj,mkAdv(w.from_Prep,mkNP(mkNum(min_age),w.year_1_N)))
+	max_age_list = sorted(((literacy,get_time_qualifier("P585",quals) or "X") for literacy,quals in get_quantities("P3271",entity)),key=lambda p: p[1],reverse=True)
+	if max_age_list:
+		max_age = int(max_age_list[0][0])
+		obj = mkCN(obj,mkAdv(w.to_1_Prep,mkNP(mkNum(max_age),w.year_1_N)))
+	if min_age or max_age:
+		phr = mkPhr(mkUtt(mkCl(mkNP(w.education_1_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(aPl_Det,w.PossNP(mkCN(w.child_1_N), mkNP(obj))))))), fullStopPunct)
+		yield " "+cnc.linearize(phr)
+		
+		if literacy_rate:
+			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.result_in_V2, mkNP(aSg_Det,mkCN(w.CompoundN(w.literacy_N,w.rate_4_N), mkAdv(w.of_1_Prep, literacy_rate)))))),fullStopPunct)
+			yield " "+cnc.linearize(phr)
+	else:
+		if literacy_rate:
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.CompoundN(w.literacy_N,w.rate_4_N)), literacy_rate)),fullStopPunct)
+			yield " "+cnc.linearize(phr)
+
+	out_of_school_list = sorted(((out_of_school,get_time_qualifier("P585",quals)) for out_of_school,quals in get_quantities("P2573",entity)),key=lambda p: p[1],reverse=True)
+	if out_of_school_list:
+		out_of_school = int(out_of_school_list[0][0])
+		yield " "+cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(mkNum(out_of_school), w.child_1_N), mkAdv(w.out_of_3_Prep,mkNP(theSg_Det, w.CompoundN(w.education_1_N,w.system_1_N))))),fullStopPunct))
+		if population:
+			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.amount_to_2_V2, mkNP(mkNP(round((out_of_school/population)*100,2), w.percent_MU), mkAdv(w.of_1_Prep, mkNP(theSg_Det, w.population_1_N)))))),fullStopPunct)
+			yield " "+cnc.linearize(phr)
+
 	# State basic form of government
 	bfog = None
 	for basic_form in get_items("P122", entity, qual=False):
@@ -696,7 +737,7 @@ def render(cnc, lexeme, entity):
 			elif gini > 35:
 				quality = mkCN(w.moderate_1_A, w.inequality_N)
 			elif gini > 30:
-				quality = mkCN(w.moderate_1_A, w.equality_N)
+				quality = mkCN(w.moderate_1_A, w.equality_1_N)
 			else:
 				quality = mkCN(w.high_1_A, w.equality_1_N)
 			gini = w.QuantityNP(mkDigits(gini),w.percent_MU)
