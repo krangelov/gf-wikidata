@@ -633,9 +633,77 @@ def render(cnc, lexeme, entity):
 			agents.append(mkNP(agent))
 	agents = mkNP(w.and_Conj, agents)
 	if agents:
-		phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.it_Pron),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.terrorist_N))),agents)))), fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.it_Pron),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.CompoundN(w.terrorist_N,w.state_4_N)))),agents)))), fullStopPunct)
 		yield " "+cnc.linearize(phr)
 
 	yield "</p>"
 
-	yield '<h2 class="gp-page-title">'+cnc.linearize(w.economy_1_N)+'</h2>'
+	economy = get_entities("P8744",entity,qual=False)
+	if economy:
+		economy = economy[0]
+		yield '<h2 class="gp-page-title">'+cnc.linearize(w.economy_1_N)+'</h2>'
+
+		objs = []
+
+		gdp_list = sorted(((gdp,get_time_qualifier("P585",quals)) for gdp,quals in get_quantities("P2131",economy)),key=lambda p: p[1],reverse=True)
+		if gdp_list:
+			gdp = int(gdp_list[0][0])
+			objs.append(mkNP(gdp,w.dollar_MU))
+
+		gdp_list = sorted(((gdp,get_time_qualifier("P585",quals)) for gdp,quals in get_quantities("P2132",economy)),key=lambda p: p[1],reverse=True)
+		if gdp_list:
+			gdpp = int(gdp_list[0][0])
+			objs.append(mkNP(mkNP(gdpp,w.dollar_MU),w.per_capita_Adv))
+
+		if objs:
+			gdp = mkNP(w.and_Conj,objs)
+			
+			gdp_rate_list = sorted(((rate,get_time_qualifier("P585",quals)) for rate,quals in get_quantities("P2219",economy)),key=lambda p: p[1],reverse=True)
+			if gdp_rate_list:
+				gdp_rate = float(gdp_rate_list[0][0])
+				if gdp_rate > 0:
+					gdp = mkNP(gdp, mkAdv(w.with_Prep, mkNP(mkNP(aSg_Det,w.growth_3_N), mkAdv(w.of_1_Prep, mkNP(gdp_rate,w.percent_MU)))))
+				elif gdp_rate < 0:
+					gdp = mkNP(gdp, mkAdv(w.with_Prep, mkNP(mkNP(aSg_Det,w.decline_1_N), mkAdv(w.of_1_Prep, mkNP(-gdp_rate,w.percent_MU)))))
+				else:
+					pass
+
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det, mkCN(w.gross_1_A, mkCN(w.domestic_1_A,w.product_2_N))), gdp))), fullStopPunct)
+			yield " "+cnc.linearize(phr)
+
+		inflation_list = sorted(((gdp,get_time_qualifier("P585",quals) or "X") for gdp,quals in get_quantities("P1279",economy)),key=lambda p: p[1],reverse=True)
+		if inflation_list:
+			inflation = float(inflation_list[0][0])
+			yield " "+cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.CompoundN(w.inflation_1_N, w.rate_2_N)),mkNP(inflation,w.percent_MU))), fullStopPunct))
+
+		reserve_list = sorted(((gdp,get_time_qualifier("P585",quals)) for gdp,quals in get_quantities("P2134",economy)),key=lambda p: p[1],reverse=True)
+		if reserve_list:
+			reserve = int(reserve_list[0][0])
+			reserve = w.QuantityNP(mkDigits(reserve),w.dollar_MU)
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_2_N),mkVP(w.have_1_V2,mkNP(mkNP(aSg_Det, mkCN(w.total_1_A,w.reserve_2_N)), mkAdv(w.of_1_Prep, reserve))))), fullStopPunct)
+			yield " "+cnc.linearize(phr)
+			
+		
+		gini_list = sorted(((gini,get_time_qualifier("P585",quals) or "X") for gini,quals in get_quantities("P1125",entity)),key=lambda p: p[1],reverse=True)
+		if gini_list:
+			gini = int(gini_list[0][0])
+			if gini > 50:
+				quality = mkCN(w.extreme_1_A, w.inequality_N)
+			elif gini > 45:
+				quality = mkCN(mkAP(w.very_AdA, w.high_1_A), w.inequality_N)
+			elif gini > 40:
+				quality = mkCN(w.high_1_A, w.inequality_N)
+			elif gini > 35:
+				quality = mkCN(w.moderate_1_A, w.inequality_N)
+			elif gini > 30:
+				quality = mkCN(w.moderate_1_A, w.equality_N)
+			else:
+				quality = mkCN(w.high_1_A, w.equality_1_N)
+			gini = w.QuantityNP(mkDigits(gini),w.percent_MU)
+			yield " "+cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.PossNP(mkCN(w.distribution_1_N), mkNP(w.wealth_4_N))), mkVP(w.show_2_V2, mkNP(mkNP(aSg_Det,quality), mkAdv(w.of_1_Prep, gini))))), fullStopPunct))
+
+		for curr, qual in cnc.get_lexemes("P38",entity):
+			if "P582" not in qual:
+				phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, mkCN(w.official_1_A, w.currency_1_N)), mkNP(theSg_Det, curr))), fullStopPunct)
+				yield " "+cnc.linearize(phr)
+				break
