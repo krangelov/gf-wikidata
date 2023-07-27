@@ -231,7 +231,6 @@ def render(cnc, lexeme, entity):
 			cn = mkCN(mkCN(mkAP(mkOrd(w.large_1_A)), city), city_population)
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(theSg_Det,cn)))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
-	
 
 	# Stating the official religion
 	religion = False
@@ -266,7 +265,6 @@ def render(cnc, lexeme, entity):
 			# 	religion = mkCN(lutheranism) #not in Wikidata
 			# 	break
 			
-
 	if religion:
 		# The official religion is [religion].
 		# Future work: allowing multiple religions simultaneously.
@@ -610,16 +608,17 @@ def render(cnc, lexeme, entity):
 				head_entity = entities[prev_head_gov_qid]
 				prev_head_gov = cnc.get_person_name(head_entity)
 
-				if position_gov:
-					prev_head_gov = mkNP(mkCN(position_gov, prev_head_gov))
+				if prev_head_gov:
+					if position_gov:
+						prev_head_gov = mkNP(mkCN(position_gov, prev_head_gov))
 
-				if prev_head_gov_qid == father_qid:
-					# his/her father [name].
-					prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), prev_head_gov))
-				elif prev_head_gov_qid == mother_qid:
-					# He/She took office after his/her mother [name].
-					prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
-				curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_12_V2, mkNP(w.office_4_N)), mkAdv(w.after_Prep, prev_head_gov)))))
+					if prev_head_gov_qid == father_qid:
+						# his/her father [name].
+						prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.father_1_N), prev_head_gov))
+					elif prev_head_gov_qid == mother_qid:
+						# He/She took office after his/her mother [name].
+						prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
+					curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_12_V2, mkNP(w.office_4_N)), mkAdv(w.after_Prep, prev_head_gov)))))
 
 			phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
 			yield " "+cnc.linearize(phr)
@@ -723,11 +722,18 @@ def render(cnc, lexeme, entity):
 			reserve = w.QuantityNP(mkDigits(reserve),w.dollar_MU)
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_2_N),mkVP(w.have_1_V2,mkNP(mkNP(aSg_Det, mkCN(w.total_1_A,w.reserve_2_N)), mkAdv(w.of_1_Prep, reserve))))), fullStopPunct)
 			yield " "+cnc.linearize(phr)
-			
-		
+
+		median_income = None
+		median_income_list = sorted(((median_income,get_time_qualifier("P585",quals) or "X") for median_income,quals in get_quantities("P3529",entity)),key=lambda p: p[1],reverse=True)
+		if median_income_list:
+			median_income = int(median_income_list[0][0])
+			median_income = mkNP(median_income,w.dollar_MU)
+
+		gini = None
 		gini_list = sorted(((gini,get_time_qualifier("P585",quals) or "X") for gini,quals in get_quantities("P1125",entity)),key=lambda p: p[1],reverse=True)
 		if gini_list:
 			gini = int(gini_list[0][0])
+			conj = w.but_1_Conj
 			if gini > 50:
 				quality = mkCN(w.extreme_1_A, w.inequality_N)
 			elif gini > 45:
@@ -738,13 +744,31 @@ def render(cnc, lexeme, entity):
 				quality = mkCN(w.moderate_1_A, w.inequality_N)
 			elif gini > 30:
 				quality = mkCN(w.moderate_1_A, w.equality_1_N)
+				conj = w.and_Conj
 			else:
 				quality = mkCN(w.high_1_A, w.equality_1_N)
+				conj = w.and_Conj
 			gini = w.QuantityNP(mkDigits(gini),w.percent_MU)
-			yield " "+cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.PossNP(mkCN(w.distribution_1_N), mkNP(w.wealth_4_N))), mkVP(w.show_2_V2, mkNP(mkNP(aSg_Det,quality), mkAdv(w.of_1_Prep, gini))))), fullStopPunct))
+
+		if median_income and gini:
+			phr = mkUtt(mkS(conj,mkS(mkCl(mkNP(theSg_Det, mkCN(w.median_3_A, w.income_N)), median_income)),
+			                     mkS(mkCl(mkNP(mkDet(w.it_Pron), w.distribution_1_N), mkVP(w.show_2_V2, mkNP(aSg_Det,quality))))))
+			yield " "+cnc.linearize(phr)+" ("+cnc.linearize(gini)+")."
+		elif median_income:
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, mkCN(w.median_3_A, w.income_N)), median_income)), fullStopPunct)
+			yield " "+cnc.linearize(phr)
+		elif gini:
+			phr = mkUtt(mkCl(mkNP(theSg_Det, w.PossNP(mkCN(w.distribution_1_N), mkNP(w.income_N))), mkVP(w.show_2_V2, mkNP(aSg_Det,quality))))
+			yield " "+cnc.linearize(phr)+" ("+cnc.linearize(gini)+")."
 
 		for curr, qual in cnc.get_lexemes("P38",entity):
 			if "P582" not in qual:
 				phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, mkCN(w.official_1_A, w.currency_1_N)), mkNP(theSg_Det, curr))), fullStopPunct)
 				yield " "+cnc.linearize(phr)
 				break
+
+		unemployment_list = sorted(((gini,get_time_qualifier("P585",quals) or "X") for gini,quals in get_quantities("P1198",entity)),key=lambda p: p[1],reverse=True)
+		if unemployment_list:
+			unemployment = float(unemployment_list[0][0])
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.unemployment_N), mkNP(unemployment, w.percent_MU))), fullStopPunct)
+			yield " "+cnc.linearize(phr)
