@@ -194,7 +194,6 @@ def render(cnc, lexeme, entity):
 	expectancy_list = sorted(((life_expectancy,get_time_qualifier("P585",quals)) for life_expectancy,quals in get_quantities("P2250",entity)),key=lambda p: p[1],reverse=True)
 	if expectancy_list:
 		life_expectancy = expectancy_list[0][0]
-		top_or_bottom = False
 
 		for qid, expectancy, region in top:
 			if life_expectancy == expectancy:
@@ -204,22 +203,28 @@ def render(cnc, lexeme, entity):
 				yield " " + cnc.linearize(phr)
 				top_or_bottom = True
 				break
-
-		if not top_or_bottom:
+		else:
 			for qid, expectancy, region in bottom:
 				if life_expectancy == expectancy:
 					# [Country name] has the lowest life expectancy in [continent / the world], with an average of [XX] years.
 					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
 					      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
 					yield " " + cnc.linearize(phr)
-					top_or_bottom = True
 					break
+			else:
+				# The life expectancy is [XX] years.
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.life_1_N,w.expectancy_1_N)), mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
 
-		if not top_or_bottom:
-			# The life expectancy is [XX] years.
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.life_1_N,w.expectancy_1_N)), mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
-			yield " " + cnc.linearize(phr)
+	fertility_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P4841",entity)),key=lambda p: p[1],reverse=True)
+	if fertility_list:
+		fertility = float(fertility_list[0][0])
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.fertility_1_N), mkNP(mkNum(fertility), mkCN(mkCN(w.child_1_N), mkAdv(w.per_Prep,mkNP(w.woman_1_N)))))), fullStopPunct))
 
+	suicide_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P3864",entity)),key=lambda p: p[1],reverse=True)
+	if suicide_list:
+		suicide = float(suicide_list[0][0])
+		yield " " + str(suicide)
 	
 	# State largest city in the country
 	# [Tokyo] is the largest city in [Japan] with a population of [00000] inhabitants.
@@ -231,6 +236,27 @@ def render(cnc, lexeme, entity):
 			cn = mkCN(mkCN(mkAP(mkOrd(w.large_1_A)), city), city_population)
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(theSg_Det,cn)))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
+
+	hdi_list = sorted(((hdi,get_time_qualifier("P585",quals)) for hdi,quals in get_quantities("P1081",entity)),key=lambda p: p[1],reverse=True)
+	if hdi_list:
+		hdi = float(hdi_list[0][0])
+		quality = mkCN(w.CompoundN(w.human_N, w.development_2_N))
+		if hdi >= 0.800:
+			quality = mkCN(mkAP(w.very_AdA,w.high_1_A), quality)
+		elif hdi >= 0.700:
+			quality = mkCN(mkAP(w.high_1_A), quality)
+		elif hdi >= 0.550:
+			quality = mkCN(mkAP(w.medium_1_A), quality)
+		else:
+			quality = mkCN(mkAP(w.low_1_A), quality)
+
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (HDI " + str(hdi) + ")."
+
+
+# P2997 maturity
+# P3000 mariage
+# P2834 tax rate
+# P2855 VAT
 
 	# Stating the official religion
 	religion = False
@@ -310,6 +336,15 @@ def render(cnc, lexeme, entity):
 		if population:
 			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.amount_to_2_V2, mkNP(mkNP(round((out_of_school/population)*100,2), w.percent_MU), mkAdv(w.of_1_Prep, mkNP(theSg_Det, w.population_1_N)))))),fullStopPunct)
 			yield " "+cnc.linearize(phr)
+
+	divisions = cnc.get_lexemes("P150",entity,qual=False)
+	if divisions:
+		yield '<h2 class="gp-page-title">'+cnc.linearize(mkNP(aPl_Det,mkCN(w.administrative_A,w.unit_3_N)))+'</h2>'
+		yield '<p>'+cnc.linearize(mkCl(mkNP(theSg_Det,w.country_1_N),mkVP(w.have_1_V2,mkNP(thePl_Det,mkCN(w.following_2_A,mkCN(w.administrative_A,w.unit_3_N))))))+':'
+		yield "<ul style='column-count: 4'>"
+		for division in divisions:
+			yield "<li>"+cnc.linearize(division)+"</li>"
+		yield '</ul></p>'
 
 	# State basic form of government
 	bfog = None
