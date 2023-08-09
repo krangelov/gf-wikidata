@@ -718,6 +718,8 @@ def render(cnc, lexeme, entity):
 		economy = economy[0]
 		yield '<h2 class="gp-page-title">'+cnc.linearize(w.economy_1_N)+'</h2>'
 
+		yield "<p>"
+
 		objs = []
 
 		gdp_list = sorted(((gdp,get_time_qualifier("P585",quals)) for gdp,quals in get_quantities("P2131",economy)),key=lambda p: p[1],reverse=True)
@@ -807,3 +809,37 @@ def render(cnc, lexeme, entity):
 			unemployment = float(unemployment_list[0][0])
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.unemployment_N), mkNP(unemployment, w.percent_MU))), fullStopPunct)
 			yield " "+cnc.linearize(phr)
+	yield "</p>"
+
+	vats = []
+	for vat,qual in get_quantities("P2855",entity):
+		if "P582" not in qual:
+			vat = mkNP(vat,w.percent_MU)
+			products = []
+			for lexeme in cnc.get_lexeme_qualifiers("P518", qual):
+				products.append(mkNP(lexeme))
+			products = mkNP(w.and_Conj, products)
+			if products:
+				vat = mkNP(vat,mkAdv(w.for_Prep,products))
+			vats.append(vat)
+	vats = mkNP(w.and_Conj, vats)
+
+	ind_tax = []
+	for tax,qual in get_quantities("P2834",entity):
+		if "P582" not in qual:
+			tax = mkNP(tax,w.percent_MU)
+			value = get_quantity_qualifier("P2835",qual)
+			if value:
+				tax = mkNP(tax,mkAdv(w.above_Prep,mkNP(mkNum(value),w.krona_1_N)))
+			ind_tax.append(tax)
+	ind_tax = mkNP(w.and_Conj, ind_tax)
+
+	if vats or ind_tax:
+		yield "<p>"
+		if vats:
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.vat_1_N), vats)), fullStopPunct)
+			yield " "+cnc.linearize(phr)
+		if ind_tax:
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,mkCN(w.individual_4_A,w.CompoundN(w.tax_N,w.rate_4_N))), ind_tax)), fullStopPunct)
+			yield " "+cnc.linearize(phr)
+		yield "</p>"

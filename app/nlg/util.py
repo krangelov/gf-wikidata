@@ -178,6 +178,18 @@ class ConcrHelper:
 					items.append(fun)
 		return items
 
+	def get_lexeme_qualifiers(self,prop,quals,link=True):
+		items = []
+		for value in quals.get(prop,[]):
+			try:
+				qid = value["datavalue"]["value"]["id"]
+			except KeyError:
+				continue
+			fun = self.get_lex_fun(qid,link)
+			if fun:
+				items.append(fun)
+		return items
+
 	def get_demonyms(self,prop,entity,link=True):
 		adjs = set()
 		pns  = set()
@@ -381,6 +393,14 @@ def get_time_qualifier(prop,quals):
 	for value in quals.get(prop,[]):
 		try:
 			return value["datavalue"]["value"]["time"]
+		except KeyError:
+			continue
+	return None
+
+def get_quantity_qualifier(prop,quals):
+	for value in quals.get(prop,[]):
+		try:
+			return float(value["datavalue"]["value"]["amount"])
 		except KeyError:
 			continue
 	return None
