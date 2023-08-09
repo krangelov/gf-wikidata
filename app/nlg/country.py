@@ -224,7 +224,7 @@ def render(cnc, lexeme, entity):
 	suicide_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P3864",entity)),key=lambda p: p[1],reverse=True)
 	if suicide_list:
 		suicide = float(suicide_list[0][0])
-		yield " " + str(suicide)
+#		yield " " + str(suicide)
 	
 	# State largest city in the country
 	# [Tokyo] is the largest city in [Japan] with a population of [00000] inhabitants.
@@ -658,14 +658,27 @@ def render(cnc, lexeme, entity):
 			phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
 			yield " "+cnc.linearize(phr)
 
-	organizations = []
-	for org in cnc.get_lexemes("P463",entity,qual=False):
+	curr_organizations = set()
+	prev_organizations = set()
+	for org,qual in cnc.get_lexemes("P463",entity):
 		if org != w.european_union_NP:
 			org = mkNP(org)
-		organizations.append(org)
-	organizations = mkNP(w.and_Conj, organizations)
-	if organizations:
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.country_1_N), mkNP(aSg_Det,w.PossNP(mkCN(w.member_4_N), organizations))))),fullStopPunct)
+		if "P582" not in qual:
+			curr_organizations.add(org)
+		else:
+			prev_organizations.add(org)
+	for org in curr_organizations:
+		try:
+			prev_organizations.remove(org)
+		except KeyError:
+			pass
+	curr_organizations = mkNP(w.and_Conj, list(curr_organizations))
+	if curr_organizations:
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.country_1_N), mkNP(aSg_Det,w.PossNP(mkCN(w.member_4_N), curr_organizations))))),fullStopPunct)
+		yield " "+cnc.linearize(phr)
+	prev_organizations = mkNP(w.and_Conj, list(prev_organizations))
+	if prev_organizations:
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.it_Pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,mkCN(w.former_3_A,w.PossNP(mkCN(w.member_4_N), prev_organizations)))))))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
 	
 	democracy_list = sorted(((democracy,get_time_qualifier("P585",quals)) for democracy,quals in get_quantities("P8328",entity)),key=lambda p: p[1],reverse=True)
