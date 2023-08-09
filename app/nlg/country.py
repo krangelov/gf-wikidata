@@ -341,7 +341,13 @@ def render(cnc, lexeme, entity):
 	if divisions:
 		yield '<h2 class="gp-page-title">'+cnc.linearize(mkNP(aPl_Det,mkCN(w.administrative_A,w.unit_3_N)))+'</h2>'
 		yield '<p>'+cnc.linearize(mkCl(mkNP(theSg_Det,w.country_1_N),mkVP(w.have_1_V2,mkNP(thePl_Det,mkCN(w.following_2_A,mkCN(w.administrative_A,w.unit_3_N))))))+':'
-		yield "<ul style='column-count: 4'>"
+		if len(divisions) < 5:
+			column_count = 1
+		elif len(divisions) < 10:
+			column_count = 2
+		else:
+			column_count = 4
+		yield "<ul style='column-count: "+str(column_count)+"'>"
 		for division in divisions:
 			yield "<li>"+cnc.linearize(division)+"</li>"
 		yield '</ul></p>'
@@ -510,7 +516,10 @@ def render(cnc, lexeme, entity):
 			curr_head_gov_qid = head_government
 		else: # End date == previous heads of government
 			date = get_time_qualifier("P582",qual) # Checking end date
-			name_date_gov.append((head_government,date))
+			if date:
+				name_date_gov.append((head_government,date))
+			else:
+				curr_head_gov_qid = head_government
 
 	# Sorting by dates
 	if name_date_gov:
@@ -721,7 +730,7 @@ def render(cnc, lexeme, entity):
 			agents.append(mkNP(agent))
 	agents = mkNP(w.and_Conj, agents)
 	if agents:
-		phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.it_Pron),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.CompoundN(w.terrorist_N,w.state_4_N)))),agents)))), fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(positivePol,mkCl(mkNP(w.it_Pron),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.CompoundN(w.terrorist_N,w.state_4_N)))),agents)))), fullStopPunct)
 		yield " "+cnc.linearize(phr)
 
 	yield "</p>"
