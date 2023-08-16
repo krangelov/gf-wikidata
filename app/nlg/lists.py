@@ -451,13 +451,12 @@ largest_cities = [
 
 # Continents
 the_world = mkNP(theSg_Det, mkCN(w.world_1_N))
-europe = mkNP(w.europe_1_PN)
-asia = mkNP(w.asia_1_PN)
-africa = mkNP(w.africa_PN)
-north_america = mkNP(w.north_america_1_PN)
-south_america = mkNP(w.south_america_1_PN)
-insular_oceania = mkNP(w.insular_oceania_PN)
-
+europe = mkNP(w.europe_1_LN)
+asia = mkNP(w.asia_1_LN)
+africa = mkNP(w.africa_LN)
+north_america = mkNP(w.north_america_1_LN)
+south_america = mkNP(w.south_america_1_LN)
+insular_oceania = mkNP(w.insular_oceania_LN)
 
 # Top 5 highest life expectancies per continent / the world
 top = [
