@@ -213,7 +213,7 @@ def render(cnc, lexeme, entity):
 					break
 			else:
 				# The life expectancy is [XX] years.
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.life_1_N,w.expectancy_1_N)), mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.life_expectancy_N), mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
 
 	fertility_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P4841",entity)),key=lambda p: p[1],reverse=True)
