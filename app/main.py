@@ -194,7 +194,8 @@ def render_page(query, start_response):
         lex_fun = cnc.get_lex_fun(qid,link=False)
         if not lex_fun:
             lex_fun = cnc.get_person_name(entity)
-            cnc.removeLink(lex_fun)
+            if lex_fun:
+                cnc.removeLink(lex_fun)
 
         if lex_fun:
             for s in render(cnc,lex_fun,entity):
