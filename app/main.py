@@ -120,7 +120,8 @@ langs = {
   "sw": ("Swahili",   "ParseSwa"),
   "sv": ("Swedish",   "ParseSwe"),
   "th": ("Thai",      "ParseTha"),
-  "tr": ("Turkish",   "ParseTur")
+  "tr": ("Turkish",   "ParseTur"),
+  "zu": ("Zulu",      "ParseZul")
   }
 
 home = [
