@@ -198,7 +198,8 @@ def render(cnc, lexeme, entity):
 		for qid, expectancy, region in top:
 			if life_expectancy == expectancy:
 				# [Country name] has the highest life expectancy in [continent / the world], with an average of [XX] years.
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), w.life_expectancy_N), 
+				#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), w.life_expectancy_N), 
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
 				      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
 				yield " " + cnc.linearize(phr)
 				top_or_bottom = True
@@ -207,13 +208,15 @@ def render(cnc, lexeme, entity):
 			for qid, expectancy, region in bottom:
 				if life_expectancy == expectancy:
 					# [Country name] has the lowest life expectancy in [continent / the world], with an average of [XX] years.
-					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), w.life_expectancy_N),
+					#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), w.life_expectancy_N),
+					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
 					      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
 					yield " " + cnc.linearize(phr)
 					break
 			else:
 				# The life expectancy is [XX] years.
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.life_expectancy_N), mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.life_1_N,w.expectancy_1_N)), mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
+				#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.life_expectancy_N), mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
 
 	fertility_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P4841",entity)),key=lambda p: p[1],reverse=True)
@@ -221,11 +224,32 @@ def render(cnc, lexeme, entity):
 		fertility = float(fertility_list[0][0])
 		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.fertility_1_N), mkNP(mkNum(fertility), mkCN(mkCN(w.child_1_N), mkAdv(w.per_Prep,mkNP(w.woman_1_N)))))), fullStopPunct))
 
+	
 	suicide_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P3864",entity)),key=lambda p: p[1],reverse=True)
 	if suicide_list:
 		suicide = float(suicide_list[0][0])
-#		yield " " + str(suicide)
-	
+		#yield " " + str(suicide)
+		#The suicide rate stands at [12.4] individuals per 100,000 people (or population) yearly.
+		#Originally "population" (instead of "people") but it would result in "populations" because of the digit preceding it.
+		#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(mkVP(w.stand_2_V), mkAdv(w.at_1_Prep, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), w.population_1_N))))))))), fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(mkVP(w.stand_2_V), mkAdv(w.at_1_Prep, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.people_1_N, w.yearly_Adv)))))))))), fullStopPunct)
+		yield " " + cnc.linearize(phr)
+
+# P2997 maturity
+# P3000 mariage
+# P2834 tax rate (done below)
+# P2855 VAT (done below)
+
+
+	# Age of majority (maturity)
+	# The age of majority is [X].
+	# [Country] sets the age of majority at [X].
+	maturity_age_list = sorted(((majority_age,get_time_qualifier("P585",quals) or "X") for majority_age,quals in get_quantities("P2997",entity)),key=lambda p: p[1],reverse=True)
+	if maturity_age_list:
+		maturity_age = int(maturity_age_list[0][0])
+		print('MATURITY_AGE: ', maturity_age)
+
+
 	# State largest city in the country
 	# [Tokyo] is the largest city in [Japan] with a population of [00000] inhabitants.
 	for city_qid, city_pop, country_qid in largest_cities:

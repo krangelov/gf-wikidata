@@ -451,7 +451,7 @@ largest_cities = [
 
 # Continents
 the_world = mkNP(theSg_Det, mkCN(w.world_1_N))
-europe = mkNP(w.europe_1_LN)
+europe = mkNP(w.europe_1_PN)
 asia = mkNP(w.asia_1_LN)
 africa = mkNP(w.africa_LN)
 north_america = mkNP(w.north_america_1_LN)
