@@ -227,6 +227,7 @@ def render(cnc, lexeme, entity):
 	
 	suicide_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P3864",entity)),key=lambda p: p[1],reverse=True)
 	if suicide_list:
+		#print('SUICIDE_LIST: ', suicide_list)
 		suicide = float(suicide_list[0][0])
 		#yield " " + str(suicide)
 		#The suicide rate stands at [12.4] individuals per 100,000 people (or population) yearly.
@@ -244,10 +245,24 @@ def render(cnc, lexeme, entity):
 	# Age of majority (maturity)
 	# The age of majority is [X].
 	# [Country] sets the age of majority at [X].
-	maturity_age_list = sorted(((majority_age,get_time_qualifier("P585",quals) or "X") for majority_age,quals in get_quantities("P2997",entity)),key=lambda p: p[1],reverse=True)
+	maturity_age_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P2997",entity)),key=lambda p: p[1],reverse=True)
 	if maturity_age_list:
 		maturity_age = int(maturity_age_list[0][0])
-		print('MATURITY_AGE: ', maturity_age)
+		#print('MATURITY_AGE: ', maturity_age)
+	
+
+
+	# Marriageable age:
+	marriageable_age_list = sorted(((life_expectancy,get_time_qualifier("P582",quals) or "X") for life_expectancy,quals in get_quantities("P3000",entity)),key=lambda p: p[1],reverse=True)
+	if marriageable_age_list:
+		marriage = int(marriageable_age_list[0][0])
+		print('MARRIGE: ', marriage)
+		
+	
+
+	# IN SPAIN:
+	# - The minimum age of marriage is 18.
+	# - Girls and boys aged 16 can be married off with judicial consent.
 
 
 	# State largest city in the country
