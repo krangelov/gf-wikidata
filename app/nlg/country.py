@@ -1,7 +1,6 @@
 from os import name
 import pgf
-import wordnet as w
-from wordnet.api import *
+from wordnet import *
 from nlg.util import *
 from nlg.lists import *
 
