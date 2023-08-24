@@ -224,45 +224,16 @@ def render(cnc, lexeme, entity):
 		fertility = float(fertility_list[0][0])
 		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.fertility_1_N), mkNP(mkNum(fertility), mkCN(mkCN(w.child_1_N), mkAdv(w.per_Prep,mkNP(w.woman_1_N)))))), fullStopPunct))
 
-	
+
+	# Suicide rate
 	suicide_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P3864",entity)),key=lambda p: p[1],reverse=True)
 	if suicide_list:
-		#print('SUICIDE_LIST: ', suicide_list)
 		suicide = float(suicide_list[0][0])
-		#yield " " + str(suicide)
 		#The suicide rate stands at [12.4] individuals per 100,000 people (or population) yearly.
 		#Originally "population" (instead of "people") but it would result in "populations" because of the digit preceding it.
 		#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(mkVP(w.stand_2_V), mkAdv(w.at_1_Prep, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), w.population_1_N))))))))), fullStopPunct)
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(mkVP(w.stand_2_V), mkAdv(w.at_1_Prep, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.people_1_N, w.yearly_Adv)))))))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
-
-# P2997 maturity
-# P3000 mariage
-# P2834 tax rate (done below)
-# P2855 VAT (done below)
-
-
-	# Age of majority (maturity)
-	# The age of majority is [X].
-	# [Country] sets the age of majority at [X].
-	maturity_age_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P2997",entity)),key=lambda p: p[1],reverse=True)
-	if maturity_age_list:
-		maturity_age = int(maturity_age_list[0][0])
-		#print('MATURITY_AGE: ', maturity_age)
-	
-
-
-	# Marriageable age:
-	marriageable_age_list = sorted(((life_expectancy,get_time_qualifier("P582",quals) or "X") for life_expectancy,quals in get_quantities("P3000",entity)),key=lambda p: p[1],reverse=True)
-	if marriageable_age_list:
-		marriage = int(marriageable_age_list[0][0])
-		print('MARRIGE: ', marriage)
-		
-	
-
-	# IN SPAIN:
-	# - The minimum age of marriage is 18.
-	# - Girls and boys aged 16 can be married off with judicial consent.
 
 
 	# State largest city in the country
@@ -292,10 +263,37 @@ def render(cnc, lexeme, entity):
 		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (HDI " + str(hdi) + ")."
 
 
-# P2997 maturity
-# P3000 mariage
-# P2834 tax rate
-# P2855 VAT
+	# Age of majority (maturity)
+	# [Country] sets the age of majority at [X] years.
+	maturity_age_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P2997",entity)),key=lambda p: p[1],reverse=True)
+	if maturity_age_list:
+		maturity_age = int(maturity_age_list[0][0])
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.majority_3_N), mkAdv(w.at_1_Prep, mkNP(mkNum(maturity_age), w.year_1_N)))))))))), fullStopPunct)
+		yield " " + cnc.linearize(phr)
+		# TO DO: Spanish - "mayoría de edad"
+
+
+	# Marriageable age:
+	marriageable_age_list = sorted(((life_expectancy,get_time_qualifier("P582",quals) or "X") for life_expectancy,quals in get_quantities("P3000",entity)),key=lambda p: p[1],reverse=True)
+	if marriageable_age_list:
+		marriage = int(marriageable_age_list[0][0])
+		# The minimum/legal age of marriage for each gender is 18 years.
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.marriage_1_N), mkAdv(w.for_Prep, mkNP(w.each_Det, w.gender_2_N))))))),mkNP(mkNum(marriage), w.year_1_N)))),fullStopPunct)		
+		yield " " + cnc.linearize(phr)
+		# both_Adv
+		# TO DO:
+		# Marriageable age depends on gender (ex: Senegal) or court consent (ex: Spain)
+	
+
+	# Retirement age:
+	retirement_age_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P3001",entity)),key=lambda p: p[1],reverse=True)
+	if retirement_age_list:
+		retirement_age = int(retirement_age_list[0][0])
+		# The age of retirement is [X] years.
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.retirement_1_N)))),mkNP(mkNum(retirement_age), w.year_1_N)))),fullStopPunct)
+		yield " " + cnc.linearize(phr)
+		# TO DO: 4 countries where retirement age varies depeding on gender (Israel, Turkey, Colombia, Venezuela)
+
 
 	# Stating the official religion
 	religion = False
