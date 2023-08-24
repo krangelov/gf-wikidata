@@ -184,7 +184,7 @@ def render_page(query, start_response):
     yield b'     </div>'
     yield b'     <div class="gp-body" id="content" data-lang="'+bytes(lang,"utf8")+b'">'
 
-    from wordnet import *
+    import wordnet
     from nlg import render, render_list
     from nlg.util import get_entity, ConcrHelper
 
@@ -228,7 +228,7 @@ def application(env, start_response):
 
     if not gr:
         gr = pgf.readNGF(env["PARSE_GRAMMAR_PATH"])
-        gr.embed()
+        gr.embed("Parse")
 
     query = parse_qs(env["QUERY_STRING"])
 
