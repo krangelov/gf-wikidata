@@ -240,7 +240,7 @@ def render(cnc, lexeme, entity):
 	hdi_list = sorted(((hdi,get_time_qualifier("P585",quals)) for hdi,quals in get_quantities("P1081",entity)),key=lambda p: p[1],reverse=True)
 	if hdi_list:
 		hdi = float(hdi_list[0][0])
-		quality = mkCN(w.CompoundN(w.human_N, w.development_2_N))
+		quality = mkCN(w.human_1_A, w.development_2_N)
 		if hdi >= 0.800:
 			quality = mkCN(mkAP(w.very_AdA,w.high_1_A), quality)
 		elif hdi >= 0.700:
