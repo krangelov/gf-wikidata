@@ -1,6 +1,6 @@
 import pgf
 from daison import *
-import wordnet as w
+from wordnet import *
 from wordnet.semantics import *
 from html import escape
 import hashlib

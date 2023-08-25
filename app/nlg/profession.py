@@ -1,6 +1,5 @@
 import pgf
-import wordnet as w
-from wordnet.api import *
+from wordnet import *
 from nlg.util import *
 
 def render(cnc, lexeme, entity):
