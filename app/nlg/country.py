@@ -268,9 +268,12 @@ def render(cnc, lexeme, entity):
 	maturity_age_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P2997",entity)),key=lambda p: p[1],reverse=True)
 	if maturity_age_list:
 		maturity_age = int(maturity_age_list[0][0])
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.majority_3_N), mkAdv(w.at_1_Prep, mkNP(mkNum(maturity_age), w.year_1_N)))))))))), fullStopPunct)
+		#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.majority_3_N), mkAdv(w.at_1_Prep, mkNP(mkNum(maturity_age), w.year_1_N)))))))))), fullStopPunct)
+		#Pakistan establishes the age of majority at 18 years for men and 16 years for women.
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.majority_3_N), mkAdv(w.at_1_Prep, mkNP(mkNum(maturity_age), mkCN(w.year_1_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N))))))))))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
 		# TO DO: Spanish - "mayoría de edad"
+	
 
 
 	# Marriageable age:
@@ -442,7 +445,7 @@ def render(cnc, lexeme, entity):
 				break
 			
 			entity_office = get_entity(qid)
-			if "P279" in entity_office['claims']: # P270 = subclass of
+			if "P279" in entity_office['claims']: # P279 = subclass of
 				for subclass_qid, quad in get_items("P279", entity_office):
 					if subclass_qid == 'Q15995642' or subclass_qid == 'Q611644': # religious leader / Catholic bishop
 						position_state = mkCN(w.pope_1_N)
@@ -499,7 +502,7 @@ def render(cnc, lexeme, entity):
 				break
 
 			entity_office = get_entity(qid)
-			if "P279" in entity_office['claims']: # P270 = subclass of
+			if "P279" in entity_office['claims']: # P279 = subclass of
 				for subclass_qid, quad in get_items("P279", entity_office):
 					if subclass_qid == 'Q959664': # premier
 						position_gov = mkCN(w.premier_2_N)	
