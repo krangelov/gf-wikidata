@@ -264,19 +264,34 @@ def render(cnc, lexeme, entity):
 
 
 	# Age of majority (maturity)
-	# [Country] sets the age of majority at [X] years.
-	maturity_age_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P2997",entity)),key=lambda p: p[1],reverse=True)
-	if maturity_age_list:
-		maturity_age = int(maturity_age_list[0][0])
-		#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.majority_3_N), mkAdv(w.at_1_Prep, mkNP(mkNum(maturity_age), w.year_1_N)))))))))), fullStopPunct)
-		#Pakistan establishes the age of majority at 18 years for men and 16 years for women.
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.majority_3_N), mkAdv(w.at_1_Prep, mkNP(mkNum(maturity_age), mkCN(w.year_1_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N))))))))))))), fullStopPunct)
-		yield " " + cnc.linearize(phr)
-		# TO DO: Spanish - "mayoría de edad"
-	
+	# TO DO: Spanish - "mayoría de edad"
+	female_age = None
+	male_age = None
+	for majority_age, qual in get_quantities("P2997",entity):
+		if "P582" not in qual:
+			gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
+			if gender_diff:
+				for lex in gender_diff:
+					if lex == w.female_2_N:
+						female_age = int(majority_age)
+					if lex == w.male_2_N:
+						male_age = int(majority_age)
+			else:
+				# [Country] sets the age of majority at [X] years. --> w.set_3_V2
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.majority_3_N), mkAdv(w.at_1_Prep, mkNP(mkNum(int(majority_age)), w.year_1_N)))))))))), fullStopPunct)
+				yield " " + cnc.linearize(phr)
+
+	if female_age and male_age:
+		# The age of majority for men is set at 21 years and it is at 16 years for women.		
+		conj = w.and_Conj
+		phr = mkUtt(mkS(conj, mkS(mkCl(mkNP(theSg_Det, mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.majority_3_N), mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N)))))), mkVP(passiveVP(mkVPSlash(w.set_3_V2)), mkAdv(w.at_1_Prep, mkNP(mkNum(male_age), mkCN(w.year_1_N)))))),
+							mkS(mkCl(mkNP(w.it_Pron), mkAdv(w.at_1_Prep, mkNP(mkNum(female_age), mkCN(w.year_1_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))))))))
+		yield " "+cnc.linearize(phr)+"."
 
 
 	# Marriageable age:
+	# TO DO:
+	# Marriageable age depends on gender (ex: Senegal) or court consent (ex: Spain)
 	marriageable_age_list = sorted(((life_expectancy,get_time_qualifier("P582",quals) or "X") for life_expectancy,quals in get_quantities("P3000",entity)),key=lambda p: p[1],reverse=True)
 	if marriageable_age_list:
 		marriage = int(marriageable_age_list[0][0])
@@ -284,9 +299,8 @@ def render(cnc, lexeme, entity):
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.marriage_1_N), mkAdv(w.for_Prep, mkNP(w.each_Det, w.gender_2_N))))))),mkNP(mkNum(marriage), w.year_1_N)))),fullStopPunct)		
 		yield " " + cnc.linearize(phr)
 		# both_Adv
-		# TO DO:
-		# Marriageable age depends on gender (ex: Senegal) or court consent (ex: Spain)
-	
+		
+						
 
 	# Retirement age:
 	retirement_age_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P3001",entity)),key=lambda p: p[1],reverse=True)
@@ -730,6 +744,7 @@ def render(cnc, lexeme, entity):
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.it_Pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,mkCN(w.former_3_A,w.PossNP(mkCN(w.member_4_N), prev_organizations)))))))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
 	
+
 	democracy_list = sorted(((democracy,get_time_qualifier("P585",quals)) for democracy,quals in get_quantities("P8328",entity)),key=lambda p: p[1],reverse=True)
 	if democracy_list:
 		democracy_index = float(democracy_list[0][0])
@@ -892,6 +907,7 @@ def render(cnc, lexeme, entity):
 			tax = mkNP(tax,w.percent_MU)
 			value = get_quantity_qualifier("P2835",qual)
 			if value:
+				print('VALUE: ', value)
 				tax = mkNP(tax,mkAdv(w.above_Prep,mkNP(mkNum(value),w.krona_1_N)))
 			ind_tax.append(tax)
 	ind_tax = mkNP(w.and_Conj, ind_tax)
@@ -926,7 +942,10 @@ def render(cnc, lexeme, entity):
 		# No "recorded" in GF wordnet --> registered
 		phr = mkUtt(mkS(conj, mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(w.reach_2_V2, mkNP(mkNum(max_temp), w.degree_6_N)))),
 		                      mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkAP(mkOrd(w.low_1_A)), w.temperature_1_N)), mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep,mkNP(mkNum(max_temp), w.degree_6_N)))))))
+		
 		yield " "+cnc.linearize(phr)+"."
+
+	
 	
 	elif max_temp:
 		#The highest recorded/registered temperature in [country] reached [max_temp] degrees (°C)
