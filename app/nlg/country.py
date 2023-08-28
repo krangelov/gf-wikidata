@@ -282,34 +282,70 @@ def render(cnc, lexeme, entity):
 				yield " " + cnc.linearize(phr)
 
 	if female_age and male_age:
-		# The age of majority for men is set at 21 years and it is at 16 years for women.		
+		# The age of majority for men is set at [X] years and it is at [X] years for women.		
 		conj = w.and_Conj
 		phr = mkUtt(mkS(conj, mkS(mkCl(mkNP(theSg_Det, mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.majority_3_N), mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N)))))), mkVP(passiveVP(mkVPSlash(w.set_3_V2)), mkAdv(w.at_1_Prep, mkNP(mkNum(male_age), mkCN(w.year_1_N)))))),
-							mkS(mkCl(mkNP(w.it_Pron), mkAdv(w.at_1_Prep, mkNP(mkNum(female_age), mkCN(w.year_1_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))))))))
+							  mkS(mkCl(mkNP(w.it_Pron), mkAdv(w.at_1_Prep, mkNP(mkNum(female_age), mkCN(w.year_1_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))))))))
 		yield " "+cnc.linearize(phr)+"."
 
 
 	# Marriageable age:
-	# TO DO:
-	# Marriageable age depends on gender (ex: Senegal) or court consent (ex: Spain)
-	marriageable_age_list = sorted(((life_expectancy,get_time_qualifier("P582",quals) or "X") for life_expectancy,quals in get_quantities("P3000",entity)),key=lambda p: p[1],reverse=True)
-	if marriageable_age_list:
-		marriage = int(marriageable_age_list[0][0])
-		# The minimum/legal age of marriage for each gender is 18 years.
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(mkNP(w.marriage_1_N), mkAdv(w.for_Prep, mkNP(w.each_Det, w.gender_2_N))))))),mkNP(mkNum(marriage), w.year_1_N)))),fullStopPunct)		
-		yield " " + cnc.linearize(phr)
-		# both_Adv
-		
-						
+	female_age = None
+	male_age = None
+	for marriageable_age, qual in get_quantities("P3000",entity):
+		if "P582" not in qual:
+			gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
+			if gender_diff:
+				for lex in gender_diff:
+					if lex == w.female_2_N:
+						female_age = int(marriageable_age)
+					if lex == w.male_2_N:
+						male_age = int(marriageable_age)
+			
+			consent = get_item_qualifier("P1013", qual)
+			if consent:
+				if consent == 'Q27177319':
+					consent_type = mkCN(mkAP(w.parental_2_A), w.consent_N)
+				elif consent == 'Q27177129':
+					consent_type = mkCN(w.CompoundN(w.court_1_N, w.consent_N))
+				
+				# The minimum age of marriage is [X] years with parental/court consent.
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), mkNP(mkNum(int(marriageable_age)), mkCN(w.year_1_N, mkAdv(w.with_Prep, mkNP(consent_type))))))),fullStopPunct)		
+				yield " " + cnc.linearize(phr)
+
+	if female_age and male_age:
+		# The minimum age of marriage is set at [X] years for men and it is at [X] years for women.		
+		conj = w.and_Conj
+		phr = mkUtt(mkS(conj, mkS(mkCl(mkNP(theSg_Det, mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), mkVP(passiveVP(mkVPSlash(w.set_3_V2)), mkAdv(w.at_1_Prep, mkNP(mkNum(male_age), mkCN(w.year_1_N)))))),
+		                      mkS(mkCl(mkNP(w.it_Pron), mkAdv(w.at_1_Prep, mkNP(mkNum(female_age), mkCN(w.year_1_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))))))))	  
+		yield " "+cnc.linearize(phr)+"."
+
 
 	# Retirement age:
-	retirement_age_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P3001",entity)),key=lambda p: p[1],reverse=True)
-	if retirement_age_list:
-		retirement_age = int(retirement_age_list[0][0])
-		# The age of retirement is [X] years.
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.retirement_1_N)))),mkNP(mkNum(retirement_age), w.year_1_N)))),fullStopPunct)
-		yield " " + cnc.linearize(phr)
-		# TO DO: 4 countries where retirement age varies depeding on gender (Israel, Turkey, Colombia, Venezuela)
+	female_age = None
+	male_age = None
+	for retirement_age, qual in get_quantities("P3001",entity):
+		if "P582" not in qual:
+			gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
+			if gender_diff:
+				for lex in gender_diff:
+					if lex == w.female_2_N:
+						female_age = int(retirement_age)
+					if lex == w.male_2_N:
+						male_age = int(retirement_age)
+			else:
+				# The age of retirement is [X] years.
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.retirement_1_N)))),mkNP(mkNum(int(retirement_age)), w.year_1_N)))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
+		
+	# TO DO: 4 countries where retirement age varies depeding on gender (Israel, Turkey, Colombia (Q739), Venezuela)
+	if female_age and male_age:
+		# The age of retirement for men is set at [X] years and it is at [X] years for women.		
+		conj = w.and_Conj
+		phr = mkUtt(mkS(conj, mkS(mkCl(mkNP(theSg_Det, mkCN(w.CompoundN(w.retirement_1_N,w.age_1_N), mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N)))), mkVP(passiveVP(mkVPSlash(w.set_3_V2)), mkAdv(w.at_1_Prep, mkNP(mkNum(male_age), mkCN(w.year_1_N)))))),
+		                      mkS(mkCl(mkNP(w.it_Pron), mkAdv(w.at_1_Prep, mkNP(mkNum(female_age), mkCN(w.year_1_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))))))))	  
+		yield " "+cnc.linearize(phr)+"."
+
 
 
 	# Stating the official religion
