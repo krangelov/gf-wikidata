@@ -1,7 +1,6 @@
 import pgf
 from daison import *
 from wordnet import *
-from wordnet.semantics import *
 from html import escape
 import hashlib
 import re
@@ -109,10 +108,9 @@ class ConcrHelper:
 						info = self.links.get(expr)
 						if self.edit and info == None:
 							self.links[expr] = False
-							with wordnet._semantics.db.run("r") as t:
-								for lexeme_id in t.cursor(lexemes_fun, x.fun):
-									for lexeme in t.cursor(lexemes, lexeme_id):
-										info = self.addLink(lexeme, None)
+							l = lexeme(x.fun)
+							if l:
+								info = self.addLink(l, None)
 						tmp  = info
 
 						flatten(x.children)
@@ -128,31 +126,12 @@ class ConcrHelper:
 			text = text[0].upper()+text[1:]
 		return text
 
-	lex_hacks = {
-		"Q6452640": "southeast_1_N",
-		"Q2381698": "southwest_1_N",
-		"Q6497686": "northeast_1_N",
-		"Q5491373": "northwest_3_N",
-		"Q865":     "taiwan_2_PN",
-		"Q869":     "thailand_PN",
-		"Q801":     "israel_1_PN"
-	}
-
 	def get_lex_fun(self, qid, link=True):
-		with wordnet._semantics.db.run("r") as t:
-			fun = self.lex_hacks.get(qid)
-			if fun:
-				for lexeme_id in t.cursor(lexemes_fun, fun):
-					for lexeme in t.cursor(lexemes, lexeme_id):
-						if link:
-							self.addLink(lexeme, qid)
-						return pgf.ExprFun(lexeme.lex_fun)
-			else:
-				for lexeme_id in t.cursor(lexemes_qid, qid):
-					for lexeme in t.cursor(lexemes, lexeme_id):
-						if link:
-							self.addLink(lexeme, qid)
-						return pgf.ExprFun(lexeme.lex_fun)
+		lexeme = wikilexeme(qid)
+		if lexeme:
+			if link:
+				self.addLink(lexeme, qid)
+			return pgf.ExprFun(lexeme.lex_fun)
 		return None
 
 	def get_lexemes(self,prop,entity,qual=True,link=True):
@@ -193,26 +172,25 @@ class ConcrHelper:
 		adjs = set()
 		pns  = set()
 		all_adjs = True
-		with wordnet._semantics.db.run("r") as t:
-			for value in entity["claims"].get(prop,[]):
-				try:
-					qid = value["mainsnak"]["datavalue"]["value"]["id"]
-				except KeyError:
-					continue
+		
+		for value in entity["claims"].get(prop,[]):
+			try:
+				qid = value["mainsnak"]["datavalue"]["value"]["id"]
+			except KeyError:
+				continue
 
-				for lexeme_id in t.cursor(lexemes_qid, qid):
-					for lexeme in t.cursor(lexemes, lexeme_id):
-						if link:
-							self.addLink(lexeme, qid)
-						pns.add(pgf.ExprFun(lexeme.lex_fun))
-						for sym,target_id in lexeme.lex_pointers:
-							if sym == Derived():
-								for adj in t.cursor(lexemes, target_id):
-									if link:
-										self.addLink(adj, qid)
-									adjs.add(pgf.ExprFun(adj.lex_fun))
-							else:
-								all_adjs = False
+			lexeme = wikilexeme(qid)
+			if lexeme:
+				if link:
+					self.addLink(lexeme, qid)
+				pns.add(pgf.ExprFun(lexeme.lex_fun))
+				adjs = lexeme.derived()
+				if adjs:
+					if link:
+						self.addLink(adjs[0], qid)
+					adjs.add(pgf.ExprFun(adjs[0].lex_fun))
+				else:
+					all_adjs = False
 
 		return (all_adjs, adjs if all_adjs else pns)
 
