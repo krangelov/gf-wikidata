@@ -8,9 +8,8 @@ import json
 import urllib.request
 
 class ConcrHelper:
-	def __init__(self,cnc,db,lang,edit):
+	def __init__(self,cnc,lang,edit):
 		self.cnc  = cnc
-		self.db   = db
 		self.edit = edit
 		self.links = {}
 		self.name  = cnc.name
@@ -109,7 +108,7 @@ class ConcrHelper:
 						info = self.links.get(expr)
 						if self.edit and info == None:
 							self.links[expr] = False
-							with self.db.run("r") as t:
+							with wordnet._semantics.db.run("r") as t:
 								for lexeme_id in t.cursor(lexemes_fun, x.fun):
 									for lexeme in t.cursor(lexemes, lexeme_id):
 										info = self.addLink(lexeme, None)
@@ -139,7 +138,7 @@ class ConcrHelper:
 	}
 
 	def get_lex_fun(self, qid, link=True):
-		with self.db.run("r") as t:
+		with wordnet._semantics.db.run("r") as t:
 			fun = self.lex_hacks.get(qid)
 			if fun:
 				for lexeme_id in t.cursor(lexemes_fun, fun):
@@ -193,7 +192,7 @@ class ConcrHelper:
 		adjs = set()
 		pns  = set()
 		all_adjs = True
-		with self.db.run("r") as t:
+		with wordnet._semantics.db.run("r") as t:
 			for value in entity["claims"].get(prop,[]):
 				try:
 					qid = value["mainsnak"]["datavalue"]["value"]["id"]

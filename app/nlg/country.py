@@ -232,8 +232,8 @@ def render(cnc, lexeme, entity):
 			city_name = cnc.get_lex_fun(city_qid)
 			city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
 			city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitant_1_N))
-			cn = mkCN(mkCN(mkAP(mkOrd(w.large_1_A)), city), city_population)
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(theSg_Det,cn)))),fullStopPunct)
+			cn = mkCN(city, city_population)
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
 	hdi_list = sorted(((hdi,get_time_qualifier("P585",quals)) for hdi,quals in get_quantities("P1081",entity)),key=lambda p: p[1],reverse=True)
