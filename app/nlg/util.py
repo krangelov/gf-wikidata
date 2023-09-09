@@ -184,11 +184,11 @@ class ConcrHelper:
 				if link:
 					self.addLink(lexemes[0], qid)
 				pns.add(pgf.ExprFun(lexemes[0].lex_fun))
-				adjs = lexemes[0].derived()
-				if adjs:
+				adj_lexemes = lexemes[0].derived()
+				if adj_lexemes:
 					if link:
-						self.addLink(adjs[0], qid)
-					adjs.add(pgf.ExprFun(adjs[0].lex_fun))
+						self.addLink(adj_lexemes[0], qid)
+					adjs.add(pgf.ExprFun(adj_lexemes[0].lex_fun))
 				else:
 					all_adjs = False
 
