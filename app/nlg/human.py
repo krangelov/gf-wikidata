@@ -58,7 +58,7 @@ def render(cnc, lexeme, entity):
 	for teacher in get_entities(["P1066"],entity,qual=False):
 		name = cnc.get_person_name(teacher)
 		if name:
-			teachers.append(mkNP(name))
+			teachers.append(name)
 	if teachers:
 		num = singularNum if len(teachers) == 1 else pluralNum
 		teachers = mkNP(w.and_Conj,teachers)
