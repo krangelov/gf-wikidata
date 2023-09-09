@@ -127,11 +127,11 @@ class ConcrHelper:
 		return text
 
 	def get_lex_fun(self, qid, link=True):
-		lexeme = wikilexeme(qid)
-		if lexeme:
+		lexemes = wikilexemes(qid)
+		if lexemes:
 			if link:
-				self.addLink(lexeme, qid)
-			return pgf.ExprFun(lexeme.lex_fun)
+				self.addLink(lexemes[0], qid)
+			return pgf.ExprFun(lexemes[0].lex_fun)
 		return None
 
 	def get_lexemes(self,prop,entity,qual=True,link=True):
