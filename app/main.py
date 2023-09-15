@@ -3,11 +3,8 @@ import urllib.request
 from urllib.parse import parse_qs
 from urllib.request import Request
 from daison import *
-
+import sys
 import pgf
-
-gr = None
-db = None
 
 def autorize(code, start_response):
   import os
@@ -120,7 +117,8 @@ langs = {
   "sw": ("Swahili",   "ParseSwa"),
   "sv": ("Swedish",   "ParseSwe"),
   "th": ("Thai",      "ParseTha"),
-  "tr": ("Turkish",   "ParseTur")
+  "tr": ("Turkish",   "ParseTur"),
+  "zu": ("Zulu",      "ParseZul")
   }
 
 home = [
@@ -183,18 +181,19 @@ def render_page(query, start_response):
     yield b'     </div>'
     yield b'     <div class="gp-body" id="content" data-lang="'+bytes(lang,"utf8")+b'">'
 
-    import wordnet as w
+    import wordnet
     from nlg import render, render_list
     from nlg.util import get_entity, ConcrHelper
 
     if qid != None:
         entity = get_entity(qid)
-        cnc = ConcrHelper(gr.languages[langs[lang][1]],db,lang,edit)
+        cnc = ConcrHelper(wordnet.grammar.languages[langs[lang][1]],lang,edit)
 
         lex_fun = cnc.get_lex_fun(qid,link=False)
         if not lex_fun:
             lex_fun = cnc.get_person_name(entity)
-            cnc.removeLink(lex_fun)
+            if lex_fun:
+                cnc.removeLink(lex_fun)
 
         if lex_fun:
             for s in render(cnc,lex_fun,entity):
@@ -219,15 +218,6 @@ def render_page(query, start_response):
         yield line
 
 def application(env, start_response):
-    global db, gr
-
-    if not db:
-        db = openDB(env["SEMANTICS_DB_PATH"])
-
-    if not gr:
-        gr = pgf.readNGF(env["PARSE_GRAMMAR_PATH"])
-        gr.embed("wordnet")
-
     query = parse_qs(env["QUERY_STRING"])
 
     code  = query.get("code",[None])[0]

@@ -1,6 +1,5 @@
 import pgf
-import wordnet as w
-from wordnet.api import *
+from wordnet import *
 from nlg.util import *
 
 def render(cnc, lexeme, entity):
@@ -37,7 +36,7 @@ def render(cnc, lexeme, entity):
 	if birthday:
 		description = mkCN(mkAP(mkVPSlash(mkVPSlash(w.bear_2_V2),birthday)),description)
 
-	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,description)))),fullStopPunct)
+	phr = mkPhr(mkUtt(mkS(mkCl(lexeme,mkNP(aSg_Det,description)))),fullStopPunct)
 	yield cnc.linearize(phr)
 
 	if "Q6581072" in gender:
@@ -49,7 +48,7 @@ def render(cnc, lexeme, entity):
 	for advisor in get_entities(["P184"],entity,qual=False):
 		name = cnc.get_person_name(advisor)
 		if name:
-			advisors.append(mkNP(name))
+			advisors.append(name)
 	if advisors:
 		num = singularNum if len(advisors) == 1 else pluralNum
 		advisors = mkNP(w.and_Conj,advisors)
@@ -59,7 +58,7 @@ def render(cnc, lexeme, entity):
 	for teacher in get_entities(["P1066"],entity,qual=False):
 		name = cnc.get_person_name(teacher)
 		if name:
-			teachers.append(mkNP(name))
+			teachers.append(name)
 	if teachers:
 		num = singularNum if len(teachers) == 1 else pluralNum
 		teachers = mkNP(w.and_Conj,teachers)
@@ -69,7 +68,7 @@ def render(cnc, lexeme, entity):
 	for student in get_entities(["P802","P185"],entity,qual=False):
 		name = cnc.get_person_name(student)
 		if name:
-			students.append(mkNP(name))
+			students.append(name)
 	if students:
 		students = mkNP(w.and_Conj,students)	
 		phr = mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisor_1_N),students))))),fullStopPunct)

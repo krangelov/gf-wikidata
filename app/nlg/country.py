@@ -1,7 +1,6 @@
 from os import name
 import pgf
-import wordnet as w
-from wordnet.api import *
+from wordnet import *
 from nlg.util import *
 from nlg.lists import *
 
@@ -154,12 +153,12 @@ def render(cnc, lexeme, entity):
 			sq_km = w.CompoundN(w.square_1_N,w.kilometre_1_N)
 		else:
 			sq_km = mkCN(w.square_1_A,w.kilometre_1_N)
-
-		number = mkNP(mkDigits(int(area)), sq_km)
-		verb = copula_number(cnc, number)
-
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N),verb))),fullStopPunct)
-		print('DOES IT WORK?????')
+		if cnc.name in ["ParseFre"]:
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N), mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(area)), sq_km))))),fullStopPunct)
+		elif cnc.name in ["ParseSpa"]:
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N), w.UseComp_ser(w.CompAdv(mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(area)), sq_km))))))),fullStopPunct)
+		else:
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N),mkNP(mkDecimal(int(area)),sq_km)))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
 
 		#if cnc.name in ["ParseSwe", "ParseGer", "ParseFin", "ParseDut"]:
@@ -231,9 +230,8 @@ def render(cnc, lexeme, entity):
 		for qid, expectancy, region in top:
 			if life_expectancy == expectancy:
 				# [Country name] has the highest life expectancy in [continent / the world], with an average of [XX] years.
-				#updated phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), w.life_expectancy_N), 
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
-				      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), w.life_expectancy_N), 
+				      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
 				yield " " + cnc.linearize(phr)
 				top_or_bottom = True
 				break
@@ -241,22 +239,14 @@ def render(cnc, lexeme, entity):
 			for qid, expectancy, region in bottom:
 				if life_expectancy == expectancy:
 					# [Country name] has the lowest life expectancy in [continent / the world], with an average of [XX] years.
-					#updated phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), w.life_expectancy_N),
-					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), (w.CompoundN(w.life_1_N, w.expectancy_1_N))), 
-					      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
+					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), w.life_expectancy_N),
+					      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
 					yield " " + cnc.linearize(phr)
 					break
 			else:
 				#life_exp_short = float(str(life_expectancy)[:4])
 				# The life expectancy is [XX] years.
-				# updated phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.life_expectancy_N), mkNP(mkDigits(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
-				
-				number = mkNP(mkNum(life_expectancy), w.year_1_N)
-				verb = copula_number(cnc, number)
-
-				#updated_phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.life_expectancy_N), verb))),fullStopPunct)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.life_1_N,w.expectancy_1_N)), verb))),fullStopPunct)
-				print('LIFE EXPECTANCY????')
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.life_expectancy_N), mkNP(mkDecimal(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
 
 				#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N),verb))),fullStopPunct)
@@ -274,10 +264,7 @@ def render(cnc, lexeme, entity):
 	fertility_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P4841",entity)),key=lambda p: p[1],reverse=True)
 	if fertility_list:
 		fertility = float(fertility_list[0][0])
-		#yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.fertility_1_N), mkNP(mkNum(fertility), mkCN(mkCN(w.child_1_N), mkAdv(w.per_Prep,mkNP(w.woman_1_N)))))), fullStopPunct))
-		
-		number = mkNP(mkNum(fertility), mkCN(mkCN(w.child_2_N), mkAdv(w.per_Prep,mkNP(w.woman_1_N))))
-		verb = copula_number(cnc, number)
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.fertility_1_N), mkNP(mkNum(fertility), mkCN(mkCN(w.child_2_N), mkAdv(w.per_Prep,mkNP(w.woman_1_N)))))), fullStopPunct))
 
 		phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.fertility_1_N), verb)), fullStopPunct)
 		print('FERTILITY RATE????')
@@ -310,26 +297,15 @@ def render(cnc, lexeme, entity):
 		if entity["id"] == country_qid:
 			city_name = cnc.get_lex_fun(city_qid)
 			city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
-			city_population = mkAdv(w.with_Prep,mkNP(mkDigits(int(city_pop)),w.inhabitant_1_N))
+			city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitant_1_N))
 			cn = mkCN(city, city_population)
-
-			if cnc.name in ["ParseFre"] or cnc.name in ["ParseSpa"]:
-				#city_test = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep,mkNP(the_Det, w.world_1_N))) #w.brazil_1_LN
-				city = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep,mkNP(lexeme)))
-				cn = mkCN(city, city_population)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
-				yield " " + cnc.linearize(phr)
-			else:
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
-				yield " " + cnc.linearize(phr)
-
-
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
 
 	hdi_list = sorted(((hdi,get_time_qualifier("P585",quals)) for hdi,quals in get_quantities("P1081",entity)),key=lambda p: p[1],reverse=True)
 	if hdi_list:
 		hdi = float(hdi_list[0][0])
-		# check this (quality)
-		quality = mkCN(w.CompoundN(w.human_N, w.development_2_N))
+		quality = mkCN(w.human_1_A, w.development_2_N)
 		if hdi >= 0.800:
 			quality = mkCN(mkAP(w.very_AdA,w.high_1_A), quality) #w.very_3_A (FRE) / high? --> w.grand_5_A? (élevé)
 		elif hdi >= 0.700:
@@ -674,7 +650,7 @@ def render(cnc, lexeme, entity):
 						position_gov = mkCN((w.CompoundN(w.chief_1_N, w.minister_2_N)))
 						break
 					elif subclass_qid == 'Q14212' or subclass_qid == 'Q58869896' or subclass_qid == 'Q2632935': # prime minister / Head of Government of Liechtenstein / minister of state
-						position_gov = mkCN(w.prime_minister_2_N)
+						position_gov = mkCN(w.prime_ministerMasc_N)
 						break
 
 
@@ -995,7 +971,7 @@ def render(cnc, lexeme, entity):
 		reserve_list = sorted(((gdp,get_time_qualifier("P585",quals)) for gdp,quals in get_quantities("P2134",economy)),key=lambda p: p[1],reverse=True)
 		if reserve_list:
 			reserve = int(reserve_list[0][0])
-			reserve = w.QuantityNP(mkDigits(reserve),w.dollar_MU)
+			reserve = w.QuantityNP(mkDecimal(reserve),w.dollar_MU)
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_2_N),mkVP(w.have_1_V2,mkNP(mkNP(aSg_Det, mkCN(w.total_1_A,w.reserve_2_N)), mkAdv(w.of_1_Prep, reserve))))), fullStopPunct)
 			yield " "+cnc.linearize(phr)
 
@@ -1025,7 +1001,7 @@ def render(cnc, lexeme, entity):
 			else:
 				quality = mkCN(w.high_1_A, w.equality_1_N)
 				conj = w.and_Conj
-			gini = w.QuantityNP(mkDigits(gini),w.percent_MU)
+			gini = w.QuantityNP(mkDecimal(gini),w.percent_MU)
 
 		if median_income and gini:
 			#phr = mkUtt(mkS(conj,mkS(mkCl(mkNP(theSg_Det, mkCN(w.median_3_A, w.income_N)), median_income)),
