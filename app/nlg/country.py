@@ -212,8 +212,8 @@ def render(cnc, lexeme, entity):
 	# GOAL: [Norway] has the (second/third/...) highest/lowest life expectancy (in Europe / in the world), with an average of XX years.
 	expectancy_list = sorted(((life_expectancy,get_time_qualifier("P585",quals)) for life_expectancy,quals in get_quantities("P2250",entity)),key=lambda p: p[1],reverse=True)
 	if expectancy_list:
-		life_expectancy = float(expectancy_list[0][0])
-		#life_expectancy = expectancy_list[0][0]
+		#life_expectancy = float(expectancy_list[0][0])
+		life_expectancy = expectancy_list[0][0]
 
 		for qid, expectancy, region in top:
 			if life_expectancy == expectancy:
@@ -236,6 +236,7 @@ def render(cnc, lexeme, entity):
 					yield " " + cnc.linearize(phr)
 					break
 			else:
+				print('LIFE EXP NUM: ', life_expectancy)
 				#life_exp_short = float(str(life_expectancy)[:4])
 				# The life expectancy is [XX] years.
 				#number = mkNP(mkNum(life_expectancy), w.year_5_N)
@@ -314,10 +315,10 @@ def render(cnc, lexeme, entity):
 			else:
 				quality = mkCN(mkAP(w.low_1_A), quality) 
 
-		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (HDI " + str(hdi) + ")."
+		#yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (HDI " + str(hdi) + ")."
 		
 		#could this work?
-		#yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (" + cnc.linearize(w.hdi_N) + str(hdi) + ")."
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (" + cnc.linearize(w.hdi_N) + " " + str(hdi) + ")."
 
 
 
@@ -370,8 +371,8 @@ def render(cnc, lexeme, entity):
 
 			else:
 				# The minimum age of marriage is [X] years.
-				#number = mkNP(mkNum(int(marriageable_age)))
-				number = mkNP(mkDecimal(int(marriageable_age)))
+				number = mkNP(mkNum(int(marriageable_age)), w.year_5_N)
+				#number = mkNP(mkDecimal(int(marriageable_age)), w.year_5_N)
 				verb = copula_number(cnc, number)
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
 				print('MIN AGE OF MARRIAGE:')
@@ -482,10 +483,11 @@ def render(cnc, lexeme, entity):
 			yield " " + cnc.linearize(phr)
 		
 		if literacy_rate:
-			# This results in a literacy rate of XX.X% --> WE NEED copula_percentage!
+			print('LITERACY RATE:')
+			# This results in a literacy rate of XX.X%
 			# phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.result_in_V2, mkNP(aSg_Det,mkCN(w.CompoundN(w.literacy_N,w.rate_4_N), mkAdv(w.of_1_Prep, literacy_rate)))))),fullStopPunct)
 			# w.literacy_rate_N
-			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.result_in_V2, mkNP(aSg_Det, w.literacy_rate_N, mkAdv(w.of_1_Prep, literacy_rate))))),fullStopPunct)
+			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.result_in_V2, mkNP(mkNP(aSg_Det, w.literacy_rate_N), mkAdv(w.of_1_Prep, literacy_rate))))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
 	else:
 		if literacy_rate:
@@ -962,20 +964,20 @@ def render(cnc, lexeme, entity):
 		inflation_list = sorted(((gdp,get_time_qualifier("P585",quals) or "X") for gdp,quals in get_quantities("P1279",economy)),key=lambda p: p[1],reverse=True)
 		if inflation_list:
 			inflation = float(inflation_list[0][0])
-			yield " "+cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.CompoundN(w.inflation_1_N, w.rate_2_N)),mkNP(inflation,w.percent_MU))), fullStopPunct))
+			#yield " "+cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.CompoundN(w.inflation_1_N, w.rate_2_N)),mkNP(inflation,w.percent_MU))), fullStopPunct))
 
-			#number = mkNP(inflation, w.percent_MU)
-			#verb = copula_number(cnc, number)
-			#phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.CompoundN(w.inflation_1_N, w.rate_2_N)), verb)), fullStopPunct)
-			#print('INFLATION RATE????')
-			#yield " " + cnc.linearize(phr)
+			number = mkNP(inflation, w.percent_MU)
+			verb = copula_number(cnc, number)
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.CompoundN(w.inflation_1_N, w.rate_2_N)), verb)), fullStopPunct)
+			print('INFLATION RATE????')
+			yield " " + cnc.linearize(phr)
 
 
 		reserve_list = sorted(((gdp,get_time_qualifier("P585",quals)) for gdp,quals in get_quantities("P2134",economy)),key=lambda p: p[1],reverse=True)
 		if reserve_list:
 			reserve = int(reserve_list[0][0])
 			reserve = w.QuantityNP(mkDecimal(reserve),w.dollar_MU)
-			# The country has a total reserve of dollarXXXX
+			# The country has a total reserve of $XXXX
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_2_N),mkVP(w.have_1_V2,mkNP(mkNP(aSg_Det, mkCN(w.total_1_A,w.reserve_2_N)), mkAdv(w.of_1_Prep, reserve))))), fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
