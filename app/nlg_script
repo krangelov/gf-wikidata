@@ -1,9 +1,0 @@
-#! /bin/bash
-
-args=("$@")
-
-export QUERY_STRING="id=${args[0]}&lang=${args[1]}"
-export SEMANTICS_DB_PATH=/home/andrea/semantics.db
-export PARSE_GRAMMAR_PATH=/home/andrea/Parse.ngf
-python3.10 main.py
-
