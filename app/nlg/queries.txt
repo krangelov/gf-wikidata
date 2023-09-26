@@ -94,3 +94,28 @@ SELECT DISTINCT ?city ?cityLabel ?population ?country ?countryLabel WHERE {
   }
 }
 ORDER BY DESC(?population)
+
+
+
+# Query used to get property "P3001" (retirement age) for every sovereign country:
+SELECT ?country ?countryLabel ?retirementAge
+WITH {
+  SELECT DISTINCT *
+  WHERE {
+    ?country wdt:P31/wdt:P279* wd:Q3624078 .
+    ?country wdt:P3001 ?retirementAge .
+  }
+  ORDER BY DESC(?retirementAge)
+  LIMIT 300
+} AS %i
+WHERE {
+  INCLUDE %i
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" .
+    ?retirementAge wdt:P3001 ?retirementAge .
+    ?country rdfs:label ?countryLabel .
+    ?country wdt:Q3624078 ?country .
+    
+  }
+}
+ORDER BY DESC(?retirementAge)

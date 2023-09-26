@@ -5,6 +5,14 @@ from nlg.util import *
 from nlg.lists import *
 
 
+def copula_number(cnc, number):
+	if cnc.name in ['ParseFre']:
+		return mkAdv(w.of_1_Prep, number)
+	elif cnc.name in ['ParseSpa']:
+		return w.UseComp_ser(w.CompAdv(mkAdv(w.of_1_Prep, number)))
+	else:
+		return number
+
 
 def render(cnc, lexeme, entity):
 	yield "<div class='infobox'><table border=1>"
@@ -39,6 +47,7 @@ def render(cnc, lexeme, entity):
 	yield "</table></div>"
 
 
+
 	# start the text generation
 	yield "<p>"
 
@@ -62,7 +71,7 @@ def render(cnc, lexeme, entity):
 	region_nps  = []
 	region_advs = []
 	if "Q23522" in location_qids:  # on the balkans instead of in the balkans
-		region_advs.append(mkAdv(w.on_1_Prep,mkNP(w.balkans_2_PN)))
+		region_advs.append(mkAdv(w.on_1_Prep,mkNP(w.balkans_2_LN)))
 	if not region_advs or entity["id"] == "Q43":
 		for qid in regions: # the Caribbean, Melanesia, etc.
 			if qid in part_of_qids or qid in location_qids:
@@ -135,19 +144,17 @@ def render(cnc, lexeme, entity):
 			sq_km = w.CompoundN(w.square_1_N,w.kilometre_1_N)
 		else:
 			sq_km = mkCN(w.square_1_A,w.kilometre_1_N)
-		if cnc.name in ["ParseFre"]:
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N), mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(area)), sq_km))))),fullStopPunct)
-		elif cnc.name in ["ParseSpa"]:
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N), w.UseComp_ser(w.CompAdv(mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(area)), sq_km))))))),fullStopPunct)
-		else:
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N),mkNP(mkDecimal(int(area)),sq_km)))),fullStopPunct)
-		yield " "+cnc.linearize(phr)
+		
+		number = mkNP(mkDecimal(int(area)), sq_km)
+		verb = copula_number(cnc, number)
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.area_6_N),verb))),fullStopPunct)
+		yield " " + cnc.linearize(phr)
 
     # state the capital
 	for capital, qual in cnc.get_lexemes("P36",entity):
 		if "P582" not in qual:
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,w.capital_3_N),mkNP(capital)))),fullStopPunct)
-			yield " "+cnc.linearize(phr)
+			yield " " + cnc.linearize(phr)
 			break
 
     # state the official and other languages
@@ -182,23 +189,24 @@ def render(cnc, lexeme, entity):
 		else:
 			my_det = theSg_Det
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(my_det,mkCN(w.spoken_A,mkCN(w.language_1_N))),mkNP(w.and_Conj,other_langs)))),fullStopPunct)
-		yield " "+cnc.linearize(phr)
+		yield " " + cnc.linearize(phr)
 
 
-	yield '<h2 class="gp-page-title">'+cnc.linearize(w.demographic_N)+'</h2>'
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.demography_N)+'</h2>'
 
 	# state life expectancy
 	# [Country name] has the highest/lowest life expectancy in [continent / the world], with an average of [XX] years.
 	# GOAL: [Norway] has the (second/third/...) highest/lowest life expectancy (in Europe / in the world), with an average of XX years.
 	expectancy_list = sorted(((life_expectancy,get_time_qualifier("P585",quals)) for life_expectancy,quals in get_quantities("P2250",entity)),key=lambda p: p[1],reverse=True)
 	if expectancy_list:
+		#life_expectancy = float(expectancy_list[0][0])
 		life_expectancy = expectancy_list[0][0]
 
 		for qid, expectancy, region in top:
 			if life_expectancy == expectancy:
 				# [Country name] has the highest life expectancy in [continent / the world], with an average of [XX] years.
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), w.life_expectancy_N), 
-				      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
+				      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(life_expectancy)), w.year_5_N)))))))))))))), fullStopPunct)
 				yield " " + cnc.linearize(phr)
 				top_or_bottom = True
 				break
@@ -207,55 +215,189 @@ def render(cnc, lexeme, entity):
 				if life_expectancy == expectancy:
 					# [Country name] has the lowest life expectancy in [continent / the world], with an average of [XX] years.
 					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), w.life_expectancy_N),
-					      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(life_expectancy)), w.year_1_N)))))))))))))), fullStopPunct)
+					      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkDecimal(int(life_expectancy)), w.year_5_N)))))))))))))), fullStopPunct)
 					yield " " + cnc.linearize(phr)
 					break
 			else:
 				# The life expectancy is [XX] years.
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.life_expectancy_N), mkNP(mkDecimal(int(life_expectancy)), w.year_1_N)))),fullStopPunct)
+				life_expectancy = round(life_expectancy, 2)
+				number = mkNP(mkNum(life_expectancy), w.year_5_N)
+				verb = copula_number(cnc, number)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.life_expectancy_N), verb))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
 
+	
+	# Fertility rate
+	# The fertility is [X] children per woman
 	fertility_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P4841",entity)),key=lambda p: p[1],reverse=True)
 	if fertility_list:
 		fertility = float(fertility_list[0][0])
-		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.fertility_1_N), mkNP(mkNum(fertility), mkCN(mkCN(w.child_2_N), mkAdv(w.per_Prep,mkNP(w.woman_1_N)))))), fullStopPunct))
+		number = mkNP(mkNum(fertility), mkCN(mkCN(w.child_2_N), mkAdv(w.per_Prep,mkNP(w.woman_1_N))))
+		verb = copula_number(cnc, number)
+		phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.fertility_1_N), verb)), fullStopPunct)
+		yield " " + cnc.linearize(phr)
 
+	# Suicide rate
 	suicide_list = sorted(((life_expectancy,get_time_qualifier("P585",quals) or "X") for life_expectancy,quals in get_quantities("P3864",entity)),key=lambda p: p[1],reverse=True)
 	if suicide_list:
 		suicide = float(suicide_list[0][0])
-#		yield " " + str(suicide)
-	
+		#The suicide rate stands at [12.4] individuals per 100,000 people (or population) yearly.
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(mkVP(w.stand_2_V), mkAdv(w.at_1_Prep, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.people_1_N, w.yearly_Adv)))))))))), fullStopPunct)
+		#new_phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(w.stand_at_V2, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.inhabitant_1_N, w.yearly_Adv))))))))), fullStopPunct)
+		yield " " + cnc.linearize(phr)
+
 	# State largest city in the country
 	# [Tokyo] is the largest city in [Japan] with a population of [00000] inhabitants.
 	for city_qid, city_pop, country_qid in largest_cities:
 		if entity["id"] == country_qid:
 			city_name = cnc.get_lex_fun(city_qid)
-			city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
 			city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitant_1_N))
-			cn = mkCN(city, city_population)
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
-			yield " " + cnc.linearize(phr)
+			
+			if cnc.name in ["ParseFre"] or cnc.name in ["ParseSpa"]:
+				city = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep,mkNP(lexeme)))
+				cn = mkCN(city, city_population)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
+			else:
+				city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
+				cn = mkCN(city, city_population)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
+
 
 	hdi_list = sorted(((hdi,get_time_qualifier("P585",quals)) for hdi,quals in get_quantities("P1081",entity)),key=lambda p: p[1],reverse=True)
 	if hdi_list:
 		hdi = float(hdi_list[0][0])
-		quality = mkCN(w.human_1_A, w.development_2_N)
+		quality = mkCN(w.human_development_N)
 		if hdi >= 0.800:
-			quality = mkCN(mkAP(w.very_AdA,w.high_1_A), quality)
+			if cnc.name in ["ParseFre"]:
+				quality = mkCN(mkAP(w.very_AdA,w.grand_5_A), quality)
+			else:
+				quality = mkCN(mkAP(w.very_AdA,w.high_1_A), quality)
 		elif hdi >= 0.700:
-			quality = mkCN(mkAP(w.high_1_A), quality)
+			if cnc.name in ["ParseFre"]:
+				quality = mkCN(mkAP(w.grand_5_A), quality)
+			else:
+				quality = mkCN(mkAP(w.high_1_A), quality)
 		elif hdi >= 0.550:
 			quality = mkCN(mkAP(w.medium_1_A), quality)
 		else:
-			quality = mkCN(mkAP(w.low_1_A), quality)
+			if cnc.name in ["ParseFre"]:
+				quality = mkCN(mkAP(w.weak_9_A), quality)
+			else:
+				quality = mkCN(mkAP(w.low_1_A), quality) 
+		
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (" + cnc.linearize(w.hdi_N) + " " + str(hdi) + ")."
 
-		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (HDI " + str(hdi) + ")."
+
+	# Age of majority (maturity)
+	female_age = None
+	male_age = None
+	for majority_age, qual in get_quantities("P2997",entity):
+		if "P582" not in qual:
+			gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
+			if gender_diff:
+				for lex in gender_diff:
+					if lex == w.female_2_N:
+						female_age = int(majority_age)
+					if lex == w.male_2_N:
+						male_age = int(majority_age)
+			else:
+				# [Country] establishes the age of majority at [X] years.
+				if cnc.name in ["ParseFre", "ParseSpa"]:
+					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_of_majority_N, mkAdv(w.in_2_Prep, mkNP(mkNum(int(majority_age)), w.year_5_N)))))))), fullStopPunct)
+				else:
+					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_of_majority_N, mkAdv(w.at_1_Prep, mkNP(mkNum(int(majority_age)), w.year_5_N)))))))), fullStopPunct)
+				yield " " + cnc.linearize(phr)
+
+	if female_age and male_age:
+		# The age of majority is established at [X] years for women and [Y] years for men.	
+		if cnc.name in ["ParseFre", "ParseSpa"]:
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,w.age_of_majority_N), mkVP(passiveVP(mkVPSlash(w.establish_2_V2)), mkAdv(w.in_2_Prep, mkNP(w.and_Conj, mkNP(mkNum(female_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(thePl_Det, w.woman_1_N)))), mkNP(mkNum(male_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(thePl_Det, w.man_1_N)))))))))),fullStopPunct)
+		else:
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,w.age_of_majority_N), mkVP(passiveVP(mkVPSlash(w.establish_2_V2)), mkAdv(w.at_1_Prep, mkNP(w.and_Conj, mkNP(mkNum(female_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))), mkNP(mkNum(male_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N)))))))))),fullStopPunct)	
+		yield " " + cnc.linearize(phr)
 
 
-# P2997 maturity
-# P3000 mariage
-# P2834 tax rate
-# P2855 VAT
+	# Marriageable age:
+	female_age = None
+	male_age = None
+	consent_type = None
+	marriageable_age = get_quantities("P3000",entity)
+	for age, qual in marriageable_age:
+		if "P582" not in qual:
+				gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
+				if gender_diff:
+					for lex in gender_diff:
+						if lex == w.female_2_N:
+							female_age = int(age)
+						if lex == w.male_2_N:
+							male_age = int(age)
+				
+				consent = get_item_qualifier("P1013", qual)
+				if consent:
+					if consent == 'Q27177319':
+						consent_type = mkCN(mkAP(w.parental_1_A), w.consent_N) #FRE: legal term --> consentement parental
+					elif consent == 'Q27177129':
+						consent_type = mkCN(mkAP(w.judicial_1_A), w.consent_N) #judicial consent
+					
+	if marriageable_age:
+		if not consent_type:
+			if female_age and male_age:
+				# The minimum age of marriage is [X] years for women and [Y] years for men.
+				if cnc.name in ["ParseFre", "ParseSpa"]:
+					number = mkNP(w.and_Conj, mkNP(mkNum(female_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(thePl_Det, w.woman_1_N)))), mkNP(mkNum(male_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(thePl_Det, w.man_1_N)))))
+				else:
+					number = mkNP(w.and_Conj, mkNP(mkNum(female_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))), mkNP(mkNum(male_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N)))))
+				verb = copula_number(cnc, number)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
+				#L'âge minimume de du mariage??
+				#test = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N)))), verb))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
+			else:
+				# The minimum age of marriage is [X] years.
+				number = mkNP(mkNum(int(age)), w.year_5_N)
+				verb = copula_number(cnc, number)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
+		else:
+			# The minimum age of marriage is [X] years with parental/court consent.
+			number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(consent_type))))
+			verb = copula_number(cnc, number)
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)		
+			yield " " + cnc.linearize(phr)
+
+
+	# Retirement age:
+	female_age = None
+	male_age = None
+	for retirement_age, qual in get_quantities("P3001",entity):
+		if "P582" not in qual:
+			gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
+			if gender_diff:
+				for lex in gender_diff:
+					if lex == w.female_2_N:
+						female_age = int(retirement_age)
+					if lex == w.male_2_N:
+						male_age = int(retirement_age)
+
+			else:
+				# The age of retirement is [X] years.
+				number = mkNP(mkNum(int(retirement_age)), w.year_5_N)
+				verb = copula_number(cnc, number)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.retirement_1_N)))), verb))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
+				break
+			
+	if female_age and male_age:
+		# The retirement age is fixed at XX years for women and XX years for men.
+		if cnc.name in ["ParseFre", "ParseSpa"]:
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.CompoundN(w.retirement_1_N,w.age_1_N))), mkVP(passiveVP(mkVPSlash(w.fix_3_V2)), mkAdv(w.in_2_Prep, mkNP(w.and_Conj, mkNP(mkNum(female_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(thePl_Det, w.woman_1_N)))), mkNP(mkNum(male_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(thePl_Det, w.man_1_N)))))))))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
+		else:
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.CompoundN(w.retirement_1_N,w.age_1_N))), mkVP(passiveVP(mkVPSlash(w.fix_3_V2)), mkAdv(w.at_1_Prep, mkNP(w.and_Conj, mkNP(mkNum(female_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))), mkNP(mkNum(male_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N)))))))))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
+
 
 	# Stating the official religion
 	religion = False
@@ -295,9 +437,11 @@ def render(cnc, lexeme, entity):
 		# Future work: allowing multiple religions simultaneously.
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
-	
-	yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_1_N)+'</h2>'
 
+
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_2_N)+'</h2>'
+
+	# Literacy rate and number of children out of school
 	literacy_list = sorted(((literacy,get_time_qualifier("P585",quals)) for literacy,quals in get_quantities("P6897",entity)),key=lambda p: p[1],reverse=True)
 	if literacy_list:
 		literacy_rate = float(literacy_list[0][0])
@@ -311,34 +455,49 @@ def render(cnc, lexeme, entity):
 	min_age_list = sorted(((literacy,get_time_qualifier("P585",quals) or "X") for literacy,quals in get_quantities("P3270",entity)),key=lambda p: p[1],reverse=True)
 	if min_age_list:
 		min_age = int(min_age_list[0][0])
-		obj = mkCN(obj,mkAdv(w.from_Prep,mkNP(mkNum(min_age),w.year_1_N)))
+		obj = mkCN(obj,mkAdv(w.from_Prep,mkNP(mkNum(min_age),w.year_5_N)))
 	max_age_list = sorted(((literacy,get_time_qualifier("P585",quals) or "X") for literacy,quals in get_quantities("P3271",entity)),key=lambda p: p[1],reverse=True)
 	if max_age_list:
 		max_age = int(max_age_list[0][0])
-		obj = mkCN(obj,mkAdv(w.to_1_Prep,mkNP(mkNum(max_age),w.year_1_N)))
+		obj = mkCN(obj,mkAdv(w.to_1_Prep,mkNP(mkNum(max_age),w.year_5_N)))
 	if min_age or max_age:
-		phr = mkPhr(mkUtt(mkCl(mkNP(w.education_1_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(aPl_Det,w.PossNP(mkCN(w.child_1_N), mkNP(obj))))))), fullStopPunct)
-		yield " "+cnc.linearize(phr)
+		if cnc.name in ["ParseFre", "ParseSpa"]:
+			# La educación es obligatoria para los niños de edad de [X] años a [Y] años (CHECK)
+			phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(thePl_Det,w.PossNP(mkCN(w.child_1_N), mkNP(obj))))))), fullStopPunct)
+			yield " " + cnc.linearize(phr)
+		else:
+			# Education is obligatory for children of age from [X] years to [Y] years
+			phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(aPl_Det,w.PossNP(mkCN(w.child_1_N), mkNP(obj))))))), fullStopPunct)
+			yield " " + cnc.linearize(phr)
+
+			#New sentence: Education is obligatory for children from [X] years to [Y] years.
 		
 		if literacy_rate:
-			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.result_in_V2, mkNP(aSg_Det,mkCN(w.CompoundN(w.literacy_N,w.rate_4_N), mkAdv(w.of_1_Prep, literacy_rate)))))),fullStopPunct)
-			yield " "+cnc.linearize(phr)
+			# This results in a literacy rate of XX.X%
+			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.result_in_V2, mkNP(mkNP(aSg_Det, w.literacy_rate_N), mkAdv(w.of_1_Prep, literacy_rate))))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
 	else:
 		if literacy_rate:
-			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.CompoundN(w.literacy_N,w.rate_4_N)), literacy_rate)),fullStopPunct)
-			yield " "+cnc.linearize(phr)
+			# The literacy rate is XX.X%
+			verb = copula_number(cnc, literacy_rate)
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.literacy_rate_N), verb)),fullStopPunct)
+			yield " " + cnc.linearize(phr)
+
 
 	out_of_school_list = sorted(((out_of_school,get_time_qualifier("P585",quals)) for out_of_school,quals in get_quantities("P2573",entity)),key=lambda p: p[1],reverse=True)
 	if out_of_school_list:
 		out_of_school = int(out_of_school_list[0][0])
-		yield " "+cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(mkNum(out_of_school), w.child_1_N), mkAdv(w.out_of_3_Prep,mkNP(theSg_Det, w.CompoundN(w.education_1_N,w.system_1_N))))),fullStopPunct))
+		# XXXX children are out of the education system
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(mkNum(out_of_school), w.child_1_N), mkAdv(w.out_of_1_Prep,mkNP(theSg_Det, w.education_system_N)))),fullStopPunct))
 		if population:
-			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.amount_to_2_V2, mkNP(mkNP(round((out_of_school/population)*100,2), w.percent_MU), mkAdv(w.of_1_Prep, mkNP(theSg_Det, w.population_1_N)))))),fullStopPunct)
-			yield " "+cnc.linearize(phr)
+			# This amounts to X.XX% of the population
+			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.amount_to_1_V2, mkNP(mkNP(round((out_of_school/population)*100,2), w.percent_MU), mkAdv(w.of_1_Prep, mkNP(theSg_Det, w.population_1_N)))))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
 
 	divisions = cnc.get_lexemes("P150",entity,qual=False)
 	if divisions:
 		yield '<h2 class="gp-page-title">'+cnc.linearize(mkNP(aPl_Det,mkCN(w.administrative_A,w.unit_3_N)))+'</h2>'
+		# The country has the following administrative units:
 		yield '<p>'+cnc.linearize(mkCl(mkNP(theSg_Det,w.country_1_N),mkVP(w.have_1_V2,mkNP(thePl_Det,mkCN(w.following_2_A,mkCN(w.administrative_A,w.unit_3_N))))))+':'
 		if len(divisions) < 5:
 			column_count = 1
@@ -351,6 +510,7 @@ def render(cnc, lexeme, entity):
 			yield "<li>"+cnc.linearize(division)+"</li>"
 		yield '</ul></p>'
 
+
 	# State basic form of government
 	bfog = None
 	for basic_form in get_items("P122", entity, qual=False):
@@ -359,7 +519,6 @@ def render(cnc, lexeme, entity):
 				bfog = qid[1]
 				
 	
-
 	# Property: office held by HEAD OF STATE
 	# Future work:
 	# Presidency of Bosnia and Herzegovina (Q844944) --> The presidency is divided between three people, one Serb, one Croatian and one Bosnian president
@@ -404,7 +563,7 @@ def render(cnc, lexeme, entity):
 				break
 			
 			entity_office = get_entity(qid)
-			if "P279" in entity_office['claims']: # P270 = subclass of
+			if "P279" in entity_office['claims']: # P279 = subclass of
 				for subclass_qid, quad in get_items("P279", entity_office):
 					if subclass_qid == 'Q15995642' or subclass_qid == 'Q611644': # religious leader / Catholic bishop
 						position_state = mkCN(w.pope_1_N)
@@ -432,7 +591,6 @@ def render(cnc, lexeme, entity):
 						break
 					
 					
-
 	# Property: office held by HEAD OF GOVERNMENT
 	# Future work: consider the possibility of multiple HOG as in Afghanistan OR even multiple positions (P1906) 
 	# as in Jamaica or Antigua and Barbuda
@@ -461,7 +619,7 @@ def render(cnc, lexeme, entity):
 				break
 
 			entity_office = get_entity(qid)
-			if "P279" in entity_office['claims']: # P270 = subclass of
+			if "P279" in entity_office['claims']: # P279 = subclass of
 				for subclass_qid, quad in get_items("P279", entity_office):
 					if subclass_qid == 'Q959664': # premier
 						position_gov = mkCN(w.premier_2_N)	
@@ -486,9 +644,7 @@ def render(cnc, lexeme, entity):
 						break
 
 
-
 # Future work: special condition if the head of state and the head of government is the same person as in Oman
-
 
 	# State current head of state (HOS), previous HOS, HOS' gender and kinship:
 	name_date_state = []
@@ -563,10 +719,19 @@ def render(cnc, lexeme, entity):
 				elif position_state == 'president' and gender == w.she_Pron:
 					position_state = mkCN(w.presidentFem_3_N)
 				# [position] [name]
-				curr_head_state = mkNP(mkCN(position_state, curr_head_state))
+				if cnc.name in ["ParseFre", "ParseSpa"]:
+					curr_head_state = mkNP(the_Det, mkCN(position_state, curr_head_state))
+				else:
+					curr_head_state = mkNP(mkCN(position_state, curr_head_state))
+				
 				
 			if curr_head_state:
-				bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(w.head_of_state_N)))))
+				if cnc.name in ["ParseFre"]:
+					#FRE
+					bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(the_Det, w.head_of_state_N)))))
+				else:
+					bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(w.head_of_state_N)))))
+				
 			# [Country name] is a [basic form of government], with [curr_head_state] as head of state.
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, bfog)))), fullStopPunct)
 			yield " "+cnc.linearize(phr)
@@ -595,7 +760,10 @@ def render(cnc, lexeme, entity):
 
 					elif position_state:
 						# [position] [name]
-						prev_head_state = mkNP(mkCN(position_state, prev_head_state))
+						if cnc.name in ["ParseFre", "ParseSpa"]:
+							prev_head_state = mkNP(the_Det, mkCN(position_state, prev_head_state))
+						else:
+							prev_head_state = mkNP(mkCN(position_state, prev_head_state))
 
 					# He/She succeeded [prev_head_state] in the position.
 					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(mkVP(w.succeed_V2, prev_head_state), mkAdv(w.in_1_Prep, mkNP(the_Det, w.position_6_N)))))),fullStopPunct)
@@ -636,7 +804,7 @@ def render(cnc, lexeme, entity):
 			for mother_qid, quad in get_items("P25", head_entity):
 				break
 
-			subj = mkNP(the_Det,mkCN(w.current_A, w.PossNP(mkCN(w.head_4_N),mkNP(w.gen_Quant,mkCN(w.government_1_N)))))
+			subj = mkNP(the_Det,mkCN(w.current_A, w.head_of_government_N))
 			if position_gov:
 				if position_gov == 'president':
 					if gender == w.he_Pron:
@@ -664,7 +832,7 @@ def render(cnc, lexeme, entity):
 					curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_12_V2, mkNP(w.office_4_N)), mkAdv(w.after_Prep, prev_head_gov)))))
 
 			phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
-			yield " "+cnc.linearize(phr)
+			yield " " + cnc.linearize(phr)
 
 	curr_organizations = set()
 	prev_organizations = set()
@@ -682,28 +850,32 @@ def render(cnc, lexeme, entity):
 			pass
 	curr_organizations = mkNP(w.and_Conj, list(curr_organizations))
 	if curr_organizations:
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.country_1_N), mkNP(aSg_Det,w.PossNP(mkCN(w.member_4_N), curr_organizations))))),fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.country_1_N), mkNP(w.PossNP(mkCN(w.member_4_N), curr_organizations))))),fullStopPunct)
+		#phr_spa = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.country_1_N), mkCN(w.member_4_N, mkAdv(w.of_1_Prep, curr_organizations))))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
 	prev_organizations = mkNP(w.and_Conj, list(prev_organizations))
 	if prev_organizations:
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.it_Pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,mkCN(w.former_3_A,w.PossNP(mkCN(w.member_4_N), prev_organizations)))))))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
 	
+	# CHECK REGIME TYPES
 	democracy_list = sorted(((democracy,get_time_qualifier("P585",quals)) for democracy,quals in get_quantities("P8328",entity)),key=lambda p: p[1],reverse=True)
 	if democracy_list:
 		democracy_index = float(democracy_list[0][0])
+		# With a democracy index of X.XX points
 		adv = mkAdv(w.with_Prep, mkNP(mkNP(a_Quant,w.CompoundN(w.democracy_2_N,w.index_2_N)), mkAdv(w.of_1_Prep, mkNP(mkNum(democracy_index),w.point_10_N))))
 		if democracy_index >= 9:
-			quality = mkNP(a_Quant,mkCN(w.full_3_A,w.democracy_2_N))
+			quality = mkNP(a_Quant,mkCN(w.full_3_A,w.democracy_2_N)) # démocratie à part entière / democracia plena
 		elif democracy_index >= 6:
-			quality = mkNP(a_Quant,mkCN(w.democracy_2_N,mkAdv(w.with_Prep,mkNP(aPl_Det,w.flaw_3_N))))
+			quality = mkNP(a_Quant,mkCN(w.democracy_2_N,mkAdv(w.with_Prep,mkNP(aPl_Det,w.flaw_3_N)))) # démocratie imparfaite / democracia deficiente
 		elif democracy_index >= 4:
 			quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.regime_1_N))
 		else:
 			quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.regime_1_N))
 		phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), mkVP(passiveVP(mkVPSlash(w.rank_2_V2)),mkAdv(w.as_Prep,quality)))))), fullStopPunct)
-		yield " "+cnc.linearize(phr)
+		yield " " + cnc.linearize(phr)
 
+	# CHECK QUALITIES
 	pol = positivePol
 	for quality in get_items("P1552",entity,qual=False):
 		if quality == "Q3174312":
@@ -755,7 +927,6 @@ def render(cnc, lexeme, entity):
 
 		if objs:
 			gdp = mkNP(w.and_Conj,objs)
-			
 			gdp_rate_list = sorted(((rate,get_time_qualifier("P585",quals)) for rate,quals in get_quantities("P2219",economy)),key=lambda p: p[1],reverse=True)
 			if gdp_rate_list:
 				gdp_rate = float(gdp_rate_list[0][0])
@@ -766,27 +937,35 @@ def render(cnc, lexeme, entity):
 				else:
 					pass
 
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det, mkCN(w.gross_1_A, mkCN(w.domestic_1_A,w.product_2_N))), gdp))), fullStopPunct)
-			yield " "+cnc.linearize(phr)
+			verb = copula_number(cnc, gdp)
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det, w.gross_domestic_product_N), verb))), fullStopPunct)
+			yield " " + cnc.linearize(phr)
 
 		inflation_list = sorted(((gdp,get_time_qualifier("P585",quals) or "X") for gdp,quals in get_quantities("P1279",economy)),key=lambda p: p[1],reverse=True)
 		if inflation_list:
 			inflation = float(inflation_list[0][0])
-			yield " "+cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.CompoundN(w.inflation_1_N, w.rate_2_N)),mkNP(inflation,w.percent_MU))), fullStopPunct))
+			number = mkNP(inflation, w.percent_MU)
+			verb = copula_number(cnc, number)
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.CompoundN(w.inflation_1_N, w.rate_4_N)), verb)), fullStopPunct)
+			yield " " + cnc.linearize(phr)
+
 
 		reserve_list = sorted(((gdp,get_time_qualifier("P585",quals)) for gdp,quals in get_quantities("P2134",economy)),key=lambda p: p[1],reverse=True)
 		if reserve_list:
 			reserve = int(reserve_list[0][0])
 			reserve = w.QuantityNP(mkDecimal(reserve),w.dollar_MU)
+			# The country has a total reserve of $XXXX
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_2_N),mkVP(w.have_1_V2,mkNP(mkNP(aSg_Det, mkCN(w.total_1_A,w.reserve_2_N)), mkAdv(w.of_1_Prep, reserve))))), fullStopPunct)
-			yield " "+cnc.linearize(phr)
+			yield " " + cnc.linearize(phr)
 
 		median_income = None
 		median_income_list = sorted(((median_income,get_time_qualifier("P585",quals) or "X") for median_income,quals in get_quantities("P3529",entity)),key=lambda p: p[1],reverse=True)
 		if median_income_list:
 			median_income = int(median_income_list[0][0])
 			median_income = mkNP(median_income,w.dollar_MU)
+			verb = copula_number(cnc, median_income)
 
+		# CHECK GINI LEVELS
 		gini = None
 		gini_list = sorted(((gini,get_time_qualifier("P585",quals) or "X") for gini,quals in get_quantities("P1125",entity)),key=lambda p: p[1],reverse=True)
 		if gini_list:
@@ -809,29 +988,36 @@ def render(cnc, lexeme, entity):
 			gini = w.QuantityNP(mkDecimal(gini),w.percent_MU)
 
 		if median_income and gini:
-			phr = mkUtt(mkS(conj,mkS(mkCl(mkNP(theSg_Det, mkCN(w.median_3_A, w.income_N)), median_income)),
+			phr = mkUtt(mkS(conj,mkS(mkCl(mkNP(theSg_Det, mkCN(w.median_3_A, w.income_N)), verb)),
 			                     mkS(mkCl(mkNP(mkDet(w.it_Pron), w.distribution_1_N), mkVP(w.show_2_V2, mkNP(aSg_Det,quality))))))
-			yield " "+cnc.linearize(phr)+" ("+cnc.linearize(gini)+")."
+			yield " " + cnc.linearize(phr) + " ("+cnc.linearize(gini)+")."
+		
+		
 		elif median_income:
-			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, mkCN(w.median_3_A, w.income_N)), median_income)), fullStopPunct)
-			yield " "+cnc.linearize(phr)
+			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, mkCN(w.median_3_A, w.income_N)), verb)), fullStopPunct)
+			yield " " + cnc.linearize(phr)			
+
 		elif gini:
 			phr = mkUtt(mkCl(mkNP(theSg_Det, w.PossNP(mkCN(w.distribution_1_N), mkNP(w.income_N))), mkVP(w.show_2_V2, mkNP(aSg_Det,quality))))
-			yield " "+cnc.linearize(phr)+" ("+cnc.linearize(gini)+")."
+			yield " " + cnc.linearize(phr) + " ("+cnc.linearize(gini)+")."
 
 		for curr, qual in cnc.get_lexemes("P38",entity):
 			if "P582" not in qual:
 				phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, mkCN(w.official_1_A, w.currency_1_N)), mkNP(theSg_Det, curr))), fullStopPunct)
-				yield " "+cnc.linearize(phr)
+				yield " " + cnc.linearize(phr)
 				break
 
+		# copula_percentage here
 		unemployment_list = sorted(((gini,get_time_qualifier("P585",quals) or "X") for gini,quals in get_quantities("P1198",entity)),key=lambda p: p[1],reverse=True)
 		if unemployment_list:
 			unemployment = float(unemployment_list[0][0])
+			# The unemployment is X.X%
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.unemployment_N), mkNP(unemployment, w.percent_MU))), fullStopPunct)
-			yield " "+cnc.linearize(phr)
+			yield " " + cnc.linearize(phr)
+
 	yield "</p>"
 
+	# products in plural? --> books, newspapers / BUT what if food/culture?
 	vats = []
 	for vat,qual in get_quantities("P2855",entity):
 		if "P582" not in qual:
@@ -839,6 +1025,7 @@ def render(cnc, lexeme, entity):
 			products = []
 			for lexeme in cnc.get_lexeme_qualifiers("P518", qual):
 				products.append(mkNP(lexeme))
+
 			products = mkNP(w.and_Conj, products)
 			if products:
 				vat = mkNP(vat,mkAdv(w.for_Prep,products))
@@ -855,12 +1042,58 @@ def render(cnc, lexeme, entity):
 			ind_tax.append(tax)
 	ind_tax = mkNP(w.and_Conj, ind_tax)
 
+	# copula_percentage here too
 	if vats or ind_tax:
 		yield "<p>"
 		if vats:
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.vat_1_N), vats)), fullStopPunct)
 			yield " "+cnc.linearize(phr)
 		if ind_tax:
+			# w.income_tax_N?
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,mkCN(w.individual_4_A,w.CompoundN(w.tax_N,w.rate_4_N))), ind_tax)), fullStopPunct)
 			yield " "+cnc.linearize(phr)
 		yield "</p>"
+
+
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.climate_1_N)+'</h2>'
+	
+	max_temp = False
+	max_temperature_list = sorted(((temperature,get_time_qualifier("P585",quals)) for temperature,quals in get_quantities("P6591",entity)),key=lambda p: p[1],reverse=True)
+	if max_temperature_list:
+		max_temp = float(max_temperature_list[0][0])
+		#max_temp = int(max_temperature_list[0][0])
+		max_temp = mkNP(max_temp,w.celsius_MU)
+
+	min_temp = False
+	min_temperature_list = sorted(((temperature,get_time_qualifier("P585",quals)) for temperature,quals in get_quantities("P7422",entity)),key=lambda p: p[1],reverse=True)
+	if min_temperature_list:
+		min_temp = float(min_temperature_list[0][0])
+		#min_temp = int(min_temperature_list[0][0])
+		min_temp = mkNP(min_temp,w.celsius_MU)
+	
+	if max_temp and min_temp:
+		#needs fixing
+		#The highest recorded temperature in [country] reached [max_temp] degrees (°C), and the lowest temperature dropped to [min_temp] degrees (°C).
+		#phr = mkUtt(mkS(conj, mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(w.reach_2_V2, mkNP(mkDecimal(int(max_temp)), w.degree_6_N)))),
+		                      #mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkAP(mkOrd(w.low_1_A)), w.temperature_1_N)), mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep,mkNP(mkDecimal(int((max_temp)), w.degree_6_N))))))))
+		
+		#yield " "+cnc.linearize(phr)+"."
+		print('MAX AND MIN TEMPS HERE')
+
+	
+	elif max_temp:
+		#The highest recorded/registered temperature in [country] reached [max_temp] degrees (°C)
+		#phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(w.reach_2_V2, mkNP(mkNum(max_temp), w.degree_6_N))))), fullStopPunct)
+		#yield " "+cnc.linearize(phr)
+		print('MAX TEMP')
+
+	elif min_temp:
+		max_temp = 55555 # temporary workaround
+	    #The lowest recorded/registered temperature in [country] dropped to [min_temp] degrees (°C)
+	    # change to min_temp (issue with negative numbers) + ºC
+		phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep,mkNP(mkNum(max_temp), w.degree_6_N)))))), fullStopPunct)
+		yield " "+cnc.linearize(phr)
+
+
+
+
