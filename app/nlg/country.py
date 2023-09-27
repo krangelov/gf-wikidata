@@ -991,7 +991,7 @@ def render(cnc, lexeme, entity):
 			phr = mkUtt(mkS(conj,mkS(mkCl(mkNP(theSg_Det, mkCN(w.median_3_A, w.income_N)), verb)),
 			                     mkS(mkCl(mkNP(mkDet(w.it_Pron), w.distribution_1_N), mkVP(w.show_2_V2, mkNP(aSg_Det,quality))))))
 			yield " " + cnc.linearize(phr) + " ("+cnc.linearize(gini)+")."
-		
+			
 		
 		elif median_income:
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, mkCN(w.median_3_A, w.income_N)), verb)), fullStopPunct)
@@ -1060,39 +1060,30 @@ def render(cnc, lexeme, entity):
 	max_temp = False
 	max_temperature_list = sorted(((temperature,get_time_qualifier("P585",quals)) for temperature,quals in get_quantities("P6591",entity)),key=lambda p: p[1],reverse=True)
 	if max_temperature_list:
-		max_temp = float(max_temperature_list[0][0])
-		#max_temp = int(max_temperature_list[0][0])
+		max_temp = max_temperature_list[0][0]
 		max_temp = mkNP(max_temp,w.celsius_MU)
 
 	min_temp = False
 	min_temperature_list = sorted(((temperature,get_time_qualifier("P585",quals)) for temperature,quals in get_quantities("P7422",entity)),key=lambda p: p[1],reverse=True)
 	if min_temperature_list:
-		min_temp = float(min_temperature_list[0][0])
-		#min_temp = int(min_temperature_list[0][0])
+		min_temp = min_temperature_list[0][0]
 		min_temp = mkNP(min_temp,w.celsius_MU)
 	
 	if max_temp and min_temp:
-		#needs fixing
 		#The highest recorded temperature in [country] reached [max_temp] degrees (°C), and the lowest temperature dropped to [min_temp] degrees (°C).
-		#phr = mkUtt(mkS(conj, mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(w.reach_2_V2, mkNP(mkDecimal(int(max_temp)), w.degree_6_N)))),
-		                      #mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkAP(mkOrd(w.low_1_A)), w.temperature_1_N)), mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep,mkNP(mkDecimal(int((max_temp)), w.degree_6_N))))))))
-		
-		#yield " "+cnc.linearize(phr)+"."
-		print('MAX AND MIN TEMPS HERE')
+		phr = mkUtt(mkS(conj, mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(w.reach_2_V2, max_temp))),
+		                      mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkAP(mkOrd(w.low_1_A)), w.temperature_1_N)), mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep, min_temp))))))
+		yield " " + cnc.linearize(phr) + "."
 
-	
 	elif max_temp:
 		#The highest recorded/registered temperature in [country] reached [max_temp] degrees (°C)
-		#phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(w.reach_2_V2, mkNP(mkNum(max_temp), w.degree_6_N))))), fullStopPunct)
-		#yield " "+cnc.linearize(phr)
-		print('MAX TEMP')
+		phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(w.reach_2_V2, max_temp)))), fullStopPunct)
+		yield " " + cnc.linearize(phr)
 
 	elif min_temp:
-		max_temp = 55555 # temporary workaround
 	    #The lowest recorded/registered temperature in [country] dropped to [min_temp] degrees (°C)
-	    # change to min_temp (issue with negative numbers) + ºC
-		phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep,mkNP(mkNum(max_temp), w.degree_6_N)))))), fullStopPunct)
-		yield " "+cnc.linearize(phr)
+		phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep, min_temp))))), fullStopPunct)
+		yield " " + cnc.linearize(phr)
 
 
 
