@@ -242,8 +242,7 @@ def render(cnc, lexeme, entity):
 	if suicide_list:
 		suicide = float(suicide_list[0][0])
 		#The suicide rate stands at [12.4] individuals per 100,000 people (or population) yearly.
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(mkVP(w.stand_2_V), mkAdv(w.at_1_Prep, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.people_1_N, w.yearly_Adv)))))))))), fullStopPunct)
-		#new_phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(w.stand_at_V2, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.inhabitant_1_N, w.yearly_Adv))))))))), fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(w.stand_at_V2, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.inhabitant_1_N, w.yearly_Adv))))))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
 	# State largest city in the country
@@ -488,7 +487,7 @@ def render(cnc, lexeme, entity):
 	if out_of_school_list:
 		out_of_school = int(out_of_school_list[0][0])
 		# XXXX children are out of the education system
-		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(mkNum(out_of_school), w.child_1_N), mkAdv(w.out_of_1_Prep,mkNP(theSg_Det, w.education_system_N)))),fullStopPunct))
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(mkNum(out_of_school), w.child_1_N), mkAdv(w.out_of_3_Prep,mkNP(theSg_Det, w.education_system_N)))),fullStopPunct))
 		if population:
 			# This amounts to X.XX% of the population
 			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.amount_to_1_V2, mkNP(mkNP(round((out_of_school/population)*100,2), w.percent_MU), mkAdv(w.of_1_Prep, mkNP(theSg_Det, w.population_1_N)))))),fullStopPunct)
@@ -901,7 +900,7 @@ def render(cnc, lexeme, entity):
 			agents.append(mkNP(agent))
 	agents = mkNP(w.and_Conj, agents)
 	if agents:
-		phr = mkPhr(mkUtt(mkS(positivePol,mkCl(mkNP(w.it_Pron),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.CompoundN(w.terrorist_N,w.state_4_N)))),agents)))), fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(positivePol,mkCl(mkNP(w.ProDrop(w.it_Pron)),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.CompoundN(w.terrorist_N,w.state_4_N)))),agents)))), fullStopPunct)
 		yield " "+cnc.linearize(phr)
 
 	yield "</p>"
