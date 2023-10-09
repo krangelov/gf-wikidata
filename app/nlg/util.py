@@ -293,18 +293,21 @@ def get_medias(prop,entity):
 		medias.append((img,value.get("qualifiers",{})))
 	return medias
 
-iso8601_regex = re.compile(r"^(?P<era>\+|-)?(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})(T| )(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})(?P<offset>(Z|(?P<offset_op>\+|-)?(?P<offset_hour>\d{2}):?(?P<offset_minute>\d{2})))?$")
-
 def get_date(prop,entity):
 	for value in entity["claims"].get(prop,[]):
 		try:
-			match = iso8601_regex.match(value["mainsnak"]["datavalue"]["value"]["time"])
+			match = str2date(value["mainsnak"]["datavalue"]["value"]["time"])
 			if match:
-				break
+				return match
 		except KeyError:
 			continue
 	else:
 		return None
+
+iso8601_regex = re.compile(r"^(?P<era>\+|-)?(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})(T| )(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})(?P<offset>(Z|(?P<offset_op>\+|-)?(?P<offset_hour>\d{2}):?(?P<offset_minute>\d{2})))?$")
+
+def str2date(value):
+	match = iso8601_regex.match(value)
 
 	year = int(match.group("year"))
 	if year == 0:
