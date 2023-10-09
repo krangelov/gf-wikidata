@@ -252,7 +252,7 @@ def render(cnc, lexeme, entity):
 			city_name = cnc.get_lex_fun(city_qid)
 			city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitant_1_N))
 			
-			if cnc.name in ["ParseFre"] or cnc.name in ["ParseSpa"]:
+			if cnc.name in ["ParseFre", "ParseSpa"]:
 				city = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep,mkNP(lexeme)))
 				cn = mkCN(city, city_population)
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
