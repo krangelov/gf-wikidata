@@ -242,8 +242,7 @@ def render(cnc, lexeme, entity):
 	if suicide_list:
 		suicide = float(suicide_list[0][0])
 		#The suicide rate stands at [12.4] individuals per 100,000 people (or population) yearly.
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(mkVP(w.stand_2_V), mkAdv(w.at_1_Prep, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.people_1_N, w.yearly_Adv)))))))))), fullStopPunct)
-		#new_phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(w.stand_at_V2, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.inhabitant_1_N, w.yearly_Adv))))))))), fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(w.stand_at_V2, mkNP(mkNum(suicide), mkCN(mkCN(w.individual_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.inhabitant_1_N, w.yearly_Adv))))))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
 	# State largest city in the country
@@ -253,7 +252,7 @@ def render(cnc, lexeme, entity):
 			city_name = cnc.get_lex_fun(city_qid)
 			city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitant_1_N))
 			
-			if cnc.name in ["ParseFre"] or cnc.name in ["ParseSpa"]:
+			if cnc.name in ["ParseFre", "ParseSpa"]:
 				city = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep,mkNP(lexeme)))
 				cn = mkCN(city, city_population)
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
@@ -488,7 +487,7 @@ def render(cnc, lexeme, entity):
 	if out_of_school_list:
 		out_of_school = int(out_of_school_list[0][0])
 		# XXXX children are out of the education system
-		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(mkNum(out_of_school), w.child_1_N), mkAdv(w.out_of_1_Prep,mkNP(theSg_Det, w.education_system_N)))),fullStopPunct))
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(mkNum(out_of_school), w.child_1_N), mkAdv(w.out_of_3_Prep,mkNP(theSg_Det, w.education_system_N)))),fullStopPunct))
 		if population:
 			# This amounts to X.XX% of the population
 			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.amount_to_1_V2, mkNP(mkNP(round((out_of_school/population)*100,2), w.percent_MU), mkAdv(w.of_1_Prep, mkNP(theSg_Det, w.population_1_N)))))),fullStopPunct)
@@ -901,7 +900,7 @@ def render(cnc, lexeme, entity):
 			agents.append(mkNP(agent))
 	agents = mkNP(w.and_Conj, agents)
 	if agents:
-		phr = mkPhr(mkUtt(mkS(positivePol,mkCl(mkNP(w.it_Pron),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.CompoundN(w.terrorist_N,w.state_4_N)))),agents)))), fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(positivePol,mkCl(mkNP(w.ProDrop(w.it_Pron)),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.CompoundN(w.terrorist_N,w.state_4_N)))),agents)))), fullStopPunct)
 		yield " "+cnc.linearize(phr)
 
 	yield "</p>"
@@ -1023,8 +1022,8 @@ def render(cnc, lexeme, entity):
 		if "P582" not in qual:
 			vat = mkNP(vat,w.percent_MU)
 			products = []
-			for lexeme in cnc.get_lexeme_qualifiers("P518", qual):
-				products.append(mkNP(lexeme))
+			for item_lexeme in cnc.get_lexeme_qualifiers("P518", qual):
+				products.append(mkNP(item_lexeme))
 
 			products = mkNP(w.and_Conj, products)
 			if products:
@@ -1058,31 +1057,48 @@ def render(cnc, lexeme, entity):
 	yield '<h2 class="gp-page-title">'+cnc.linearize(w.climate_1_N)+'</h2>'
 	
 	max_temp = False
-	max_temperature_list = sorted(((temperature,get_time_qualifier("P585",quals)) for temperature,quals in get_quantities("P6591",entity)),key=lambda p: p[1],reverse=True)
-	if max_temperature_list:
-		max_temp = max_temperature_list[0][0]
-		max_temp = mkNP(max_temp,w.celsius_MU)
+	temperature_list = sorted(((temperature,get_time_qualifier("P585",quals),cnc.get_lexeme_qualifiers("P276",quals)) for temperature,quals in get_quantities("P6591",entity)),key=lambda p: p[1],reverse=True)
+	if temperature_list:		
+		temp,time,loc = temperature_list[0]
+		temp = mkNP(temp,w.celsius_MU)
+		cn = mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
+		vp = mkVP(w.reach_2_V2, temp)
+		if loc:
+			vp = mkVP(vp,w.InLN(loc[0]))
+		else:
+			cn = mkCN(cn, mkAdv(w.in_1_Prep, mkNP(lexeme)))
+		if time:
+			vp = mkVP(vp,str2date(time))
+		max_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
 
 	min_temp = False
-	min_temperature_list = sorted(((temperature,get_time_qualifier("P585",quals)) for temperature,quals in get_quantities("P7422",entity)),key=lambda p: p[1],reverse=True)
-	if min_temperature_list:
-		min_temp = min_temperature_list[0][0]
-		min_temp = mkNP(min_temp,w.celsius_MU)
-	
+	temperature_list = sorted(((temperature,get_time_qualifier("P585",quals),cnc.get_lexeme_qualifiers("P276",quals)) for temperature,quals in get_quantities("P7422",entity)),key=lambda p: p[1],reverse=True)
+	if temperature_list:
+		temp,time,loc = temperature_list[0]
+		temp = mkNP(temp,w.celsius_MU)
+		cn = mkCN(mkAP(mkOrd(w.low_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
+		vp = mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep, temp))
+		if loc:
+			vp = mkVP(vp,w.InLN(loc[0]))
+		else:
+			cn = mkCN(cn, mkAdv(w.in_1_Prep, mkNP(lexeme)))
+		if time:
+			vp = mkVP(vp,str2date(time))
+		min_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
+
 	if max_temp and min_temp:
 		#The highest recorded temperature in [country] reached [max_temp] degrees (°C), and the lowest temperature dropped to [min_temp] degrees (°C).
-		phr = mkUtt(mkS(conj, mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(w.reach_2_V2, max_temp))),
-		                      mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkAP(mkOrd(w.low_1_A)), w.temperature_1_N)), mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep, min_temp))))))
-		yield " " + cnc.linearize(phr) + "."
+		phr = mkPhr(mkUtt(mkS(conj, min_temp, max_temp)), fullStopPunct)
+		yield " " + cnc.linearize(phr)
 
 	elif max_temp:
 		#The highest recorded/registered temperature in [country] reached [max_temp] degrees (°C)
-		phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(w.reach_2_V2, max_temp)))), fullStopPunct)
+		phr = mkPhr(mkUtt(max_temp), fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
 	elif min_temp:
-	    #The lowest recorded/registered temperature in [country] dropped to [min_temp] degrees (°C)
-		phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N)), mkAdv(w.in_1_Prep, mkNP(lexeme)))), mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep, min_temp))))), fullStopPunct)
+		#The lowest recorded/registered temperature in [country] dropped to [min_temp] degrees (°C)
+		phr = mkPhr(mkUtt(min_temp), fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
 
