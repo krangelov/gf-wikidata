@@ -588,14 +588,6 @@ vat_product_list = ['assistive technology',
 				'malt', 
 				'child safety seat']
 
-#vat_product_test = ["Q2095",    # food
-                    #"Q756"]     # plant
-
-
-
-
-# List of those VAT products that needs to be in plural when linearized (language dependant)
-
 
 
 # There are some VAT products that have no linearization (ex.: medicinal product), and hence, are not listed
@@ -610,8 +602,6 @@ VAT_applies_to_part = [
 ]
 
 
-vat_product_test = ["food_1_N", "plant_2_N"]
-
 # List of all the VAT products with lexemes that are being linearized at the moment
 vat_product_in_use = ["food_1_N",
                     "plant_2_N",
@@ -623,7 +613,7 @@ vat_product_in_use = ["food_1_N",
                     "drinking_water_N", 
                     "medication_1_N", # sing --> FRE: médication - remède??
                     "ticket_1_N", #plural
-                    "library_1_N", #sing
+                    "library_1_N", #sing ???QUESTION IN ALL LANG? Is it plural or singular?
                     "periodical_N", # plural
                     "water_1_N", 
                     "transport_1_N", 
@@ -640,28 +630,15 @@ vat_product_in_use = ["food_1_N",
                     "tampon_N"] # plural
 
 
-
-vat_in_use_spa = ["plant_2_N", #plural
-				  "medication_1_N", # fármaco - plural
-				  "ticket_1_N", #tickets para un evento (billete) - plural
-				  "library_1_N", # plural
-				  "periodical_N", # periódico - plural
-				  "hotel_N", # plural
-				  "book_1_N", #plural
-				  "newspaper_3_N", # plu
-				  "rental_2_N", # plur
-				  "garment_N", #prenda - plural
-				  "tampon_N"] # plural
-
-
-vat_in_use_eng = ["plant_2_N",
-            	  "ticket_1_N", #plural
-            	  "library_1_N",
-            	  "periodical_N", # plural
-            	  "hotel_N", # plural
-            	  "book_1_N", #plural
-            	  "newspaper_3_N", # plu
-            	  "rental_2_N", # plu
-            	  "garment_N", #plural
-            	  "tampon_N"] # plural
+# List of those VAT products that needs to be in plural when linearized (language dependant)
+vat_product_plural = ["plant_2_N",
+            	      "ticket_1_N",
+            	      "library_1_N",
+            	      "periodical_N",
+            	      "hotel_N",
+            	      "book_1_N",
+            	      "newspaper_3_N",
+            	      "rental_2_N",
+            	      "garment_N",
+            	      "tampon_N"]
 
