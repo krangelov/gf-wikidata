@@ -52,7 +52,7 @@ def render(cnc, lexeme, entity):
 	if advisors:
 		num = singularNum if len(advisors) == 1 else pluralNum
 		advisors = mkNP(w.and_Conj,advisors)
-		yield " "+cnc.linearize(mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(mkDet(pron,num),mkCN(w.doctoral_1_A, w.adviserMasc_N)),advisors))),fullStopPunct))
+		yield " "+cnc.linearize(mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(mkDet(pron,num),mkCN(w.doctoral_adviser_N)),advisors))),fullStopPunct))
 
 	teachers = []
 	for teacher in get_entities(["P1066"],entity,qual=False):
