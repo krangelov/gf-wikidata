@@ -55,6 +55,8 @@ def render(cnc, lexeme, entity):
 	class_qids = get_items("P31",entity,qual=False)
 	if "Q112099" in class_qids:
 		cn = mkCN(w.CompoundN(w.island_1_N,w.state_4_N))
+		#Fre and Spanish
+		#cn = mkCN(w.insular_1_A,w.state_4_N)
 	else:
 		cn = mkCN(w.country_2_N)
 
@@ -1118,7 +1120,7 @@ def render(cnc, lexeme, entity):
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
 		else:
-			cn = mkCN(cn, mkAdv(w.in_1_Prep, mkNP(lexeme)))
+			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
 		max_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
@@ -1133,7 +1135,7 @@ def render(cnc, lexeme, entity):
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
 		else:
-			cn = mkCN(cn, mkAdv(w.in_1_Prep, mkNP(lexeme)))
+			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
 		min_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
