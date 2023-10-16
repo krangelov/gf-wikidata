@@ -87,7 +87,7 @@ def render(cnc, lexeme, entity):
 		continent_lexemes = cnc.get_lexemes("P30",entity,qual=False)
 		if continent_lexemes:
 			for item in continent_lexemes:
-			cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(continent_lexemes[0])))
+				cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(continent_lexemes[0])))
 
 	# add the number of inhabitants
 	population_list = sorted(((population,get_time_qualifier("P585",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
@@ -899,15 +899,15 @@ def render(cnc, lexeme, entity):
 			else:
 				quality = mkNP(a_Quant,mkCN(w.democracy_2_N,mkAdv(w.with_Prep,mkNP(aPl_Det,w.flaw_3_N)))) 
 		elif democracy_index >= 4:
-			if cnc.name in ["ParseFre"]:
-				quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.polity_1_N))
-			else:
-				quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.regime_1_N))
+			#if cnc.name in ["ParseFre"]:
+			#	quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.polity_1_N))
+			#else:
+			quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.regime_1_N))
 		else:
-			if cnc.name in ["ParseFre"]:
-				quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.polity_1_N))
-			else:
-				quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.regime_1_N))
+			#if cnc.name in ["ParseFre"]:
+			#	quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.polity_1_N))
+			#else:
+			quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.regime_1_N))
 		phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), mkVP(passiveVP(mkVPSlash(w.rank_2_V2)),mkAdv(w.as_Prep,quality)))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
