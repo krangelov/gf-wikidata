@@ -606,31 +606,31 @@ VAT_applies_to_part = [
 vat_product_in_use = ["food_1_N",
                     "plant_2_N",
                     "firewood_N", 
-                    "formula_6_N", #?? fórmula para bebés, leche de fórmula o fórmula infantil / lait infantile, lait maternisé
+                    "formula_6_N",
                     "flour_N", 
                     "malt_3_N", 
                     "starch_1_N", 
                     "drinking_water_N", 
-                    "medication_1_N", # sing --> FRE: médication - remède??
-                    "ticket_1_N", #plural
-                    "library_1_N", #sing ???QUESTION IN ALL LANG? Is it plural or singular?
-                    "periodical_N", # plural
+                    "medication_1_N",
+                    "ticket_1_N",
+                    "library_1_N",
+                    "periodical_N",
                     "water_1_N", 
                     "transport_1_N", 
-                    "catering_N", # restauración --> restauration in FRE
+                    "catering_N",
                     "margarine_N", 
-                    "hotel_N", # plural
-                    "book_1_N", #plural
-                    "newspaper_3_N", # plu
+                    "hotel_N",
+                    "book_1_N",
+                    "newspaper_3_N",
                     "culture_6_N", 
                     "sport_1_N", 
-                    "rental_2_N", # plu
+                    "rental_2_N",
                     "healthcare_2_N",
-                    "garment_N", #plural
-                    "tampon_N"] # plural
+                    "garment_N",
+                    "tampon_N"]
 
 
-# List of those VAT products that needs to be in plural when linearized (language dependant)
+# List of those VAT products that needs to be in plural when linearized (language dependant: ENG, SPA, FRE)
 vat_product_plural = ["plant_2_N",
             	      "ticket_1_N",
             	      "library_1_N",
