@@ -47,18 +47,21 @@ def render(cnc, lexeme, entity):
 	yield "</table></div>"
 
 
-
 	# start the text generation
 	yield "<p>"
 
 	# it is a country
 	class_qids = get_items("P31",entity,qual=False)
 	if "Q112099" in class_qids:
-		cn = mkCN(w.CompoundN(w.island_1_N,w.state_4_N))
-		#Fre and Spanish
-		#cn = mkCN(w.insular_1_A,w.state_4_N)
+		if cnc.name in ["ParseSpa"]:
+			cn = mkCN(w.insular_1_A, w.country_2_N)
+		elif cnc.name in ["ParseFre"]:
+			cn = mkCN(w.insular_1_A, w.state_4_N)
+		else:
+			cn = mkCN(w.CompoundN(w.island_1_N, w.state_4_N))
 	else:
 		cn = mkCN(w.country_2_N)
+
 
 	# state the location in different ways
 	part_of_qids  = get_items("P361",entity,qual=False)
