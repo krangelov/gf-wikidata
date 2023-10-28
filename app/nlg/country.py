@@ -295,7 +295,7 @@ def render(cnc, lexeme, entity):
 			else:
 				quality = mkCN(mkAP(w.low_1_A), quality) 
 		
-		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (" + cnc.linearize(w.hdi_N) + " " + str(hdi) + ")."
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N), mkVP(w.have_1_V2, mkNP(aSg_Det, quality)))))) + " (" + cnc.linearize(w.hdi_PN) + " " + str(hdi) + ")."
 
 
 	# Age of majority (maturity)
@@ -1118,7 +1118,7 @@ def render(cnc, lexeme, entity):
 	if temperature_list:		
 		temp,time,loc = temperature_list[0]
 		temp = mkNP(temp,w.celsius_MU)
-		cn = mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
+		cn = mkCN(mkAP(w.registered_2_A), w.temperature_1_N)
 		vp = mkVP(w.reach_2_V2, temp)
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
@@ -1126,14 +1126,14 @@ def render(cnc, lexeme, entity):
 			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
-		max_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
+		max_temp = mkS(pastTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), cn), vp))
 
 	min_temp = False
 	temperature_list = sorted(((temperature,get_time_qualifier("P585",quals),cnc.get_lexeme_qualifiers("P276",quals)) for temperature,quals in get_quantities("P7422",entity)),key=lambda p: p[1],reverse=True)
 	if temperature_list:
 		temp,time,loc = temperature_list[0]
 		temp = mkNP(temp,w.celsius_MU)
-		cn = mkCN(mkAP(mkOrd(w.low_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
+		cn = mkCN(mkAP(w.registered_2_A), w.temperature_1_N)
 		vp = mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep, temp))
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
@@ -1141,7 +1141,7 @@ def render(cnc, lexeme, entity):
 			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
-		min_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
+		min_temp = mkS(pastTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), cn), vp))
 
 	if max_temp and min_temp:
 		#The lowest registered temperature in [country] reached [max_temp] degrees (°C) (in [place] on [day] [month] [year]), and the highest temperature dropped to [min_temp] degrees (°C) (in [place] on [day] [month] [year])
