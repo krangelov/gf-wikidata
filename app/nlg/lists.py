@@ -536,4 +536,109 @@ bottom = [ # sorted from lower to higher life expectancy
 	#("Q702", 69.195, insular_oceania)     # Federated States of Micronesia
 	]
 
+vat_product_list = ['assistive technology', 
+				'flour', 
+				'cleaning activities', 
+				'periodical', 
+				'health care', 
+				'human health activities', 
+				'printed book', 
+				'Repair of other personal and household goods', 
+				'transport', 
+				'infant formula', 
+				'Residential care activities', 
+				'food', 
+				'renting', 
+				'ticket', 
+				'accommodation', 
+				'firewood', 
+				'book', 
+				'air transport', 
+				'starch', 
+				'Physical well-being activities', 
+				'margarine', 
+				'land transport and transport via pipelines', 
+				'clothing', 
+				'bouquet', 
+				'drinking water', 
+				'public transport', 
+				'funeral services industry', 
+				'Food and beverage service activities', 
+				'catering', 
+				'hospitality industry', 
+				'water', 
+				'Water collection, treatment and supply', 
+				'waste collection, treatment and disposal activities; materials recovery', 
+				'Creative, arts and entertainment activities', 
+				'sport', 
+				'plant', 
+				'water transport', 
+				'low-income housing', 
+				'Hairdressing and other beauty treatment', 
+				'hotel', 
+				'sewerage', 
+				'Social work activities without accommodation', 
+				'Jessica women wipes', 
+				'Repair of footwear and leather goods', 
+				'culture', 
+				'medication', 
+				'library', 
+				'newspaper', 
+				'medicinal product', 
+				'malt', 
+				'child safety seat']
+
+
+
+# There are some VAT products that have no linearization (ex.: medicinal product), and hence, are not listed
+# when generating the VAT sentence. The idea is to create a list like form_of_government above that includes the id code
+# of the product and its corresponding lexeme.
+assistive_technology = mkCN(w.assistive_A, w.technology_1_N)
+air_transport = mkCN(w.CompoundN(w.air_9_N, w.transport_1_N))
+
+VAT_applies_to_part = [
+	("Q688498", assistive_technology),  # assistive technology
+	("Q1757562", air_transport),        # air transport
+]
+
+
+# List of all the VAT products with lexemes that are being linearized at the moment
+vat_product_in_use = ["food_1_N",
+                    "plant_2_N",
+                    "firewood_N", 
+                    "formula_6_N",
+                    "flour_N", 
+                    "malt_3_N", 
+                    "starch_1_N", 
+                    "drinking_water_N", 
+                    "medication_1_N",
+                    "ticket_1_N",
+                    "library_1_N",
+                    "periodical_N",
+                    "water_1_N", 
+                    "transport_1_N", 
+                    "catering_N",
+                    "margarine_N", 
+                    "hotel_N",
+                    "book_1_N",
+                    "newspaper_3_N",
+                    "culture_6_N", 
+                    "sport_1_N", 
+                    "rental_2_N",
+                    "healthcare_2_N",
+                    "garment_N",
+                    "tampon_N"]
+
+
+# List of those VAT products that needs to be in plural when linearized (language dependant: ENG, SPA, FRE)
+vat_product_plural = ["plant_2_N",
+            	      "ticket_1_N",
+            	      "library_1_N",
+            	      "periodical_N",
+            	      "hotel_N",
+            	      "book_1_N",
+            	      "newspaper_3_N",
+            	      "rental_2_N",
+            	      "garment_N",
+            	      "tampon_N"]
 
