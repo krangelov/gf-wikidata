@@ -363,26 +363,23 @@ def render(cnc, lexeme, entity):
 				else:
 					number = mkNP(w.and_Conj, mkNP(mkNum(female_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))), mkNP(mkNum(male_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N)))))
 				verb = copula_number(cnc, number)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
-				tst = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
-				yield " " + cnc.linearize(tst)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
 
 			else:
 				# The minimum age of marriage is [X] years.
 				# La edad mínima de matrimonio / L'âge minimum de mariage
 				number = mkNP(mkNum(int(age)), w.year_5_N)
 				verb = copula_number(cnc, number)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
-				tst = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
-				yield " " + cnc.linearize(tst)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
 		else:
 			# The minimum age of marriage is [X] years with parental/court consent.
 			# La edad mínima de matrimonio / L'âge minimum de mariage
 			number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(consent_type))))
 			verb = copula_number(cnc, number)
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)		
-			tst = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)		
-			yield " " + cnc.linearize(tst)
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
 
 
 	# Retirement age:
@@ -402,7 +399,7 @@ def render(cnc, lexeme, entity):
 				# The age of retirement is [X] years.
 				number = mkNP(mkNum(int(retirement_age)), w.year_5_N)
 				verb = copula_number(cnc, number)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.retirement_1_N)))), verb))),fullStopPunct)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(w.age_1_N, mkAdv(w.of_3_Prep, mkNP(w.retirement_1_N)))), verb))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
 				break
 			
