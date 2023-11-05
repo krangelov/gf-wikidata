@@ -578,7 +578,7 @@ vat_product_list = ['assistive technology',
 				'hotel', 
 				'sewerage', 
 				'Social work activities without accommodation', 
-				'Jessica women wipes', 
+				'Jessica women wipes', # tampons
 				'Repair of footwear and leather goods', 
 				'culture', 
 				'medication', 
@@ -595,10 +595,12 @@ vat_product_list = ['assistive technology',
 # of the product and its corresponding lexeme.
 assistive_technology = mkCN(w.assistive_A, w.technology_1_N)
 air_transport = mkCN(w.CompoundN(w.air_9_N, w.transport_1_N))
+accommodation = mkCN(w.accommodation_5_N)
 
 VAT_applies_to_part = [
 	("Q688498", assistive_technology),  # assistive technology
 	("Q1757562", air_transport),        # air transport
+    ("Q29584320", accommodation),       # accommodation
 ]
 
 

@@ -119,6 +119,8 @@ def render(cnc, lexeme, entity):
 					else:
 						neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(the_Det,direction)))
 			neighbours.append(neighbour_expr)
+	print('neighbours: ', neighbours)
+	print(type(neighbours))
 	if neighbours:
 		if cnc.name in ["ParseSpa"]: #ProDrop
 			if len(neighbours) > 1:
@@ -263,9 +265,12 @@ def render(cnc, lexeme, entity):
 			
 			if cnc.name in ["ParseFre", "ParseSpa"]:
 				city = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep,mkNP(lexeme)))
+				print('LEXEME: ', lexeme)
 				cn = mkCN(city, city_population)
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
+				#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(the_Quant, mkCN(mkAP (mkOrd(w.large_1_A)), cn))))),fullStopPunct)
+				#yield " " + cnc.linearize(phr)
 			else:
 				city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
 				cn = mkCN(city, city_population)
@@ -331,27 +336,47 @@ def render(cnc, lexeme, entity):
 	female_age = None
 	male_age = None
 	consent_type = None
+	test_dict = {}
 	marriageable_age = get_quantities("P3000",entity)
 	for age, qual in marriageable_age:
 		if "P582" not in qual:
-				gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
-				if gender_diff:
-					for lex in gender_diff:
-						if lex == w.female_2_N:
-							female_age = int(age)
-						if lex == w.male_2_N:
-							male_age = int(age)
-				#check Russia's interesting property (P1001) - applies to jurisdiction
-				consent = get_item_qualifier("P1013", qual)
-				if consent:
-					if consent == 'Q27177319':
-						consent_type = mkCN(mkAP(w.parental_1_A), w.consent_N) #FRE: legal term --> consentement parental
-					elif consent == 'Q27177129':
-						consent_type = mkCN(mkAP(w.judicial_1_A), w.consent_N) #judicial consent
+			gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
+			if gender_diff:
+				for lex in gender_diff:
+					if lex == w.female_2_N:
+						female_age = int(age)
+					if lex == w.male_2_N:
+						male_age = int(age)
+			
+			consent = get_item_qualifier("P1013", qual)
+			if consent:
+				if consent == 'Q27177319':
+					consent_type = mkCN(mkAP(w.parental_1_A), w.consent_N)
+				elif consent == 'Q27177129':
+					consent_type = mkCN(mkAP(w.judicial_1_A), w.consent_N)
+			
+			# Russia's only property (P1001) - applies to jurisdiction
+			jurisdiction = cnc.get_lexeme_qualifiers("P1001", qual)
+			if jurisdiction:
+				test_dict[age] = jurisdiction
+
+	#print('TEST_DICT: ', test_dict)
+	age_1 = list(test_dict.keys())[0]
+	age_2 = list(test_dict.keys())[1]
+	region_1 = test_dict[age_1]
+	region_2 = test_dict[age_2]
 					
 	if marriageable_age:
 		if not consent_type:
-			if female_age and male_age:
+			if jurisdiction: # WORK IN PROGRESS
+				#The minimum age of marriage is [X] years in [jurisdiction_regions] and [Y] years in [jurisdiction_regions]
+				#print('REGION1: ', region_1)
+				number = mkNP(w.and_Conj, mkNP(mkNum(age_1), mkCN(w.year_5_N, mkAdv(w.in_2_Prep, mkNP(w.and_Conj,region_1)))), mkNP(mkNum(age_2), mkCN(w.year_5_N, mkAdv(w.in_2_Prep, mkNP(w.and_Conj,region_2)))))
+				verb = copula_number(cnc, number)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
+			
+			elif female_age and male_age:
 				# The minimum age of marriage is [X] years for women and [Y] years for men.
 				# La edad mínima de matrimonio / L'âge minimum de mariage
 				if cnc.name in ["ParseFre", "ParseSpa"]:
@@ -359,29 +384,31 @@ def render(cnc, lexeme, entity):
 				else:
 					number = mkNP(w.and_Conj, mkNP(mkNum(female_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))), mkNP(mkNum(male_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N)))))
 				verb = copula_number(cnc, number)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
-				tst = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
-				yield " " + cnc.linearize(tst)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
 
 			else:
 				# The minimum age of marriage is [X] years.
 				# La edad mínima de matrimonio / L'âge minimum de mariage
 				number = mkNP(mkNum(int(age)), w.year_5_N)
 				verb = copula_number(cnc, number)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
-				tst = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
-				yield " " + cnc.linearize(tst)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
 		else:
 			# The minimum age of marriage is [X] years with parental/court consent.
 			# La edad mínima de matrimonio / L'âge minimum de mariage
-			number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(consent_type))))
+			if cnc.name in ["ParseFre"]: # avec LE consent_type
+				number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(the_Det, consent_type))))
+			else:
+				number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(consent_type))))
+			
 			verb = copula_number(cnc, number)
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)		
-			tst = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)		
-			yield " " + cnc.linearize(tst)
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)		
+			yield " " + cnc.linearize(phr)
 
 
 	# Retirement age:
+	print('HERE retirement')
 	female_age = None
 	male_age = None
 	for retirement_age, qual in get_quantities("P3001",entity):
@@ -414,42 +441,50 @@ def render(cnc, lexeme, entity):
 
 	# Stating the official religion
 	religion = False
+	laicism = False
 	property_religion = get_items("P3075", entity)
 	if property_religion:
 		for qid, quad in property_religion: 
-			if qid == 'Q432': # Islam
+			print('RELIGION QID: ', qid)
+			if qid == 'Q432': # Islam YES
 				religion = mkCN(w.islam_2_N)
 				break
-			elif qid == 'Q5043': # Christianity
+			elif qid == 'Q5043': # Christianity YES
 				religion = mkCN(w.christianity_1_N)
 				break
-			elif qid == 'Q9268': # Judaism
+			elif qid == 'Q9268': # Judaism YES
 				religion = mkCN(w.judaism_2_N)
 				break
-			elif qid == 'Q748': # Buddhism
+			elif qid == 'Q748': # Buddhism YES
 				religion = mkCN(w.buddhism_1_N)
 				break
-			elif qid == 'Q752470': # Finnish Orthodox Church --> Eastern Orthodox Christianity
-				religion = mkCN(w.eastern_4_A, mkCN(w.orthodox_3_A, w.christianity_1_N))
+			elif qid == 'Q752470': # Finnish Orthodox Church --> Orthodox Christianity
+				religion = mkCN(w.orthodox_3_A, w.christianity_1_N)
 				break
-			elif qid == 'Q9592' or qid == 'Q1841': # Catholic Church / Catholicism
+			elif qid == 'Q9592' or qid == 'Q1841': # Catholic Church / Catholicism YES
 				religion = mkCN(w.catholicism_N)
 				break
-			# elif qid == 'Q163943': # Druze
-			# 	religion = mkCN(druze) # not in Wikidata
-			# 	break
-			# elif qid == 'Q728697': # Laicism
-			# 	religion = mkCN(laicism) # not in Wikidata
-			# 	break
-			# elif qid == 'Q1379849': # Evangelical Lutheran Church of Finland
-			# 	religion = mkCN(lutheranism) #not in Wikidata
-			# 	break
+			elif qid == 'Q163943': # Druzism
+				religion = mkCN(w.druzism_N)
+				break
+			elif qid == 'Q728697': # Laicism
+				religion = mkCN(w.secular_3_A, w.state_4_N)
+				laicism = True
+				break
+			elif qid == 'Q1379849': # Evangelical Lutheran Church of Finland
+				religion = mkCN(w.lutheranism_N)
+				break
 			
 	if religion:
-		# The official religion is [religion].
-		# Future work: allowing multiple religions simultaneously.
-		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
-		yield " " + cnc.linearize(phr)
+		if laicism:
+			# The country is a secular state
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.country_1_N),mkNP(aSg_Det, religion)))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
+		else:
+			# The official religion is [religion].
+			# Future work: allowing multiple religions simultaneously / de jure vs. de facto
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
 
 
 	yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_2_N)+'</h2>'
@@ -464,7 +499,6 @@ def render(cnc, lexeme, entity):
 
 	min_age = False
 	max_age = False
-	#obj = mkCN(w.age_1_N) #originally
 	obj = mkCN(w.child_1_N)
 	min_age_list = sorted(((literacy,get_time_qualifier("P585",quals) or "X") for literacy,quals in get_quantities("P3270",entity)),key=lambda p: p[1],reverse=True)
 	if min_age_list:
@@ -476,21 +510,14 @@ def render(cnc, lexeme, entity):
 		obj = mkCN(obj,mkAdv(w.to_1_Prep,mkNP(mkNum(max_age),w.year_5_N)))
 	if min_age or max_age:
 		if cnc.name in ["ParseFre", "ParseSpa"]:
-			# La educación es obligatoria para los niños de edad de [X] años a [Y] años
-			# phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(thePl_Det,w.PossNP(mkCN(w.child_1_N), mkNP(obj))))))), fullStopPunct)
-			# NEW SENTENCE:
 			# La educación es obligatoria para los niños de [X] años a [Y] años / L'éducation est obligatoire pour les enfants de [X] ans à [Y] ans
 			phrsf = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(thePl_Det, obj))))), fullStopPunct)
 			yield " " + cnc.linearize(phrsf)
 		else:
-			# Education is obligatory for children of age from [X] years to [Y] years
-			# phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(aPl_Det,w.PossNP(mkCN(w.child_1_N), mkNP(obj))))))), fullStopPunct)
-			# NEW SENTENCE:
 			# Education is obligatory for children from [X] years to [Y] years.
 			phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(aPl_Det, obj))))), fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
-		
 		if literacy_rate:
 			# This results in a literacy rate of XX.X%
 			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.result_in_V2, mkNP(mkNP(aSg_Det, w.literacy_rate_N), mkAdv(w.of_1_Prep, literacy_rate))))),fullStopPunct)
@@ -856,10 +883,16 @@ def render(cnc, lexeme, entity):
 
 			phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
-
+	
+	
+	
 	curr_organizations = set()
 	prev_organizations = set()
+	
 	for org,qual in cnc.get_lexemes("P463",entity):
+		#print('ORG: ', org)
+		#print(type(org))
+		#print('QUAL: ', qual)
 		if org != w.european_union_NP:
 			org = mkNP(org)
 		if "P582" not in qual:
@@ -871,6 +904,7 @@ def render(cnc, lexeme, entity):
 			prev_organizations.remove(org)
 		except KeyError:
 			pass
+
 	curr_organizations = mkNP(w.and_Conj, list(curr_organizations))
 	if curr_organizations:
 		# The country is a member of [...]
@@ -904,14 +938,8 @@ def render(cnc, lexeme, entity):
 			else:
 				quality = mkNP(a_Quant,mkCN(w.democracy_2_N,mkAdv(w.with_Prep,mkNP(aPl_Det,w.flaw_3_N)))) 
 		elif democracy_index >= 4:
-			#if cnc.name in ["ParseFre"]:
-			#	quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.polity_1_N))
-			#else:
 			quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.regime_1_N))
 		else:
-			#if cnc.name in ["ParseFre"]:
-			#	quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.polity_1_N))
-			#else:
 			quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.regime_1_N))
 		phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), mkVP(passiveVP(mkVPSlash(w.rank_2_V2)),mkAdv(w.as_Prep,quality)))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
@@ -932,8 +960,7 @@ def render(cnc, lexeme, entity):
 			quality = mkNP(aSg_Det,mkCN(w.democratic_1_A,w.country_1_N))
 			break
 		quality = None
-	phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(mkNP(w.freedom_1_N), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.world_5_N))), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
-	#phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
+	phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
 	yield " "+cnc.linearize(phr)
 
 
@@ -1062,12 +1089,25 @@ def render(cnc, lexeme, entity):
 
 	yield "</p>"
 
+	#it's working!!! place this function (modify name) in utils.py
+	def get_product_ids(qual, product_list):
+		product_ids = []
+		if 'P518' in qual:
+			for product in qual['P518']:
+				product_id = product['datavalue']['value']['id']
+				for item in product_list:
+					if product_id == item[0]:
+						product_ids.append(item[1])
+		return product_ids
+
+
 	vats = []
 	for vat,qual in get_quantities("P2855",entity):
 		if "P582" not in qual:
 			vat = mkNP(vat,w.percent_MU)
 			products = []
 			for item_lexeme in cnc.get_lexeme_qualifiers("P518", qual):
+				#print('ITEM NAME: ', item_lexeme)
 				if cnc.name in ["ParseFre"] and (item_lexeme.name == "food_1_N" or item_lexeme.name in vat_product_plural): # article before the product
 					products.append(mkNP(thePl_Det, item_lexeme))
 				elif cnc.name in ["ParseSpa"] and item_lexeme.name == "medication_1_N":
@@ -1079,6 +1119,26 @@ def render(cnc, lexeme, entity):
 						products.append(mkNP(theSg_Det, item_lexeme)) # article before the product
 					else:
 						products.append(mkNP(item_lexeme))
+
+			#testing other products # maybe new function?
+			print('PLEASE')
+			#no_lex_product = None
+			#if 'P518' in qual:
+			#	for product in qual['P518']:
+			#		print('product_id: ', product['datavalue']['value']['id'])
+			#		product_id = product['datavalue']['value']['id']
+			#		for item in VAT_applies_to_part:
+			#			if product_id == item[0]:
+			#				no_lex_product = item[1]
+			#				products.append(mkNP(no_lex_product))
+#
+#
+			#print('NO_LEX_LIST: ', no_lex_product)
+
+			test = get_product_ids(qual, VAT_applies_to_part)
+			print('TEST BELOW: ', test)
+			for item in test:
+				products.append(mkNP(item))
 
 			products = mkNP(w.and_Conj, products)
 			if products:
@@ -1123,9 +1183,11 @@ def render(cnc, lexeme, entity):
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
 		else:
-			cn = mkCN(cn, w.InLN(lexeme))
+			cn = mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
+			#cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
+		#max_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
 		max_temp = mkS(pastTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), cn), vp))
 
 	min_temp = False
@@ -1133,7 +1195,8 @@ def render(cnc, lexeme, entity):
 	if temperature_list:
 		temp,time,loc = temperature_list[0]
 		temp = mkNP(temp,w.celsius_MU)
-		cn = mkCN(mkAP(w.registered_2_A), w.temperature_1_N)
+		cn = mkCN(mkAP(mkOrd(w.low_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
+		#cn = mkCN(mkAP(w.registered_2_A), w.temperature_1_N)
 		vp = mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep, temp))
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
@@ -1141,6 +1204,7 @@ def render(cnc, lexeme, entity):
 			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
+		#min_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
 		min_temp = mkS(pastTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), cn), vp))
 
 	if max_temp and min_temp:

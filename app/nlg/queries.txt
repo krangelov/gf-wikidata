@@ -119,3 +119,71 @@ WHERE {
   }
 }
 ORDER BY DESC(?retirementAge)
+
+
+
+# Query used to get property "P463" (member of) for every sovereign country:
+SELECT ?country ?countryLabel ?memberOf ?organizarionLabel
+WITH {
+  SELECT DISTINCT *
+  WHERE {
+    ?country wdt:P31/wdt:P279* wd:Q3624078 .
+    ?country wdt:P463 ?memberOf .
+  }
+  ORDER BY DESC(?memberOf)
+  LIMIT 5000
+} AS %i
+WHERE {
+  INCLUDE %i
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" .
+    ?memberOf rdfs:label ?organizarionLabel .
+    ?memberOf wdt:P463 ?memberOf .
+    ?country rdfs:label ?countryLabel .
+    ?country wdt:Q3624078 ?country .
+    
+  }
+}
+ORDER BY DESC(?memberOf)
+
+
+
+# Query used to get property "P1013" (criterion used) to check the type of consent (P3000: marriageable age) for every sovereign country:
+SELECT DISTINCT ?countryLabel ?marriageableAge ?consent ?consentLabel
+WHERE {
+  ?country wdt:P31 wd:Q3624078 ;
+           p:P3000 ?statement .
+  ?statement ps:P3000 ?marriageableAge ;
+             pq:P1013 ?consent .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" }
+  FILTER NOT EXISTS {
+    ?country wdt:P31 wd:Q3624078 ;
+             p:P3000 ?otherStatement .
+    ?otherStatement ps:P3000 ?otherLifeExpectancy ;
+                    pq:P1013 ?otherDate .
+    FILTER (?otherDate > ?consent || (?otherDate = ?consent && ?otherLifeExpectancy > ?marriageableAge))
+  }
+}
+ORDER BY DESC(?consent)
+
+
+
+# Query used to get the list of VAT products for every sovereign country:
+SELECT DISTINCT ?countryLabel ?vatRate ?product ?productLabel
+WHERE {
+  ?country wdt:P31 wd:Q3624078 ;
+           wdt:P30 wd:Q46 ;
+           p:P2855 ?statement .
+  ?statement ps:P2855 ?vatRate ;
+             pq:P518 ?product .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" }
+  FILTER NOT EXISTS {
+    ?country wdt:P31 wd:Q3624078 ;
+             wdt:P30 wd:Q46 ;
+             p:P2855 ?otherStatement .
+    ?otherStatement ps:P2855 ?otherVatRate ;
+                    pq:P518 ?productLabel .
+    FILTER (?otherProduct > ?product || (?otherProduct = ?product && ?otherVatRate > ?vatRate))
+  }
+}
+ORDER BY DESC(?product)
