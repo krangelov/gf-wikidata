@@ -188,7 +188,7 @@ def render(cnc, lexeme, entity):
 			if cnc.name in ["ParseBul", "ParseCat", "ParseFre", "ParseIta", "ParsePor", "ParseSpa"]:
 				vp = reflexiveVP(w.speak_3_V2)
 			else:
-				vp = passiveVP(w.speak_3_V2):
+				vp = passiveVP(w.speak_3_V2)
 			phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(official_langs,mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))))),mkS(mkCl(other_langs,mkVP(w.also_AdV,vp))))),fullStopPunct)
 		else:
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))),official_langs))),fullStopPunct)
