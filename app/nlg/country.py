@@ -119,8 +119,7 @@ def render(cnc, lexeme, entity):
 					else:
 						neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(the_Det,direction)))
 			neighbours.append(neighbour_expr)
-	print('neighbours: ', neighbours)
-	print(type(neighbours))
+
 	if neighbours:
 		if cnc.name in ["ParseSpa"]: #ProDrop
 			if len(neighbours) > 1:
@@ -188,6 +187,11 @@ def render(cnc, lexeme, entity):
 		other_langs = mkNP(w.and_Conj,other_langs)
 		if other_langs:
 			phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(official_langs,mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))))),mkS(mkCl(other_langs,w.AdVVP(w.also_AdV,w.PassVPSlash(mkVPSlash(w.speak_3_V2))))))),fullStopPunct)
+			#if cnc.name in ["ParseBul", "ParseCat", "ParseFre", "ParseIta", "ParsePor", "ParseSpa"]:
+			#	vp = reflexiveVP(w.speak_3_V2)
+			#else:
+			#	vp = passiveVP(w.speak_3_V2)
+			#phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(official_langs,mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))))),mkS(mkCl(other_langs,mkVP(w.also_AdV,vp))))),fullStopPunct)
 		else:
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))),official_langs))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
@@ -214,7 +218,7 @@ def render(cnc, lexeme, entity):
 			if life_expectancy == expectancy:
 				life_expectancy = round(life_expectancy, 2)
 				# [Country name] has the highest life expectancy in [continent / the world], with an average of [XX] years.
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.high_1_A)), w.life_expectancy_N), 
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), mkCN(mkCN(w.life_expectancy_N), 
 				      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkNum(life_expectancy), w.year_5_N)))))))))))))), fullStopPunct)
 				yield " " + cnc.linearize(phr)
 				top_or_bottom = True
@@ -224,7 +228,7 @@ def render(cnc, lexeme, entity):
 				if life_expectancy == expectancy:
 					life_expectancy = round(life_expectancy, 2)
 					# [Country name] has the lowest life expectancy in [continent / the world], with an average of [XX] years.
-					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(theSg_Det, mkCN(mkCN(mkAP(mkOrd(w.low_1_A)), w.life_expectancy_N),
+					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.have_1_V2, mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), mkCN(mkCN(w.life_expectancy_N),
 					      mkAdv(w.in_1_Prep, (mkNP(region, mkAdv(w.with_Prep, mkNP(a_Det, mkCN(mkCN(w.average_1_N), mkAdv(w.of_1_Prep, mkNP(mkNum(life_expectancy), w.year_5_N)))))))))))))), fullStopPunct)
 					yield " " + cnc.linearize(phr)
 					break
@@ -265,7 +269,6 @@ def render(cnc, lexeme, entity):
 			
 			if cnc.name in ["ParseFre", "ParseSpa"]:
 				city = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep,mkNP(lexeme)))
-				print('LEXEME: ', lexeme)
 				cn = mkCN(city, city_population)
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
@@ -359,21 +362,20 @@ def render(cnc, lexeme, entity):
 			jurisdiction = cnc.get_lexeme_qualifiers("P1001", qual)
 			if jurisdiction:
 				test_dict[age] = jurisdiction
-
-	#print('TEST_DICT: ', test_dict)
-	age_1 = list(test_dict.keys())[0]
-	age_2 = list(test_dict.keys())[1]
-	region_1 = test_dict[age_1]
-	region_2 = test_dict[age_2]
 					
 	if marriageable_age:
 		if not consent_type:
 			if jurisdiction: # WORK IN PROGRESS
 				#The minimum age of marriage is [X] years in [jurisdiction_regions] and [Y] years in [jurisdiction_regions]
+				age_1 = list(test_dict.keys())[0]
+				age_2 = list(test_dict.keys())[1]
+				region_1 = test_dict[age_1]
+				region_2 = test_dict[age_2]
 				#print('REGION1: ', region_1)
+				#print('REGION2: ', region_2)
 				number = mkNP(w.and_Conj, mkNP(mkNum(age_1), mkCN(w.year_5_N, mkAdv(w.in_2_Prep, mkNP(w.and_Conj,region_1)))), mkNP(mkNum(age_2), mkCN(w.year_5_N, mkAdv(w.in_2_Prep, mkNP(w.and_Conj,region_2)))))
 				verb = copula_number(cnc, number)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
 			
 			elif female_age and male_age:
@@ -384,7 +386,7 @@ def render(cnc, lexeme, entity):
 				else:
 					number = mkNP(w.and_Conj, mkNP(mkNum(female_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.woman_1_N)))), mkNP(mkNum(male_age), mkCN(w.year_5_N, mkAdv(w.for_Prep, mkNP(aPl_Det, w.man_1_N)))))
 				verb = copula_number(cnc, number)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
 
 			else:
@@ -392,7 +394,7 @@ def render(cnc, lexeme, entity):
 				# La edad mínima de matrimonio / L'âge minimum de mariage
 				number = mkNP(mkNum(int(age)), w.year_5_N)
 				verb = copula_number(cnc, number)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
 		else:
 			# The minimum age of marriage is [X] years with parental/court consent.
@@ -403,12 +405,12 @@ def render(cnc, lexeme, entity):
 				number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(consent_type))))
 			
 			verb = copula_number(cnc, number)
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)		
+			#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)		
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
 
 	# Retirement age:
-	print('HERE retirement')
 	female_age = None
 	male_age = None
 	for retirement_age, qual in get_quantities("P3001",entity):
@@ -425,7 +427,7 @@ def render(cnc, lexeme, entity):
 				# The age of retirement is [X] years.
 				number = mkNP(mkNum(int(retirement_age)), w.year_5_N)
 				verb = copula_number(cnc, number)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(w.age_1_N, mkAdv(w.of_1_Prep, mkNP(w.retirement_1_N)))), verb))),fullStopPunct)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(w.age_1_N, mkAdv(w.of_3_Prep, mkNP(w.retirement_1_N)))), verb))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
 				break
 			
@@ -445,7 +447,6 @@ def render(cnc, lexeme, entity):
 	property_religion = get_items("P3075", entity)
 	if property_religion:
 		for qid, quad in property_religion: 
-			print('RELIGION QID: ', qid)
 			if qid == 'Q432': # Islam YES
 				religion = mkCN(w.islam_2_N)
 				break
@@ -644,7 +645,7 @@ def render(cnc, lexeme, entity):
 	position_gov = False
 	office_gov = get_items("P1313", entity)
 	if office_gov:
-		for qid, quad in office_gov: 
+		for qid, quad in office_gov:
 			if qid == 'Q2387238': # President of the Pontifical Commission for the Vatican City State
 				position_gov = mkCN(w.presidentMasc_3_N, mkAdv(w.of_1_Prep, mkNP(the_Det, mkCN(w.pontifical_1_A, w.commission_1_N)))) 
 				break
@@ -879,20 +880,34 @@ def render(cnc, lexeme, entity):
 					elif prev_head_gov_qid == mother_qid:
 						# He/She took office after his/her mother [name]
 						prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
-					curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_office_V), mkAdv(w.after_Prep, prev_head_gov))))) # APRÈS VS ENSUITE
+					curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_office_V), mkAdv(w.after_Prep, prev_head_gov)))))
+					#curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastSimpleTense, mkRCl(which_RP,mkVP(mkVP(w.take_office_V), mkAdv(w.after_Prep, prev_head_gov))))) # APRÈS VS ENSUITE
 
 			phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
 	
+
+	# Current / Previous organizations
+	# this is made to include the organizations that are not listed with cnc.get_lexemes below
+	current_orgs_qids = []
+	prev_orgs_qids = []
+	# checking every organization's qids and dividing in current / previous orgs
+	print('MEMBER OF: ')
+	for org_qid, qual in get_items("P463",entity):
+		if "P582" not in qual:
+			current_orgs_qids.append(org_qid)
+		else:
+			prev_orgs_qids.append(org_qid)
 	
+	# checking that every qid in current_orgs_qids is in org_qid_lexeme and collecting w.org_lexemes
+	result_curr = [lexeme for qid, lexeme in org_qid_lexeme if qid in current_orgs_qids]
+	# checking that every qid in prev_orgs_qids is in org_qid_lexeme and collecting w.org_lexemes
+	result_prev = [lexeme for qid, lexeme in org_qid_lexeme if qid in prev_orgs_qids]
 	
 	curr_organizations = set()
 	prev_organizations = set()
-	
+
 	for org,qual in cnc.get_lexemes("P463",entity):
-		#print('ORG: ', org)
-		#print(type(org))
-		#print('QUAL: ', qual)
 		if org != w.european_union_NP:
 			org = mkNP(org)
 		if "P582" not in qual:
@@ -904,6 +919,16 @@ def render(cnc, lexeme, entity):
 			prev_organizations.remove(org)
 		except KeyError:
 			pass
+
+	# adding the w.lexemes to curr_organizations
+	for item in result_curr:
+		if item not in curr_organizations:
+			curr_organizations.add(mkNP(item))
+	
+	# adding the w.lexemes to prev_organizations	
+	for item in result_prev:
+		if item not in prev_organizations:
+			prev_organizations.add(mkNP(item))
 
 	curr_organizations = mkNP(w.and_Conj, list(curr_organizations))
 	if curr_organizations:
@@ -1089,7 +1114,7 @@ def render(cnc, lexeme, entity):
 
 	yield "</p>"
 
-	#it's working!!! place this function (modify name) in utils.py
+	# this function allows me to get the qids of those product with no lexemes that are listed in VAT_applies_to_part (lists.py)
 	def get_product_ids(qual, product_list):
 		product_ids = []
 		if 'P518' in qual:
@@ -1099,7 +1124,6 @@ def render(cnc, lexeme, entity):
 					if product_id == item[0]:
 						product_ids.append(item[1])
 		return product_ids
-
 
 	vats = []
 	for vat,qual in get_quantities("P2855",entity):
@@ -1120,25 +1144,13 @@ def render(cnc, lexeme, entity):
 					else:
 						products.append(mkNP(item_lexeme))
 
-			#testing other products # maybe new function?
-			print('PLEASE')
-			#no_lex_product = None
-			#if 'P518' in qual:
-			#	for product in qual['P518']:
-			#		print('product_id: ', product['datavalue']['value']['id'])
-			#		product_id = product['datavalue']['value']['id']
-			#		for item in VAT_applies_to_part:
-			#			if product_id == item[0]:
-			#				no_lex_product = item[1]
-			#				products.append(mkNP(no_lex_product))
-#
-#
-			#print('NO_LEX_LIST: ', no_lex_product)
-
+			# getting products with no lexeme --> need to update to include products in plural
 			test = get_product_ids(qual, VAT_applies_to_part)
-			print('TEST BELOW: ', test)
 			for item in test:
-				products.append(mkNP(item))
+				if cnc.name in ["ParseFre"]:
+					products.append(mkNP(theSg_Det, item))
+				else:
+					products.append(mkNP(item))
 
 			products = mkNP(w.and_Conj, products)
 			if products:
@@ -1183,11 +1195,9 @@ def render(cnc, lexeme, entity):
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
 		else:
-			cn = mkCN(mkAP(mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
-			#cn = mkCN(cn, w.InLN(lexeme))
+			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
-		#max_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
 		max_temp = mkS(pastTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), cn), vp))
 
 	min_temp = False
@@ -1195,8 +1205,7 @@ def render(cnc, lexeme, entity):
 	if temperature_list:
 		temp,time,loc = temperature_list[0]
 		temp = mkNP(temp,w.celsius_MU)
-		cn = mkCN(mkAP(mkOrd(w.low_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
-		#cn = mkCN(mkAP(w.registered_2_A), w.temperature_1_N)
+		cn = mkCN(mkAP(w.registered_2_A), w.temperature_1_N)
 		vp = mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep, temp))
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
@@ -1204,7 +1213,6 @@ def render(cnc, lexeme, entity):
 			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
-		#min_temp = mkS(pastTense, mkCl(mkNP(theSg_Det, cn), vp))
 		min_temp = mkS(pastTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), cn), vp))
 
 	if max_temp and min_temp:
