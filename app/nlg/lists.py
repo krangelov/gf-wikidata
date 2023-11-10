@@ -536,148 +536,94 @@ bottom = [ # sorted from lower to higher life expectancy
 	#("Q702", 69.195, insular_oceania)     # Federated States of Micronesia
 	]
 
-vat_product_list = ['assistive technology', 
-				'flour', 
-				'cleaning activities', 
-				'periodical', 
-				'health care', 
-				'human health activities', 
-				'printed book', 
-				'Repair of other personal and household goods', 
-				'transport', 
-				'infant formula', 
-				'Residential care activities', 
-				'food', 
-				'renting', 
-				'ticket', 
-				'accommodation', 
-				'firewood', 
-				'book', 
-				'air transport', 
-				'starch', 
-				'Physical well-being activities', 
-				'margarine', 
-				'land transport and transport via pipelines', 
-				'clothing', 
-				'bouquet', 
-				'drinking water', 
-				'public transport', 
-				'funeral services industry', 
-				'Food and beverage service activities', 
-				'catering', 
-				'hospitality industry', 
-				'water', 
-				'Water collection, treatment and supply', 
-				'waste collection, treatment and disposal activities; materials recovery', 
-				'Creative, arts and entertainment activities', 
-				'sport', 
-				'plant', 
-				'water transport', 
-				'low-income housing', 
-				'Hairdressing and other beauty treatment', 
-				'hotel', 
-				'sewerage', 
-				'Social work activities without accommodation', 
-				'Jessica women wipes', # tampons
-				'Repair of footwear and leather goods', 
-				'culture', 
-				'medication', 
-				'library', 
-				'newspaper', 
-				'medicinal product', 
-				'malt', 
-				'child safety seat']
 
 
-
-# There are some VAT products that have no linearization (ex.: medicinal product), and hence, are not listed
-# when generating the VAT sentence. The idea is to create a list like form_of_government above that includes the id code
+# There are some VAT products that have no lexeme (ex.: accommodation), and hence, are not listed
+# when generating the VAT sentence. The idea is to create a list like form_of_government above that includes the qid
 # of the product and its corresponding lexeme.
 assistive_technology = mkCN(w.assistive_A, w.technology_1_N)
 air_transport = mkCN(w.CompoundN(w.air_9_N, w.transport_1_N))
 accommodation = mkCN(w.accommodation_5_N)
 clothing = mkCN(w.clothing_N)
 sewerage = mkCN(w.sewerage_2_N)
-medicinal_product = mkCN(w.medication_1_N)
+medicinal_product = mkCN(w.medicinal_A, w.product_1_N)
+beauty_services = mkCN(w.CompoundN(w.beauty_1_N, w.service_1_N))
+public_transport = mkCN(w.public_1_A, w.transport_1_N)
+wellbeing_activities = mkCN(w.CompoundN(w.well_being_N, w.activity_1_N))
 
+
+# The dict indicates when a product needs to be used in plural (language-dependent), where True == plural
 VAT_applies_to_part = [
-	("Q688498", assistive_technology),  # assistive technology
-	("Q1757562", air_transport),        # air transport
-    ("Q29584320", accommodation),       # accommodation
-    ("Q11460", clothing),
-    ("Q21040870", sewerage),
-    ("Q12034612", medicinal_product),
+	("Q688498", assistive_technology, {'en': False, 'es': False, 'fr': True}),
+	("Q1757562", air_transport, {'en': False, 'es': False, 'fr': False}),
+    ("Q29584320", accommodation, {'en': False, 'es': False, 'fr': False}),
+    ("Q11460", clothing, {'en': False, 'es': False, 'fr': True}),
+    ("Q21040870", sewerage, {'en': False, 'es': False, 'fr': False}),
+    ("Q12034612", medicinal_product, {'en': False, 'es': True, 'fr': True}),
+    ("Q29586123", beauty_services, {'en': True, 'es': True, 'fr': True}),   # Hairdressing and other beauty treatment
+    ("Q178512", public_transport, {'en': False, 'es': False, 'fr': False}),
+    ("Q29586130", wellbeing_activities, {'en': True, 'es': True, 'fr': True}), # Physical well-being activities
 ]
 
 
-# List of all the VAT products with lexemes that are being linearized at the moment
-vat_product_in_use = ["food_1_N",
-                    "plant_2_N",
-                    "firewood_N", 
-                    "formula_6_N",
-                    "flour_N", 
-                    "malt_3_N", 
-                    "starch_1_N", 
-                    "drinking_water_N", 
-                    "medication_1_N",
-                    "ticket_1_N",
-                    "library_1_N",
-                    "periodical_N",
-                    "water_1_N", 
-                    "transport_1_N", 
-                    "catering_N",
-                    "margarine_N", 
-                    "hotel_N",
-                    "book_1_N",
-                    "newspaper_3_N",
-                    "culture_6_N", 
-                    "sport_1_N", 
-                    "rental_2_N",
-                    "healthcare_2_N",
-                    "garment_N",
-                    "tampon_N"]
+# List of all the VAT products with lexemes
+vat_products_in_use = [
+    				("food_1_N", {'en': False, 'es': False, 'fr': True}),
+                    ("plant_2_N", {'en': True, 'es': True, 'fr': True}),
+                    ("firewood_N",  {'en': False, 'es': False, 'fr': False}),
+                    ("formula_6_N", {'en': False, 'es': False, 'fr': False}),
+                    ("flour_N", {'en': False, 'es': False, 'fr': False}),
+                    ("malt_3_N", {'en': False, 'es': False, 'fr': False}),
+                    ("starch_1_N", {'en': False, 'es': False, 'fr': False}),
+                    ("drinking_water_N", {'en': False, 'es': False, 'fr': False}),
+                    ("medication_1_N", {'en': False, 'es': True, 'fr': False}),
+                    ("ticket_1_N", {'en': True, 'es': True, 'fr': True}),
+                    ("library_1_N", {'en': True, 'es': True, 'fr': True}),
+                    ("periodical_N", {'en': True, 'es': True, 'fr': True}),
+                    ("water_1_N", {'en': False, 'es': False, 'fr': False}),
+                    ("transport_1_N", {'en': False, 'es': False, 'fr': False}),
+                    ("catering_N", {'en': False, 'es': False, 'fr': False}),
+                    ("margarine_N", {'en': False, 'es': False, 'fr': False}),
+                    ("hotel_N", {'en': True, 'es': True, 'fr': True}),
+                    ("book_1_N", {'en': True, 'es': True, 'fr': True}),
+                    ("newspaper_3_N", {'en': True, 'es': True, 'fr': True}),
+                    ("culture_6_N", {'en': False, 'es': False, 'fr': False}),
+                    ("sport_1_N", {'en': False, 'es': False, 'fr': False}),
+                    ("rental_2_N", {'en': True, 'es': True, 'fr': True}),
+                    ("healthcare_2_N", {'en': False, 'es': False, 'fr': False}),
+                    ("garment_N", {'en': True, 'es': True, 'fr': True}),
+                    ("tampon_N", {'en': True, 'es': True, 'fr': True}),
+                     ]
 
-
-# List of those VAT products that needs to be in plural when linearized (language dependant: ENG, SPA, FRE)
-vat_product_plural = ["plant_2_N",
-            	      "ticket_1_N",
-            	      "library_1_N",
-            	      "periodical_N",
-            	      "hotel_N",
-            	      "book_1_N",
-            	      "newspaper_3_N",
-            	      "rental_2_N",
-            	      "garment_N",
-            	      "tampon_N"]
 
 
 
 # this list contains (qid, w.lexeme) for some organizations
 org_qid_lexeme = [
-    ('Q1065', w.un_N), # United Nations
+    #('Q1065', w.un_PN), # United Nations
     ('Q7817', w.who_PN), # World Health Organization
     #('Q17495', w.upu_PN), #Universal Postal Union
     #('Q842490', w.opcw_PN), #Organization for the Prohibition of Chemical Weapons
     #('Q7825', w.wto_PN), # World Trade Organization
-    ('Q458', w.european_union_NP) # European Union
+	#('Q656801', w.ifc_PN), # International Finance Corporation
     ]
 
 
 # list of all organizations of which the countries are current/former members (and the number of members)
 organizations_count = [
-    ('Interpol', 194), #YES
-	('United Nations', 194), #*mkN -> w.un_N
-	('World Health Organization', 192), #YES
-	('UNESCO', 191), #YES
-	('Universal Postal Union', 189), #ADDED
-	('Organisation for the Prohibition of Chemical Weapons', 189), #ADDED
+    ('Interpol', 194),
+	('United Nations', 194),
+	('World Health Organization', 192),
+	('UNESCO', 191),
+	('Universal Postal Union', 189),
+	('Organisation for the Prohibition of Chemical Weapons', 189),
 	('International Telecommunication Union', 189),
 	('International Bank for Reconstruction and Development', 187),
 	('International Finance Corporation', 183),
 	('World Meteorological Organization', 180),
 	('Multilateral Investment Guarantee Agency', 179),
-	('International Development Association', 171), #NO PERO ESTÁ EN WORDNET
-	('World Trade Organization', 156), #ADDED
+	('International Development Association', 171),
+	('World Trade Organization', 156),
 	('International Centre for Settlement of Investment Disputes', 149),
 	('Group on Earth Observations', 104),
 	('International Hydrographic Organization', 86),
@@ -685,7 +631,7 @@ organizations_count = [
 	('Organisation of African, Caribbean and Pacific States', 77),
 	('International Civil Defence Organisation', 75),
 	('Asian Development Bank', 64),
-	('Commonwealth of Nations', 56), # w.commonweath_N
+	('Commonwealth of Nations', 56), # lexeme is commonwealth_3_N but it should be commonwealth_PN
 	('Organisation of Islamic Cooperation', 56),
 	('Organization for Security and Co-operation in Europe', 55),
 	('African Union', 54),
