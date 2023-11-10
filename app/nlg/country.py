@@ -89,10 +89,9 @@ def render(cnc, lexeme, entity):
 		cn = mkCN(cn,mkAdv(w.and_Conj,region_advs))
 	if not has_adjective and not region_advs:
 		# add the continent if stated
-		continent_lexemes = cnc.get_lexemes("P30",entity,qual=False)
-		if continent_lexemes:
-			for item in continent_lexemes:
-				cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(continent_lexemes[0])))
+		for continent in cnc.get_lexemes("P30",entity,qual=False):
+			region_nps.append(mkNP(continent))
+		cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(w.and_Conj,region_nps)))
 
 	# add the number of inhabitants
 	population_list = sorted(((population,get_time_qualifier("P585",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
