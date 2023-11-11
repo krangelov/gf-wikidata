@@ -87,7 +87,7 @@ def prelude(qid,lang,edit):
   yield b'           <table>'
 
   if qid:
-    yield b'             <tr><td><a href="https://cloud.grammaticalframework.org/wikidata">Main page</a></td></tr>'
+    yield b'             <tr><td><a href="https://cloud.grammaticalframework.org/wikidata/index.wsgi">Main page</a></td></tr>'
     yield b'             <tr><td><a href="https://www.wikidata.org/wiki/'+bytes(qid,"utf8")+b'">Wikidata item</a></td></tr>'
 
   yield b'           </table>'
