@@ -740,7 +740,7 @@ def render(cnc, lexeme, entity):
 
 	# Sorting by dates 
 	if name_date_state:
-		name_date_state.sort(key=lambda x: x[1], reverse=True) #Australia is complaining (Q408)
+		name_date_state.sort(key=lambda x: x[1] or "X", reverse=True) #Australia is complaining (Q408)
 		prev_head_state_qid = name_date_state[0][0]
 
 	# State current head of government (HOG), previous HOG, HOG' gender and kinship:
