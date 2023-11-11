@@ -207,7 +207,6 @@ def render(cnc, lexeme, entity):
 		official_langs = mkNP(w.and_Conj,official_langs)
 		other_langs = mkNP(w.and_Conj,other_langs)
 		if other_langs:
-			#phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(official_langs,mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))))),mkS(mkCl(other_langs,w.AdVVP(w.also_AdV,w.PassVPSlash(mkVPSlash(w.speak_3_V2))))))),fullStopPunct)
 			if cnc.name in ["ParseBul", "ParseCat", "ParseIta", "ParsePor", "ParseSpa"]:
 				vp = reflexiveVP(w.speak_3_V2)
 			else:
@@ -293,8 +292,6 @@ def render(cnc, lexeme, entity):
 				cn = mkCN(city, city_population)
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
-				#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(the_Quant, mkCN(mkAP (mkOrd(w.large_1_A)), cn))))),fullStopPunct)
-				#yield " " + cnc.linearize(phr)
 			else:
 				city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
 				cn = mkCN(city, city_population)
