@@ -13,6 +13,28 @@ def copula_number(cnc, number):
 	else:
 		return number
 
+# this function allows me to get the qids of those VAT products with no lexeme that are listed in VAT_applies_to_part (lists.py)
+#def get_product_ids(qual, product_list):
+#	product_ids = []
+#	if 'P518' in qual:
+#		for product in qual['P518']:
+#			product_id = product['datavalue']['value']['id']
+#			for item in product_list:
+#				if product_id == item[0]:
+#					product_ids.append(item[1])
+#	return product_ids
+
+#testing something
+def get_product_ids(qual, product_list):
+	product_ids = []
+	if 'P518' in qual:
+		for product in qual['P518']:
+			product_id = product['datavalue']['value']['id']
+			for item in product_list:
+				if product_id == item[0]:
+					product_ids.append((item[1], item[2]))
+	return product_ids
+
 
 def render(cnc, lexeme, entity):
 	yield "<div class='infobox'><table border=1>"
@@ -118,6 +140,7 @@ def render(cnc, lexeme, entity):
 					else:
 						neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(the_Det,direction)))
 			neighbours.append(neighbour_expr)
+
 	if neighbours:
 		if cnc.name in ["ParseSpa"]: #ProDrop
 			if len(neighbours) > 1:
@@ -184,7 +207,8 @@ def render(cnc, lexeme, entity):
 		official_langs = mkNP(w.and_Conj,official_langs)
 		other_langs = mkNP(w.and_Conj,other_langs)
 		if other_langs:
-			if cnc.name in ["ParseBul", "ParseCat", "ParseFre", "ParseIta", "ParsePor", "ParseSpa"]:
+			#phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(official_langs,mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))))),mkS(mkCl(other_langs,w.AdVVP(w.also_AdV,w.PassVPSlash(mkVPSlash(w.speak_3_V2))))))),fullStopPunct)
+			if cnc.name in ["ParseBul", "ParseCat", "ParseIta", "ParsePor", "ParseSpa"]:
 				vp = reflexiveVP(w.speak_3_V2)
 			else:
 				vp = passiveVP(w.speak_3_V2)
@@ -269,6 +293,8 @@ def render(cnc, lexeme, entity):
 				cn = mkCN(city, city_population)
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
+				#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(the_Quant, mkCN(mkAP (mkOrd(w.large_1_A)), cn))))),fullStopPunct)
+				#yield " " + cnc.linearize(phr)
 			else:
 				city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
 				cn = mkCN(city, city_population)
@@ -334,27 +360,49 @@ def render(cnc, lexeme, entity):
 	female_age = None
 	male_age = None
 	consent_type = None
+	test_dict = {}
 	marriageable_age = get_quantities("P3000",entity)
 	for age, qual in marriageable_age:
 		if "P582" not in qual:
-				gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
-				if gender_diff:
-					for lex in gender_diff:
-						if lex == w.female_2_N:
-							female_age = int(age)
-						if lex == w.male_2_N:
-							male_age = int(age)
-				#check Russia's interesting property (P1001) - applies to jurisdiction
-				consent = get_item_qualifier("P1013", qual)
-				if consent:
-					if consent == 'Q27177319':
-						consent_type = mkCN(mkAP(w.parental_1_A), w.consent_N) #FRE: legal term --> consentement parental
-					elif consent == 'Q27177129':
-						consent_type = mkCN(mkAP(w.judicial_1_A), w.consent_N) #judicial consent
+			gender_diff = cnc.get_lexeme_qualifiers("P518", qual)
+			if gender_diff:
+				for lex in gender_diff:
+					if lex == w.female_2_N:
+						female_age = int(age)
+					if lex == w.male_2_N:
+						male_age = int(age)
+			
+			consent = get_item_qualifier("P1013", qual)
+			if consent:
+				if consent == 'Q27177319':
+					consent_type = mkCN(mkAP(w.parental_1_A), w.consent_N)
+				elif consent == 'Q27177129':
+					consent_type = mkCN(mkAP(w.judicial_1_A), w.consent_N)
+			
+			# Russia's only property (P1001) - applies to jurisdiction
+			jurisdiction = cnc.get_lexeme_qualifiers("P1001", qual)
+			if jurisdiction:
+				test_dict[age] = jurisdiction
 					
 	if marriageable_age:
 		if not consent_type:
-			if female_age and male_age:
+			if jurisdiction:
+				#The minimum age of marriage is [X] years in [region_1] and [Y] years in [region_2]
+				age_1 = list(test_dict.keys())[0]
+				age_2 = list(test_dict.keys())[1]
+				region_1 = []
+				for reg in test_dict[age_1]:
+					region_1.append(mkNP(reg))
+				region_2 = []
+				for reg in test_dict[age_2]:
+					region_2.append(mkNP(reg))
+
+				number = mkNP(w.and_Conj, mkNP(mkNum(age_1), mkCN(w.year_5_N, mkAdv(w.in_2_Prep, mkNP(w.and_Conj,region_1)))), mkNP(mkNum(age_2), mkCN(w.year_5_N, mkAdv(w.in_2_Prep, mkNP(w.and_Conj,region_2)))))
+				verb = copula_number(cnc, number)
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)
+				yield " " + cnc.linearize(phr)
+			
+			elif female_age and male_age:
 				# The minimum age of marriage is [X] years for women and [Y] years for men.
 				# La edad mínima de matrimonio / L'âge minimum de mariage
 				if cnc.name in ["ParseFre", "ParseSpa"]:
@@ -375,8 +423,13 @@ def render(cnc, lexeme, entity):
 		else:
 			# The minimum age of marriage is [X] years with parental/court consent.
 			# La edad mínima de matrimonio / L'âge minimum de mariage
-			number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(consent_type))))
+			if cnc.name in ["ParseFre"]: # avec LE consent_type
+				number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(the_Det, consent_type))))
+			else:
+				number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(consent_type))))
+			
 			verb = copula_number(cnc, number)
+			#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)		
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
@@ -414,6 +467,7 @@ def render(cnc, lexeme, entity):
 
 	# Stating the official religion
 	religion = False
+	laicism = False
 	property_religion = get_items("P3075", entity)
 	if property_religion:
 		for qid, quad in property_religion: 
@@ -426,30 +480,48 @@ def render(cnc, lexeme, entity):
 			elif qid == 'Q9268': # Judaism
 				religion = mkCN(w.judaism_2_N)
 				break
-			elif qid == 'Q748': # Buddhism
+			elif qid == 'Q748': # Buddhism (has lexeme)
 				religion = mkCN(w.buddhism_1_N)
 				break
-			elif qid == 'Q752470': # Finnish Orthodox Church --> Eastern Orthodox Christianity
-				religion = mkCN(w.eastern_4_A, mkCN(w.orthodox_3_A, w.christianity_1_N))
+			elif qid == 'Q752470': # Finnish Orthodox Church --> Orthodox Christianity
+				religion = mkCN(w.orthodox_3_A, w.christianity_1_N)
 				break
 			elif qid == 'Q9592' or qid == 'Q1841': # Catholic Church / Catholicism
 				religion = mkCN(w.catholicism_N)
 				break
-			# elif qid == 'Q163943': # Druze
-			# 	religion = mkCN(druze) # not in Wikidata
-			# 	break
-			# elif qid == 'Q728697': # Laicism
-			# 	religion = mkCN(laicism) # not in Wikidata
-			# 	break
-			# elif qid == 'Q1379849': # Evangelical Lutheran Church of Finland
-			# 	religion = mkCN(lutheranism) #not in Wikidata
-			# 	break
+			elif qid == 'Q163943': # Druzism
+				religion = mkCN(w.druzism_N)
+				break
+			elif qid == 'Q728697': # Laicism
+				religion = mkCN(w.secular_3_A, w.state_4_N)
+				laicism = True
+				break
+			#elif qid == 'Q1379849': # Evangelical Lutheran Church of Finland
+			#	religion = mkCN(w.lutheranism_N)
+			#	break
 			
 	if religion:
+		# If no religion, we could simply omit this information; otherwise, we could state a 'secular country' for 'laicism'
+		#if laicism:
+		#	# The country is a secular state
+		#	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.country_1_N),mkNP(aSg_Det, religion)))),fullStopPunct)
+		#	yield " " + cnc.linearize(phr)
+		#else:
+
 		# The official religion is [religion].
-		# Future work: allowing multiple religions simultaneously.
+		# Future work: allowing multiple religions simultaneously / de jure vs. de facto
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
+
+	# If we had lexemes for the listed religions, we could use this code below (only working for Buddhism at the moment)
+	#religion = False
+	#for rel, qual in cnc.get_lexemes("P3075",entity):
+	#	religion = mkCN(rel)
+	#
+	#if religion:
+	#	# The official religion is [religion].
+	#	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, mkCN(w.official_3_A, w.religion_2_N)), mkNP(religion)))),fullStopPunct)
+	#	yield " " + cnc.linearize(phr)
 
 
 	yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_2_N)+'</h2>'
@@ -464,7 +536,6 @@ def render(cnc, lexeme, entity):
 
 	min_age = False
 	max_age = False
-	#obj = mkCN(w.age_1_N) #originally
 	obj = mkCN(w.child_1_N)
 	min_age_list = sorted(((literacy,get_time_qualifier("P585",quals) or "X") for literacy,quals in get_quantities("P3270",entity)),key=lambda p: p[1],reverse=True)
 	if min_age_list:
@@ -476,21 +547,14 @@ def render(cnc, lexeme, entity):
 		obj = mkCN(obj,mkAdv(w.to_1_Prep,mkNP(mkNum(max_age),w.year_5_N)))
 	if min_age or max_age:
 		if cnc.name in ["ParseFre", "ParseSpa"]:
-			# La educación es obligatoria para los niños de edad de [X] años a [Y] años
-			# phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(thePl_Det,w.PossNP(mkCN(w.child_1_N), mkNP(obj))))))), fullStopPunct)
-			# NEW SENTENCE:
 			# La educación es obligatoria para los niños de [X] años a [Y] años / L'éducation est obligatoire pour les enfants de [X] ans à [Y] ans
 			phrsf = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(thePl_Det, obj))))), fullStopPunct)
 			yield " " + cnc.linearize(phrsf)
 		else:
-			# Education is obligatory for children of age from [X] years to [Y] years
-			# phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(aPl_Det,w.PossNP(mkCN(w.child_1_N), mkNP(obj))))))), fullStopPunct)
-			# NEW SENTENCE:
 			# Education is obligatory for children from [X] years to [Y] years.
 			phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(aPl_Det, obj))))), fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
-		
 		if literacy_rate:
 			# This results in a literacy rate of XX.X%
 			phr = mkPhr(mkUtt(mkCl(this_NP, mkVP(w.result_in_V2, mkNP(mkNP(aSg_Det, w.literacy_rate_N), mkAdv(w.of_1_Prep, literacy_rate))))),fullStopPunct)
@@ -617,7 +681,7 @@ def render(cnc, lexeme, entity):
 	position_gov = False
 	office_gov = get_items("P1313", entity)
 	if office_gov:
-		for qid, quad in office_gov: 
+		for qid, quad in office_gov:
 			if qid == 'Q2387238': # President of the Pontifical Commission for the Vatican City State
 				position_gov = mkCN(w.presidentMasc_3_N, mkAdv(w.of_1_Prep, mkNP(the_Det, mkCN(w.pontifical_1_A, w.commission_1_N)))) 
 				break
@@ -852,13 +916,32 @@ def render(cnc, lexeme, entity):
 					elif prev_head_gov_qid == mother_qid:
 						# He/She took office after his/her mother [name]
 						prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
+					#curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastTense, mkRCl(which_RP,mkVP(mkVP(w.take_office_V), mkAdv(w.after_Prep, prev_head_gov)))))
 					curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastSimpleTense, mkRCl(which_RP,mkVP(mkVP(w.take_office_V), mkAdv(w.after_Prep, prev_head_gov))))) # APRÈS VS ENSUITE
 
 			phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
+	
 
+	# Current / Previous organizations
+	# this is made to include the organizations that are not listed with cnc.get_lexemes below
+	current_orgs_qids = []
+	prev_orgs_qids = []
+	# checking every organization's qids and classifying as current / previous orgs
+	for org_qid, qual in get_items("P463",entity):
+		if "P582" not in qual:
+			current_orgs_qids.append(org_qid)
+		else:
+			prev_orgs_qids.append(org_qid)
+	
+	# checking that every qid in current_orgs_qids is in org_qid_lexeme and collecting w.org_lexemes
+	result_curr = [lexeme for qid, lexeme in org_qid_lexeme if qid in current_orgs_qids]
+	# checking that every qid in prev_orgs_qids is in org_qid_lexeme and collecting w.org_lexemes
+	result_prev = [lexeme for qid, lexeme in org_qid_lexeme if qid in prev_orgs_qids]
+	
 	curr_organizations = set()
 	prev_organizations = set()
+
 	for org,qual in cnc.get_lexemes("P463",entity):
 		if org != w.european_union_NP:
 			org = mkNP(org)
@@ -871,6 +954,17 @@ def render(cnc, lexeme, entity):
 			prev_organizations.remove(org)
 		except KeyError:
 			pass
+
+	# adding the w.lexemes to curr_organizations
+	for item in result_curr:
+		if item not in curr_organizations:
+			curr_organizations.add(mkNP(item))
+	
+	# adding the w.lexemes to prev_organizations	
+	for item in result_prev:
+		if item not in prev_organizations:
+			prev_organizations.add(mkNP(item))
+
 	curr_organizations = mkNP(w.and_Conj, list(curr_organizations))
 	if curr_organizations:
 		# The country is a member of [...]
@@ -904,14 +998,8 @@ def render(cnc, lexeme, entity):
 			else:
 				quality = mkNP(a_Quant,mkCN(w.democracy_2_N,mkAdv(w.with_Prep,mkNP(aPl_Det,w.flaw_3_N)))) 
 		elif democracy_index >= 4:
-			#if cnc.name in ["ParseFre"]:
-			#	quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.polity_1_N))
-			#else:
 			quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.regime_1_N))
 		else:
-			#if cnc.name in ["ParseFre"]:
-			#	quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.polity_1_N))
-			#else:
 			quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.regime_1_N))
 		phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), mkVP(passiveVP(mkVPSlash(w.rank_2_V2)),mkAdv(w.as_Prep,quality)))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
@@ -932,8 +1020,7 @@ def render(cnc, lexeme, entity):
 			quality = mkNP(aSg_Det,mkCN(w.democratic_1_A,w.country_1_N))
 			break
 		quality = None
-	phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(mkNP(w.freedom_1_N), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.world_5_N))), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
-	#phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
+	phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
 	yield " "+cnc.linearize(phr)
 
 
@@ -1062,23 +1149,45 @@ def render(cnc, lexeme, entity):
 
 	yield "</p>"
 
+
 	vats = []
 	for vat,qual in get_quantities("P2855",entity):
 		if "P582" not in qual:
 			vat = mkNP(vat,w.percent_MU)
 			products = []
-			for item_lexeme in cnc.get_lexeme_qualifiers("P518", qual):
-				if cnc.name in ["ParseFre"] and (item_lexeme.name == "food_1_N" or item_lexeme.name in vat_product_plural): # article before the product
-					products.append(mkNP(thePl_Det, item_lexeme))
-				elif cnc.name in ["ParseSpa"] and item_lexeme.name == "medication_1_N":
-					products.append(mkNP(aPl_Det, item_lexeme))
-				elif item_lexeme.name in vat_product_plural:
-					products.append(mkNP(aPl_Det, item_lexeme))
-				else:
-					if cnc.name in ["ParseFre"]: 
-						products.append(mkNP(theSg_Det, item_lexeme)) # article before the product
+			vat_products = set()
+			lexemes_processed = set()
+			for lex, plural in vat_products_in_use:
+				for item_lexeme in cnc.get_lexeme_qualifiers("P518", qual):
+					if item_lexeme.name == lex and cnc.name in ["ParseFre"]:
+						if plural.get("fr", True):  # PLURAL
+							vat_products.add(mkNP(thePl_Det, item_lexeme))
+						elif not plural.get("fr", True) and item_lexeme not in lexemes_processed:  # SINGULAR
+							vat_products.add(mkNP(theSg_Det, item_lexeme))
+							lexemes_processed.add(item_lexeme)
+
+					elif item_lexeme.name == lex and cnc.name in ["ParseSpa", "ParseEng"]:
+						if plural.get("es", True) or plural.get("en", True):  # PLURAL
+							vat_products.add(mkNP(aPl_Det, item_lexeme))
+						elif (not plural.get("es", True) or not plural.get("en", True)) and item_lexeme not in lexemes_processed:  # SINGULAR
+							vat_products.add(mkNP(item_lexeme))
+							lexemes_processed.add(item_lexeme)
+
+			for item in vat_products:
+				products.append(item)
+
+			no_lex_products = get_product_ids(qual, VAT_applies_to_part)
+			for item, plural in no_lex_products:
+				if cnc.name in ["ParseFre"]:
+					if plural.get("fr", True):
+						products.append(mkNP(thePl_Det, item))
 					else:
-						products.append(mkNP(item_lexeme))
+						products.append(mkNP(theSg_Det, item))
+				elif cnc.name in ["ParseSpa", "ParseEng"]:
+					if plural.get("es", True) or plural.get("en", True):
+						products.append(mkNP(aPl_Det, item))
+					else:
+						products.append(mkNP(item))
 
 			products = mkNP(w.and_Conj, products)
 			if products:
