@@ -157,9 +157,11 @@ function select_language() {
 	window.localStorage.setItem('gp-languages', langs);
 }
 
-function edit_lex(span,event,lexical_id, lang) {
+function edit_lex(span,event) {
 	if (span.classList.contains("selected-lexeme"))
 		return;
+
+	const lexical_id = span.dataset.fun;
 
 	gfwordnet.selection = {langs_list: [], langs: {}}
 	let table = document.getElementById("from");
@@ -175,6 +177,9 @@ function edit_lex(span,event,lexical_id, lang) {
 				index: gfwordnet.selection.langs_list.length+1
 			}
 			gfwordnet.selection.langs_list.push(checkElem.name);
+		}
+		if (nameElem.tagName == "B") {
+			gfwordnet.selection.current = checkElem.name;
 		}
 		tr = tr.nextElementSibling;
 	}
@@ -235,6 +240,62 @@ function logOut() {
 	deleteCookie("user");
 	deleteCookie("author");
 	deleteCookie("token");
+}
+
+super_update_cells_lin = gfwordnet.update_cells_lin
+gfwordnet.update_cells_lin = function(lex_id,lang) {
+	super_update_cells_lin(lex_id,lang);
+
+	if (lang != gfwordnet.selection.current)
+		return;
+
+	// Part 4. Update the linearization of all sentences in the document
+    const spans = document.querySelectorAll("span[data-fun="+lex_id+"]");
+    for (const span of spans) {
+        if (span.parentElement.tagName != "SPAN")
+            continue;
+        const sentence = span.parentElement;
+        if (sentence.dataset.expr == null)
+			continue;
+
+		gfwordnet.grammar_call("command=bracketedLinearize&to="+lang+"&tree="+encodeURIComponent(sentence.dataset.expr), (lins) => {
+
+			sentence.innerHTML = "";
+			let bind_state = true;
+			function taggedBrackets(brackets, fun) {
+				for (let i in brackets) {
+					if ("bind" in brackets[i])
+						bind_state = brackets[i].bind;
+					else {
+						if (!bind_state) {
+							sentence.appendChild(text(" "));
+							bind_state = true;
+						}
+
+						if ("token" in brackets[i]) {
+							if (fun != null) {
+								const span = node("span", {},
+								                  [text(brackets[i].token)]);
+								span.dataset.fun = fun;
+								span.dataset.lang = lang;
+                                span.setAttribute("onclick", "edit_lex(this,event)");
+								sentence.appendChild(span);
+							} else {
+								sentence.appendChild(text(brackets[i].token));
+							}
+							bind_state = false;
+						} else {
+							taggedBrackets(brackets[i].children, brackets[i].fun);
+						}
+					}
+				}
+			}
+
+			for (const lin of lins) {
+				taggedBrackets(lin.brackets, null);
+			}
+		});
+    }
 }
 
 var user   = getCookie("user");

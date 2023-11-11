@@ -52,7 +52,7 @@ class ConcrHelper:
 						text += " "
 					if info:
 						if self.edit:
-							text += '<span class="'+info[2].name.lower()+'" lang="'+self.lang+'" onclick="edit_lex(this,event,\''+escape(info[1].name)+'\',\''+self.lang+'\')">'
+							text += '<span class="'+info[2].name.lower()+'" data-fun=\"'+escape(info[1].name)+'\" onclick="edit_lex(this,event)">'
 						else:
 							text += '<a href="index.wsgi?id='+info[0]+'&lang='+self.lang+'">'
 						info = None
@@ -124,6 +124,8 @@ class ConcrHelper:
 		flatten(self.cnc.bracketedLinearize(e))
 		if len(text) > 0:
 			text = text[0].upper()+text[1:]
+			if self.edit:
+				text = "<span data-expr=\""+escape(str(e))+"\">"+text+"</span>"
 		return text
 
 	def get_lex_fun(self, qid, link=True):
