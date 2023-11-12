@@ -5,6 +5,9 @@ from urllib.request import Request
 from daison import *
 import sys
 import pgf
+import datetime
+import time
+from email import utils
 
 def autorize(code, start_response):
   import os
@@ -143,7 +146,9 @@ epilogue = [
   ]
 
 def render_page(query, start_response):
-    start_response('200 OK', [('Content-Type','text/html; charset=utf-8')])
+    start_response('200 OK', [('Content-Type','text/html; charset=utf-8')
+                             ,('Date', utils.formatdate(time.mktime(datetime.datetime.now().timetuple())))
+                             ])
 
     qid   = query.get("id",[None])[0]
     if qid != None and (qid[0] != "Q" or not qid[1:].isdigit()):
