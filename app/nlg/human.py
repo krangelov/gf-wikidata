@@ -10,6 +10,7 @@ def render(cnc, lexeme, entity):
 	
 	gender = get_items("P21",entity,qual=False)
 
+	yield "<p>"
 	occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False)])
 	if not occupations:
 		if get_items("P184",entity):
@@ -73,4 +74,31 @@ def render(cnc, lexeme, entity):
 		students = mkNP(w.and_Conj,students)	
 		phr = mkPhr(mkUtt(mkS(pastTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisor_1_N),students))))),fullStopPunct)
 		yield " "+cnc.linearize(phr)
+		
+	yield "</p>"
+
+	if cnc.name in ["ParseBul"]:
+		useTense = presentTense
+	else:
+		useTense = pastTense
+
+	yield "<p>"
+	father = None
+	for father in get_entities("P22",entity,qual=False):
+		father = cnc.get_person_name(father)
+		break
+	mother = None
+	for mother in get_entities("P25",entity,qual=False):
+		mother = cnc.get_person_name(mother)
+		break
+	if mother and father:
+		phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkVP(passiveVP(w.bear_2_V2), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))))),fullStopPunct)
+		yield " "+cnc.linearize(phr)
+	elif mother:
+		phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(mkDet(pron,singularNum),mkCN(w.mother_1_N)),mother))),fullStopPunct)
+		yield " "+cnc.linearize(phr)
+	elif father:
+		phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(mkDet(pron,singularNum),mkCN(w.father_1_N)),father))),fullStopPunct)
+		yield " "+cnc.linearize(phr)
+	yield "</p>"
 
