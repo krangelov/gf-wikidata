@@ -116,7 +116,7 @@ def render(cnc, lexeme, entity):
 		cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(w.and_Conj,region_nps)))
 
 	# add the number of inhabitants
-	population_list = sorted(((population,get_time_qualifier("P585",quals)) for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
+	population_list = sorted(((population,get_time_qualifier("P585",quals) or "X") for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
 	if population_list:
 		population = int(population_list[0][0])
 		cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(population),w.inhabitant_1_N)))
@@ -740,7 +740,7 @@ def render(cnc, lexeme, entity):
 
 	# Sorting by dates 
 	if name_date_state:
-		name_date_state.sort(key=lambda x: x[1], reverse=True) #Australia is complaining (Q408)
+		name_date_state.sort(key=lambda x: x[1] or "X", reverse=True) #Australia is complaining (Q408)
 		prev_head_state_qid = name_date_state[0][0]
 
 	# State current head of government (HOG), previous HOG, HOG' gender and kinship:
@@ -1232,7 +1232,7 @@ def render(cnc, lexeme, entity):
 			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
-		max_temp = mkS(pastTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), cn), vp))
+		max_temp = mkS(pastSimpleTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), cn), vp))
 
 	min_temp = False
 	temperature_list = sorted(((temperature,get_time_qualifier("P585",quals),cnc.get_lexeme_qualifiers("P276",quals)) for temperature,quals in get_quantities("P7422",entity)),key=lambda p: p[1],reverse=True)
@@ -1247,7 +1247,7 @@ def render(cnc, lexeme, entity):
 			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
-		min_temp = mkS(pastTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), cn), vp))
+		min_temp = mkS(pastSimpleTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), cn), vp))
 
 	if max_temp and min_temp:
 		#The lowest registered temperature in [country] reached [max_temp] degrees (°C) (in [place] on [day] [month] [year]), and the highest temperature dropped to [min_temp] degrees (°C) (in [place] on [day] [month] [year])
