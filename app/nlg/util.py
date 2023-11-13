@@ -243,11 +243,11 @@ def get_entities(prop,entity,qual=True):
 	else:
 		props = [prop]
 
-	items = set()
+	items = {}
 	for prop in props:
 		for value in entity["claims"].get(prop,[]):
 			try:
-				items.add(value["mainsnak"]["datavalue"]["value"]["id"])
+				items[value["mainsnak"]["datavalue"]["value"]["id"]] = value.get("qualifiers",{})
 			except KeyError:
 				continue
 
@@ -259,13 +259,13 @@ def get_entities(prop,entity,qual=True):
 
 	entities = []
 	if qual:
-		for item in items:
+		for item,quals in items.items():
 			try:
-				entities.append((result[item],value.get("qualifiers",{})))
+				entities.append((result[item],quals))
 			except KeyError:
 				continue
 	else:
-		for item in items:
+		for item,quals in items.items():
 			try:
 				entities.append(result[item])
 			except KeyError:
@@ -305,6 +305,16 @@ def get_date(prop,entity):
 			continue
 	else:
 		return None
+
+def has_novalue(prop,entity):
+	for value in entity["claims"].get(prop,[]):
+		try:
+			if value["mainsnak"]["snaktype"] == "novalue":
+				return True
+		except KeyError:
+			continue
+	else:
+		return False
 
 iso8601_regex = re.compile(r"^(?P<era>\+|-)?(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})(T| )(?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})(?P<offset>(Z|(?P<offset_op>\+|-)?(?P<offset_hour>\d{2}):?(?P<offset_minute>\d{2})))?$")
 
