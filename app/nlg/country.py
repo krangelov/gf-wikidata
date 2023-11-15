@@ -13,26 +13,13 @@ def copula_number(cnc, number):
 	else:
 		return number
 
-# this function allows me to get the qids of those VAT products with no lexeme that are listed in VAT_applies_to_part (lists.py)
-#def get_product_ids(qual, product_list):
-#	product_ids = []
-#	if 'P518' in qual:
-#		for product in qual['P518']:
-#			product_id = product['datavalue']['value']['id']
-#			for item in product_list:
-#				if product_id == item[0]:
-#					product_ids.append(item[1])
-#	return product_ids
-
-#testing something
-def get_product_ids(qual, product_list):
+def get_product_ids(qual):
 	product_ids = []
-	if 'P518' in qual:
-		for product in qual['P518']:
-			product_id = product['datavalue']['value']['id']
-			for item in product_list:
-				if product_id == item[0]:
-					product_ids.append((item[1], item[2]))
+	for product in qual.get('P518',[]):
+		product_id = product['datavalue']['value']['id']
+		item = VAT_applies_to_part.get(product_id)
+		if item:
+			product_ids.append(item)
 	return product_ids
 
 
@@ -1150,42 +1137,20 @@ def render(cnc, lexeme, entity):
 	for vat,qual in get_quantities("P2855",entity):
 		if "P582" not in qual:
 			vat = mkNP(vat,w.percent_MU)
-			products = []
-			vat_products = set()
-			lexemes_processed = set()
-			for lex, plural in vat_products_in_use:
-				for item_lexeme in cnc.get_lexeme_qualifiers("P518", qual):
-					if item_lexeme.name == lex and cnc.name in ["ParseFre"]:
-						if plural.get("fr", True):  # PLURAL
-							vat_products.add(mkNP(thePl_Det, item_lexeme))
-						elif not plural.get("fr", True) and item_lexeme not in lexemes_processed:  # SINGULAR
-							vat_products.add(mkNP(theSg_Det, item_lexeme))
-							lexemes_processed.add(item_lexeme)
 
-					elif item_lexeme.name == lex and cnc.name in ["ParseSpa", "ParseEng"]:
-						if plural.get("es", True) or plural.get("en", True):  # PLURAL
-							vat_products.add(mkNP(aPl_Det, item_lexeme))
-						elif (not plural.get("es", True) or not plural.get("en", True)) and item_lexeme not in lexemes_processed:  # SINGULAR
-							vat_products.add(mkNP(item_lexeme))
-							lexemes_processed.add(item_lexeme)
+			products = set()
+			for item_lexeme in cnc.get_lexeme_qualifiers("P518", qual):
+				if det := vat_products_in_use.get(item_lexeme.name,{}).get(cnc.name):
+					products.add(mkNP(det, item_lexeme))
+				else:
+					products.add(mkNP(item_lexeme))
+			for item, dets in get_product_ids(qual):
+				if det := dets.get(cnc.name):
+					products.add(mkNP(det, item))
+				else:
+					products.add(mkNP(item))
 
-			for item in vat_products:
-				products.append(item)
-
-			no_lex_products = get_product_ids(qual, VAT_applies_to_part)
-			for item, plural in no_lex_products:
-				if cnc.name in ["ParseFre"]:
-					if plural.get("fr", True):
-						products.append(mkNP(thePl_Det, item))
-					else:
-						products.append(mkNP(theSg_Det, item))
-				elif cnc.name in ["ParseSpa", "ParseEng"]:
-					if plural.get("es", True) or plural.get("en", True):
-						products.append(mkNP(aPl_Det, item))
-					else:
-						products.append(mkNP(item))
-
-			products = mkNP(w.and_Conj, products)
+			products = mkNP(w.and_Conj, list(products))
 			if products:
 				vat = mkNP(vat,mkAdv(w.for_Prep,products))
 			vats.append(vat)

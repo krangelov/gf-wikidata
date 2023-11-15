@@ -559,47 +559,47 @@ wellbeing_activities = mkCN(w.CompoundN(w.well_being_N, w.activity_1_N))
 
 
 # The dict indicates when a product needs to be used in plural (language-dependent), where True == plural
-VAT_applies_to_part = [
-	("Q688498", assistive_technology, {'en': False, 'es': False, 'fr': True}),
-	("Q1757562", air_transport, {'en': False, 'es': False, 'fr': False}),
-    ("Q29584320", accommodation, {'en': False, 'es': False, 'fr': False}),
-    ("Q11460", clothing, {'en': False, 'es': False, 'fr': True}),
-    ("Q21040870", sewerage, {'en': False, 'es': False, 'fr': False}),
-    ("Q12034612", medicinal_product, {'en': False, 'es': True, 'fr': True}),
-    ("Q29586123", beauty_services, {'en': True, 'es': True, 'fr': True}),   # Hairdressing and other beauty treatment
-    ("Q178512", public_transport, {'en': False, 'es': False, 'fr': False}),
-    ("Q29586130", wellbeing_activities, {'en': True, 'es': True, 'fr': True}), # Physical well-being activities
-]
+VAT_applies_to_part = {
+   "Q688498": (assistive_technology, {'ParseFre': thePl_Det}),
+   "Q1757562": (air_transport, {'ParseFre': theSg_Det}),
+   "Q29584320": (accommodation, {'ParseFre': theSg_Det}),
+   "Q11460": (clothing, {'ParseFre': thePl_Det}),
+   "Q21040870": (sewerage, {'ParseFre': theSg_Det}),
+   "Q12034612": (medicinal_product, {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det}),
+   "Q29586123": (beauty_services, {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det}),   # Hairdressing and other beauty treatment
+   "Q178512": (public_transport, {'ParseFre': theSg_Det}),
+   "Q29586130": (wellbeing_activities, {'ParseEng': aPl_Det, 'ParseSpa': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseFre': thePl_Det}), # Physical well-being activities
+}
 
 
 # List of all the VAT products with lexemes
-vat_products_in_use = [
-    				("food_1_N", {'en': False, 'es': False, 'fr': True}),
-                    ("plant_2_N", {'en': True, 'es': True, 'fr': True}),
-                    ("firewood_N",  {'en': False, 'es': False, 'fr': False}),
-                    ("formula_6_N", {'en': False, 'es': False, 'fr': False}),
-                    ("flour_N", {'en': False, 'es': False, 'fr': False}),
-                    ("malt_3_N", {'en': False, 'es': False, 'fr': False}),
-                    ("starch_1_N", {'en': False, 'es': False, 'fr': False}),
-                    ("drinking_water_N", {'en': False, 'es': False, 'fr': False}),
-                    ("medication_1_N", {'en': False, 'es': True, 'fr': False}),
-                    ("ticket_1_N", {'en': True, 'es': True, 'fr': True}),
-                    ("library_1_N", {'en': True, 'es': True, 'fr': True}),
-                    ("periodical_N", {'en': True, 'es': True, 'fr': True}),
-                    ("water_1_N", {'en': False, 'es': False, 'fr': False}),
-                    ("transport_1_N", {'en': False, 'es': False, 'fr': False}),
-                    ("catering_N", {'en': False, 'es': False, 'fr': False}),
-                    ("margarine_N", {'en': False, 'es': False, 'fr': False}),
-                    ("hotel_N", {'en': True, 'es': True, 'fr': True}),
-                    ("book_1_N", {'en': True, 'es': True, 'fr': True}),
-                    ("newspaper_3_N", {'en': True, 'es': True, 'fr': True}),
-                    ("culture_6_N", {'en': False, 'es': False, 'fr': False}),
-                    ("sport_1_N", {'en': False, 'es': False, 'fr': False}),
-                    ("rental_2_N", {'en': True, 'es': True, 'fr': True}),
-                    ("healthcare_2_N", {'en': False, 'es': False, 'fr': False}),
-                    ("garment_N", {'en': True, 'es': True, 'fr': True}),
-                    ("tampon_N", {'en': True, 'es': True, 'fr': True}),
-                     ]
+vat_products_in_use = {
+   "food_1_N": {'ParseSpa': aSg_Det, 'ParseFre': thePl_Det},
+   "plant_2_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+   "firewood_N":  {'ParseBul': aPl_Det, 'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "formula_6_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "flour_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "malt_3_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "starch_1_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "drinking_water_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "medication_1_N": {'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': theSg_Det},
+   "ticket_1_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+   "library_1_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+   "periodical_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+   "water_1_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "transport_1_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "catering_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "margarine_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "hotel_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+   "book_1_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+   "newspaper_3_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+   "culture_6_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "sport_1_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "rental_2_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+   "healthcare_2_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
+   "garment_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+   "tampon_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
+  }
 
 
 
