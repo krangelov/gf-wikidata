@@ -13,26 +13,13 @@ def copula_number(cnc, number):
 	else:
 		return number
 
-# this function allows me to get the qids of those VAT products with no lexeme that are listed in VAT_applies_to_part (lists.py)
-#def get_product_ids(qual, product_list):
-#	product_ids = []
-#	if 'P518' in qual:
-#		for product in qual['P518']:
-#			product_id = product['datavalue']['value']['id']
-#			for item in product_list:
-#				if product_id == item[0]:
-#					product_ids.append(item[1])
-#	return product_ids
-
-#testing something
-def get_product_ids(qual, product_list):
+def get_product_ids(qual):
 	product_ids = []
-	if 'P518' in qual:
-		for product in qual['P518']:
-			product_id = product['datavalue']['value']['id']
-			for item in product_list:
-				if product_id == item[0]:
-					product_ids.append((item[1], item[2]))
+	for product in qual.get('P518',[]):
+		product_id = product['datavalue']['value']['id']
+		item = VAT_applies_to_part.get(product_id)
+		if item:
+			product_ids.append(item)
 	return product_ids
 
 
@@ -97,6 +84,7 @@ def render(cnc, lexeme, entity):
 
 	region_nps  = []
 	region_advs = []
+	preposition = w.of_1_Prep if cnc.name in ["ParseSpa", "ParseFre"] else w.in_1_Prep
 	if "Q23522" in location_qids:  # on the balkans instead of in the balkans
 		region_advs.append(mkAdv(w.on_1_Prep,mkNP(w.balkans_2_LN)))
 	if not region_advs or entity["id"] == "Q43":
@@ -104,16 +92,20 @@ def render(cnc, lexeme, entity):
 			if qid in part_of_qids or qid in location_qids:
 				lex_fun = cnc.get_lex_fun(qid)
 				if lex_fun:
-					region_nps.append(mkNP(lex_fun))
+					if lex_fun in [w.middle_east_LN, w.caucasus_LN, w.caribbean_LN]:
+						region_nps.append(mkNP(lex_fun))
+					else:
+						region_nps.append(w.PlainLN(lex_fun))
+			
 	if region_nps:
-		region_advs.append(mkAdv(w.in_1_Prep,mkNP(w.and_Conj,region_nps)))
+		region_advs.append(mkAdv(preposition,mkNP(w.and_Conj,region_nps)))
 	if region_advs:
 		cn = mkCN(cn,mkAdv(w.and_Conj,region_advs))
 	if not has_adjective and not region_advs:
 		# add the continent if stated
 		for continent in cnc.get_lexemes("P30",entity,qual=False):
-			region_nps.append(mkNP(continent))
-		cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(w.and_Conj,region_nps)))
+			region_nps.append(w.PlainLN(continent))
+		cn = mkCN(cn,mkAdv(preposition,mkNP(w.and_Conj,region_nps)))
 
 	# add the number of inhabitants
 	population_list = sorted(((population,get_time_qualifier("P585",quals) or "X") for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
@@ -288,7 +280,7 @@ def render(cnc, lexeme, entity):
 			city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitant_1_N))
 			
 			if cnc.name in ["ParseFre", "ParseSpa"]:
-				city = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep,mkNP(lexeme)))
+				city = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep, w.PlainLN(lexeme)))
 				cn = mkCN(city, city_population)
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
 				yield " " + cnc.linearize(phr)
@@ -913,8 +905,8 @@ def render(cnc, lexeme, entity):
 					elif prev_head_gov_qid == mother_qid:
 						# He/She took office after his/her mother [name]
 						prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
-					curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastSimpleTense, mkRCl(which_RP,mkVP(mkVP(w.take_office_V), mkAdv(w.after_Prep, prev_head_gov))))) # APRÈS VS ENSUITE
-
+					curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastSimpleTense, mkRCl(which_RP,mkVP(mkVP(w.take_office_V), mkAdv(w.after_Prep, prev_head_gov)))))
+			
 			phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
 	
@@ -1150,42 +1142,20 @@ def render(cnc, lexeme, entity):
 	for vat,qual in get_quantities("P2855",entity):
 		if "P582" not in qual:
 			vat = mkNP(vat,w.percent_MU)
-			products = []
-			vat_products = set()
-			lexemes_processed = set()
-			for lex, plural in vat_products_in_use:
-				for item_lexeme in cnc.get_lexeme_qualifiers("P518", qual):
-					if item_lexeme.name == lex and cnc.name in ["ParseFre"]:
-						if plural.get("fr", True):  # PLURAL
-							vat_products.add(mkNP(thePl_Det, item_lexeme))
-						elif not plural.get("fr", True) and item_lexeme not in lexemes_processed:  # SINGULAR
-							vat_products.add(mkNP(theSg_Det, item_lexeme))
-							lexemes_processed.add(item_lexeme)
 
-					elif item_lexeme.name == lex and cnc.name in ["ParseSpa", "ParseEng"]:
-						if plural.get("es", True) or plural.get("en", True):  # PLURAL
-							vat_products.add(mkNP(aPl_Det, item_lexeme))
-						elif (not plural.get("es", True) or not plural.get("en", True)) and item_lexeme not in lexemes_processed:  # SINGULAR
-							vat_products.add(mkNP(item_lexeme))
-							lexemes_processed.add(item_lexeme)
+			products = set()
+			for item_lexeme in cnc.get_lexeme_qualifiers("P518", qual):
+				if det := vat_products_in_use.get(item_lexeme.name,{}).get(cnc.name):
+					products.add(mkNP(det, item_lexeme))
+				else:
+					products.add(mkNP(item_lexeme))
+			for item, dets in get_product_ids(qual):
+				if det := dets.get(cnc.name):
+					products.add(mkNP(det, item))
+				else:
+					products.add(mkNP(item))
 
-			for item in vat_products:
-				products.append(item)
-
-			no_lex_products = get_product_ids(qual, VAT_applies_to_part)
-			for item, plural in no_lex_products:
-				if cnc.name in ["ParseFre"]:
-					if plural.get("fr", True):
-						products.append(mkNP(thePl_Det, item))
-					else:
-						products.append(mkNP(theSg_Det, item))
-				elif cnc.name in ["ParseSpa", "ParseEng"]:
-					if plural.get("es", True) or plural.get("en", True):
-						products.append(mkNP(aPl_Det, item))
-					else:
-						products.append(mkNP(item))
-
-			products = mkNP(w.and_Conj, products)
+			products = mkNP(w.and_Conj, list(products))
 			if products:
 				vat = mkNP(vat,mkAdv(w.for_Prep,products))
 			vats.append(vat)
@@ -1246,7 +1216,7 @@ def render(cnc, lexeme, entity):
 			cn = mkCN(cn, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
-		min_temp = mkS(pastSimpleTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), cn), vp))
+		min_temp = mkS(pastSimpleTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), cn), vp))		
 
 	if max_temp and min_temp:
 		#The lowest registered temperature in [country] reached [max_temp] degrees (°C) (in [place] on [day] [month] [year]), and the highest temperature dropped to [min_temp] degrees (°C) (in [place] on [day] [month] [year])
