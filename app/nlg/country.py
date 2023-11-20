@@ -278,18 +278,14 @@ def render(cnc, lexeme, entity):
 		if entity["id"] == country_qid:
 			city_name = cnc.get_lex_fun(city_qid)
 			city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitant_1_N))
-			
+			np = mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),mkCN(w.city_1_N))
 			if cnc.name in ["ParseFre", "ParseSpa"]:
-				city = mkCN(mkCN(w.city_1_N), mkAdv(w.of_1_Prep, w.PlainLN(lexeme)))
-				cn = mkCN(city, city_population)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
-				yield " " + cnc.linearize(phr)
+				np = mkNP(np, mkAdv(w.of_1_Prep,mkNP(lexeme)))
 			else:
-				city = mkCN(mkCN(w.city_1_N), mkAdv(w.in_1_Prep,mkNP(lexeme)))
-				cn = mkCN(city, city_population)
-				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),cn)))),fullStopPunct)
-				yield " " + cnc.linearize(phr)
-
+				np = mkNP(np, mkAdv(w.in_1_Prep,mkNP(lexeme)))
+			np = mkNP(np, city_population)
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(city_name),np))),fullStopPunct)
+			yield " " + cnc.linearize(phr)
 
 	hdi_list = sorted(((hdi,get_time_qualifier("P585",quals)) for hdi,quals in get_quantities("P1081",entity)),key=lambda p: p[1],reverse=True)
 	if hdi_list:
@@ -1193,30 +1189,30 @@ def render(cnc, lexeme, entity):
 	if temperature_list:		
 		temp,time,loc = temperature_list[0]
 		temp = mkNP(temp,w.celsius_MU)
-		cn = mkCN(mkAP(w.registered_2_A), w.temperature_1_N)
+		np = mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
 		vp = mkVP(w.reach_2_V2, temp)
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
 		else:
-			cn = mkCN(cn, w.InLN(lexeme))
+			np = mkNP(np, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
-		max_temp = mkS(pastSimpleTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), cn), vp))
+		max_temp = mkS(pastSimpleTense, mkCl(np,vp))
 
 	min_temp = False
 	temperature_list = sorted(((temperature,get_time_qualifier("P585",quals),cnc.get_lexeme_qualifiers("P276",quals)) for temperature,quals in get_quantities("P7422",entity)),key=lambda p: p[1],reverse=True)
 	if temperature_list:
 		temp,time,loc = temperature_list[0]
 		temp = mkNP(temp,w.celsius_MU)
-		cn = mkCN(mkAP(w.registered_2_A), w.temperature_1_N)
+		np = mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
 		vp = mkVP(mkVP(w.drop_4_V), mkAdv(w.to_2_Prep, temp))
 		if loc:
 			vp = mkVP(vp,w.InLN(loc[0]))
 		else:
-			cn = mkCN(cn, w.InLN(lexeme))
+			np = mkNP(np, w.InLN(lexeme))
 		if time:
 			vp = mkVP(vp,str2date(time))
-		min_temp = mkS(pastSimpleTense, mkCl(mkNP(mkDet(the_Quant,singularNum,mkOrd(w.low_1_A)), cn), vp))
+		min_temp = mkS(pastSimpleTense, mkCl(np, vp))
 
 	if max_temp and min_temp:
 		#The lowest registered temperature in [country] reached [max_temp] degrees (°C) (in [place] on [day] [month] [year]), and the highest temperature dropped to [min_temp] degrees (°C) (in [place] on [day] [month] [year])
@@ -1232,7 +1228,3 @@ def render(cnc, lexeme, entity):
 		#The lowest recorded/registered temperature in [country] dropped to [min_temp] degrees (°C) (in [place] on [day] [month] [year])
 		phr = mkPhr(mkUtt(min_temp), fullStopPunct)
 		yield " " + cnc.linearize(phr)
-
-
-
-
