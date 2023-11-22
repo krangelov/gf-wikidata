@@ -835,7 +835,7 @@ def render(cnc, lexeme, entity):
 
 					# He/She succeeded [prev_head_state] in the position.
 					prep = w.into_1_Prep if cnc.name in ["ParseFre"] else w.in_1_Prep
-					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(mkVP(w.succeed_V2, prev_head_state), mkAdv(prep, mkNP(the_Det, w.position_6_N)))))),fullStopPunct)
+					phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(gender), mkVP(mkVP(w.succeed_V2, prev_head_state), mkAdv(prep, mkNP(the_Det, w.position_6_N)))))),fullStopPunct)
 					yield " " + cnc.linearize(phr)
 		
 		else:
