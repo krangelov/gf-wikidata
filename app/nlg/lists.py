@@ -558,7 +558,7 @@ public_transport = mkCN(w.public_1_A, w.transport_1_N)
 wellbeing_activities = mkCN(w.CompoundN(w.well_being_N, w.activity_1_N))
 
 
-# The dict indicates when a product needs to be used in plural (language-dependent), where True == plural
+# The dict indicates when a product needs to be used in the plural/singular form (language-dependent)
 VAT_applies_to_part = {
    "Q688498": (assistive_technology, {'ParseFre': thePl_Det}),
    "Q1757562": (air_transport, {'ParseFre': theSg_Det}),
@@ -600,34 +600,6 @@ vat_products_in_use = {
    "garment_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
    "tampon_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
   }
-
-#vat_products_in_use = {
-#   "food_1_N": {'ParseSpa': aSg_Det, 'ParseFre': thePl_Det},
-#   "plant_2_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#   "firewood_N":  {'ParseBul': aPl_Det, 'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "formula_6_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "flour_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "malt_3_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "starch_1_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "drinking_water_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "medication_1_N": {'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': theSg_Det},
-#   "ticket_1_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#   "library_1_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#   "periodical_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#   "water_1_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "transport_1_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "catering_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "margarine_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "hotel_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#   "book_1_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#   "newspaper_3_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#   "culture_6_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "sport_1_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "rental_2_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#   "healthcare_2_N": {'ParseSpa': aSg_Det, 'ParseFre': theSg_Det},
-#   "garment_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#   "tampon_N": {'ParseEng': aPl_Det, 'ParseSwe': aPl_Det, 'ParseBul': aPl_Det, 'ParseSpa': aPl_Det, 'ParseFre': thePl_Det},
-#  }
 
 
 # this list contains (qid, w.lexeme) for some organizations

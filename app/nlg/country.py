@@ -24,40 +24,40 @@ def get_product_ids(qual):
 
 
 def render(cnc, lexeme, entity):
-	#yield "<div class='infobox'><table border=1>"
+	yield "<div class='infobox'><table border=1>"
 	# show the flag and the coat of arms if available
-	#yield "<tr><td><table><tr>"
+	yield "<tr><td><table><tr>"
 	has_flag = False
 	for media,qual in get_medias("P41",entity):
-		#yield "<td><img src='"+escape(media)+"' height=78/></td>"
+		yield "<td><img src='"+escape(media)+"' height=78/></td>"
 		has_flag = True
 		break
 	has_arms = False
 	for media,qual in get_medias("P94",entity):
-		#yield "<td><img src='"+escape(media)+"' height=78/></td>"
+		yield "<td><img src='"+escape(media)+"' height=78/></td>"
 		has_arms = True
 		break
-	#yield "</tr><tr>"
-	#if has_flag:
-	#	yield "<td>"+cnc.linearize(w.flag_1_N)+"</td>"
-	#else:
-	#	yield "<td></td>"
-	#if has_arms:
-	#	yield "<td>"+cnc.linearize(w.coat_of_arms_N)+"</td>"
-	#else:
-	#	yield "<td></td>"
-	#yield "</tr></table></td></tr>"
+	yield "</tr><tr>"
+	if has_flag:
+		yield "<td>"+cnc.linearize(w.flag_1_N)+"</td>"
+	else:
+		yield "<td></td>"
+	if has_arms:
+		yield "<td>"+cnc.linearize(w.coat_of_arms_N)+"</td>"
+	else:
+		yield "<td></td>"
+	yield "</tr></table></td></tr>"
 
 	# show the location
-	#for media,qual in get_medias("P242",entity):
-	#	yield "<tr><td><img src='"+escape(media)+"' width=250></td></tr>"
-	#	break
+	for media,qual in get_medias("P242",entity):
+		yield "<tr><td><img src='"+escape(media)+"' width=250></td></tr>"
+		break
 
-	#yield "</table></div>"
+	yield "</table></div>"
 
 
 	# start the text generation
-	#yield "<p>"
+	yield "<p>"
 
 	# it is a country
 	class_qids = get_items("P31",entity,qual=False)
@@ -115,7 +115,7 @@ def render(cnc, lexeme, entity):
 	else:
 		population = None
 	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
-	yield cnc.linearize(phr)
+	yield " " + cnc.linearize(phr)
 	
 	# list neighbours
 	neighbours = []
@@ -216,7 +216,7 @@ def render(cnc, lexeme, entity):
 		yield " " + cnc.linearize(phr)
 
 
-	#yield '<h2 class="gp-page-title">'+cnc.linearize(w.demography_N)+'</h2>'
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.demography_N)+'</h2>'
 
 	# state life expectancy
 	# [Country name] has the highest/lowest life expectancy in [continent / the world], with an average of [XX] years.
@@ -507,7 +507,7 @@ def render(cnc, lexeme, entity):
 	#	yield " " + cnc.linearize(phr)
 
 
-	#yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_2_N)+'</h2>'
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_2_N)+'</h2>'
 
 	# Literacy rate and number of children out of school
 	literacy_list = sorted(((literacy,get_time_qualifier("P585",quals)) for literacy,quals in get_quantities("P6897",entity)),key=lambda p: p[1],reverse=True)
@@ -563,19 +563,19 @@ def render(cnc, lexeme, entity):
 
 	divisions = cnc.get_lexemes("P150",entity,qual=False)
 	if divisions:
-		#yield '<h2 class="gp-page-title">'+cnc.linearize(mkNP(aPl_Det,mkCN(w.administrative_A,w.unit_3_N)))+'</h2>'
+		yield '<h2 class="gp-page-title">'+cnc.linearize(mkNP(aPl_Det,mkCN(w.administrative_A,w.unit_3_N)))+'</h2>'
 		# The country has the following administrative units:
-		#yield '<p>'+cnc.linearize(mkCl(mkNP(theSg_Det,w.country_1_N),mkVP(w.have_1_V2,mkNP(thePl_Det,mkCN(w.following_2_A,mkCN(w.administrative_A,w.unit_3_N))))))+':'
+		yield '<p>'+cnc.linearize(mkCl(mkNP(theSg_Det,w.country_1_N),mkVP(w.have_1_V2,mkNP(thePl_Det,mkCN(w.following_2_A,mkCN(w.administrative_A,w.unit_3_N))))))+':'
 		if len(divisions) < 5:
 			column_count = 1
 		elif len(divisions) < 10:
 			column_count = 2
 		else:
 			column_count = 4
-		#yield "<ul style='column-count: "+str(column_count)+"'>"
-		#for division in divisions:
-		#	yield "<li>"+cnc.linearize(division)+"</li>"
-		#yield '</ul></p>'
+		yield "<ul style='column-count: "+str(column_count)+"'>"
+		for division in divisions:
+			yield "<li>"+cnc.linearize(division)+"</li>"
+		yield '</ul></p>'
 
 
 	# State basic form of government
@@ -751,7 +751,7 @@ def render(cnc, lexeme, entity):
 
 	entities = get_entity([curr_head_state_qid,prev_head_state_qid,curr_head_gov_qid,prev_head_gov_qid])
 
-	#yield '<h2 class="gp-page-title">'+cnc.linearize(w.politics_2_N)+'</h2>'
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.politics_2_N)+'</h2>'
 
 	# Linearizing:
 	# [Country name] is a [basic form of government], with [position] [name] as head of state. 
@@ -886,7 +886,7 @@ def render(cnc, lexeme, entity):
 				if prev_head_gov:
 					if position_gov:
 						if cnc.name in ["ParseFre", "ParseSpa"]:
-							prev_head_gov =   mkNP(the_Det, mkCN(position_gov, prev_head_gov)) #THE [POSITION] [NAME]
+							prev_head_gov = mkNP(the_Det, mkCN(position_gov, prev_head_gov)) #THE [POSITION] [NAME]
 						else:
 							prev_head_gov = mkNP(mkCN(position_gov, prev_head_gov))
 
@@ -983,9 +983,7 @@ def render(cnc, lexeme, entity):
 		phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), mkVP(passiveVP(mkVPSlash(w.rank_2_V2)),mkAdv(w.as_Prep,quality)))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
-	# vatican
-	#pol = positivePol
-	#for quality in get_items("P1552",entity,qual=False):
+
 	pol = positivePol
 	freedom = get_items("P1552",entity,qual=False)
 	if freedom:
@@ -1017,14 +1015,14 @@ def render(cnc, lexeme, entity):
 		phr = mkPhr(mkUtt(mkS(positivePol,mkCl(mkNP(w.ProDrop(w.it_Pron)),passiveVP(mkVPSlash(mkVPSlash(w.designate_4_V2),mkAdv(w.as_Prep,mkNP(aSg_Det,w.CompoundN(w.terrorist_N,w.state_4_N)))),agents)))), fullStopPunct)
 		yield " "+cnc.linearize(phr)
 
-	#yield "</p>"
+	yield "</p>"
 
 	economy = get_entities("P8744",entity,qual=False)
 	if economy:
 		economy = economy[0]
-		#yield '<h2 class="gp-page-title">'+cnc.linearize(w.economy_1_N)+'</h2>'
+		yield '<h2 class="gp-page-title">'+cnc.linearize(w.economy_1_N)+'</h2>'
 
-		#yield "<p>"
+		yield "<p>"
 
 		objs = []
 
@@ -1131,7 +1129,7 @@ def render(cnc, lexeme, entity):
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det, w.unemployment_N), verb)), fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
-	#yield "</p>"
+	yield "</p>"
 
 
 	vats = []
@@ -1168,7 +1166,7 @@ def render(cnc, lexeme, entity):
 	ind_tax = mkNP(w.and_Conj, ind_tax)
 
 	if vats or ind_tax:
-		#yield "<p>"
+		yield "<p>"
 		if vats:
 			verb = copula_number(cnc, vats)
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.vat_1_N), verb)), fullStopPunct)
@@ -1179,14 +1177,14 @@ def render(cnc, lexeme, entity):
 			phr = mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.income_tax_N), verb)), fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
-		#yield "</p>"
+		yield "</p>"
 
 
-	#yield '<h2 class="gp-page-title">'+cnc.linearize(w.climate_1_N)+'</h2>'
-	
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.climate_1_N)+'</h2>'	
+
 	max_temp = False
 	temperature_list = sorted(((temperature,get_time_qualifier("P585",quals),cnc.get_lexeme_qualifiers("P276",quals)) for temperature,quals in get_quantities("P6591",entity)),key=lambda p: p[1],reverse=True)
-	if temperature_list:		
+	if temperature_list:	
 		temp,time,loc = temperature_list[0]
 		temp = mkNP(temp,w.celsius_MU)
 		np = mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
