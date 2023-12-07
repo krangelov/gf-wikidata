@@ -84,6 +84,7 @@ def render(cnc, lexeme, entity):
 
 	region_nps  = []
 	region_advs = []
+	preposition = w.of_1_Prep if cnc.name in ["ParseSpa", "ParseFre"] else w.in_1_Prep
 	if "Q23522" in location_qids:  # on the balkans instead of in the balkans
 		region_advs.append(mkAdv(w.on_1_Prep,mkNP(w.balkans_2_LN)))
 	if not region_advs or entity["id"] == "Q43":
@@ -91,16 +92,20 @@ def render(cnc, lexeme, entity):
 			if qid in part_of_qids or qid in location_qids:
 				lex_fun = cnc.get_lex_fun(qid)
 				if lex_fun:
-					region_nps.append(mkNP(lex_fun))
+					if lex_fun in [w.middle_east_LN, w.caucasus_LN, w.caribbean_LN]:
+						region_nps.append(mkNP(lex_fun))
+					else:
+						region_nps.append(w.PlainLN(lex_fun))
+			
 	if region_nps:
-		region_advs.append(mkAdv(w.in_1_Prep,mkNP(w.and_Conj,region_nps)))
+		region_advs.append(mkAdv(preposition,mkNP(w.and_Conj,region_nps)))
 	if region_advs:
 		cn = mkCN(cn,mkAdv(w.and_Conj,region_advs))
 	if not has_adjective and not region_advs:
 		# add the continent if stated
 		for continent in cnc.get_lexemes("P30",entity,qual=False):
-			region_nps.append(mkNP(continent))
-		cn = mkCN(cn,mkAdv(w.in_1_Prep,mkNP(w.and_Conj,region_nps)))
+			region_nps.append(w.PlainLN(continent))
+		cn = mkCN(cn,mkAdv(preposition,mkNP(w.and_Conj,region_nps)))
 
 	# add the number of inhabitants
 	population_list = sorted(((population,get_time_qualifier("P585",quals) or "X") for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
@@ -110,7 +115,7 @@ def render(cnc, lexeme, entity):
 	else:
 		population = None
 	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
-	yield cnc.linearize(phr)
+	yield " " + cnc.linearize(phr)
 	
 	# list neighbours
 	neighbours = []
@@ -218,7 +223,6 @@ def render(cnc, lexeme, entity):
 	# GOAL: [Norway] has the (second/third/...) highest/lowest life expectancy (in Europe / in the world), with an average of XX years.
 	expectancy_list = sorted(((life_expectancy,get_time_qualifier("P585",quals)) for life_expectancy,quals in get_quantities("P2250",entity)),key=lambda p: p[1],reverse=True)
 	if expectancy_list:
-		#life_expectancy = float(expectancy_list[0][0])
 		life_expectancy = expectancy_list[0][0]
 
 		for qid, expectancy, region in top:
@@ -409,7 +413,6 @@ def render(cnc, lexeme, entity):
 				number = mkNP(mkNum(int(age)), mkCN(w.year_5_N, mkAdv(w.with_Prep, mkNP(consent_type))))
 			
 			verb = copula_number(cnc, number)
-			#phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNP(the_Det,mkCN(w.minimum_A, w.age_1_N)), mkAdv(w.of_1_Prep, mkNP(w.marriage_1_N))), verb))),fullStopPunct)		
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,mkCN(mkAP(w.minimum_A), mkCN(w.age_1_N, mkAdv(w.of_3_Prep, mkNP(w.marriage_1_N))))), verb))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
@@ -715,7 +718,8 @@ def render(cnc, lexeme, entity):
 	curr_head_state_qid = None
 	prev_head_state_qid = None
 	for head_state, qual in get_items("P35", entity):
-		if 'P582' not in qual: # No end date == current head of state
+		#if 'P582' not in qual: # No end date == current head of state
+		if 'P582' not in qual or qual.get('P582')[0].get('snaktype') == 'novalue': # No end date == current head of state (ISRAEL HAS NO VALUE FOR P582)
 			curr_head_state_qid = head_state
 		else: # End date == previous heads of state
 			date = get_time_qualifier("P582",qual) # Checking end date
@@ -723,7 +727,7 @@ def render(cnc, lexeme, entity):
 
 	# Sorting by dates 
 	if name_date_state:
-		name_date_state.sort(key=lambda x: x[1] or "X", reverse=True) #Australia is complaining (Q408)
+		name_date_state.sort(key=lambda x: x[1] or "X", reverse=True)
 		prev_head_state_qid = name_date_state[0][0]
 
 	# State current head of government (HOG), previous HOG, HOG' gender and kinship:
@@ -794,7 +798,7 @@ def render(cnc, lexeme, entity):
 					bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(the_Det, w.head_of_state_N)))))
 				else:
 					bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(w.head_of_state_N)))))
-				
+
 			# [Country name] is a [basic form of government], with [curr_head_state] as head of state.
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, bfog)))), fullStopPunct)
 			yield " "+cnc.linearize(phr)
@@ -830,7 +834,7 @@ def render(cnc, lexeme, entity):
 
 					# He/She succeeded [prev_head_state] in the position.
 					prep = w.into_1_Prep if cnc.name in ["ParseFre"] else w.in_1_Prep
-					phr = mkPhr(mkUtt(mkS(pastTense, mkCl(mkNP(gender), mkVP(mkVP(w.succeed_V2, prev_head_state), mkAdv(prep, mkNP(the_Det, w.position_6_N)))))),fullStopPunct)
+					phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(gender), mkVP(mkVP(w.succeed_V2, prev_head_state), mkAdv(prep, mkNP(the_Det, w.position_6_N)))))),fullStopPunct)
 					yield " " + cnc.linearize(phr)
 		
 		else:
@@ -842,10 +846,6 @@ def render(cnc, lexeme, entity):
 
 	# Linearizing:
 	# The current head of government is [position] [name], who took office after [position] [name].
-	# GOAL: The current head of government is Prime Minister Pedro Sanchez, *who* assumed/took office after Mariano Rajoy.
-	# ANOTHER EXAMPLE: The current head of gov who is Pedro took office after Mariano
-	# cn = mkCN(w.current_A, mkCN(w.head_4_N,mkAdv(w.of_1_Prep,mkNP(w.government_1_N))))
-	# test = mkPhr(mkUtt(mkNP(the_Det,mkCN(cn, mkRS(pastTense, mkRCl(which_RP(mkNP(curr_head_state)), mkVP(w.take_12_V2, mkNP(mkCN(w.office_4_N, mkAdv(w.after_Prep,mkNP(prev_head_state)))))))))),fullStopPunct)
 	# We need to consider keeping the long sentence into two simple sentences for cases like the United Arab Emirates,
 	# where there is no data for the previous head of government!
 	if curr_head_gov_qid:
@@ -876,7 +876,7 @@ def render(cnc, lexeme, entity):
 					elif gender == w.she_Pron:
 						position_gov = mkCN(w.presidentFem_3_N)
 
-				# [position] [name].
+				# [position] [name]
 				curr_head_gov = mkNP(mkCN(position_gov, curr_head_gov))
 
 			if prev_head_gov_qid:
@@ -886,7 +886,7 @@ def render(cnc, lexeme, entity):
 				if prev_head_gov:
 					if position_gov:
 						if cnc.name in ["ParseFre", "ParseSpa"]:
-							prev_head_gov =   mkNP(the_Det, mkCN(position_gov, prev_head_gov)) #THE [POSITION] [NAME]
+							prev_head_gov = mkNP(the_Det, mkCN(position_gov, prev_head_gov)) #THE [POSITION] [NAME]
 						else:
 							prev_head_gov = mkNP(mkCN(position_gov, prev_head_gov))
 
@@ -896,8 +896,8 @@ def render(cnc, lexeme, entity):
 					elif prev_head_gov_qid == mother_qid:
 						# He/She took office after his/her mother [name]
 						prev_head_gov = mkNP(mkQuant(gender), mkCN(mkCN(w.mother_1_N), prev_head_gov))
-					curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastSimpleTense, mkRCl(which_RP,mkVP(mkVP(w.take_office_V), mkAdv(w.after_Prep, prev_head_gov))))) # APRÈS VS ENSUITE
-
+					
+					curr_head_gov = w.ExtRelNP(curr_head_gov, mkRS(pastSimpleTense, mkRCl(which_RP,mkVP(mkVP(w.take_office_V), mkAdv(w.after_Prep, prev_head_gov)))))
 			phr = mkPhr(mkUtt(mkS(mkCl(subj, curr_head_gov))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
 	
@@ -983,24 +983,27 @@ def render(cnc, lexeme, entity):
 		phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), mkVP(passiveVP(mkVPSlash(w.rank_2_V2)),mkAdv(w.as_Prep,quality)))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
+
 	pol = positivePol
-	for quality in get_items("P1552",entity,qual=False):
-		if quality == "Q3174312":
-			quality = mkNP(aSg_Det,mkCN(w.free_1_A,w.country_1_N))
-			break
-		elif quality == "Q47185282":
-			quality = mkNP(aSg_Det,mkCN(w.free_1_A,w.country_1_N))
-			pol     = negativePol
-			break
-		elif quality == "Q47185145":
-			quality = mkNP(aSg_Det,mkCN(mkAP(w.partly_AdA,w.free_1_A),w.country_1_N))
-			break
-		elif quality == "Q7174":
-			quality = mkNP(aSg_Det,mkCN(w.democratic_1_A,w.country_1_N))
-			break
-		quality = None
-	phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
-	yield " "+cnc.linearize(phr)
+	freedom = get_items("P1552",entity,qual=False)
+	if freedom:
+		for quality in freedom:
+			if quality == "Q3174312":
+				quality = mkNP(aSg_Det,mkCN(w.free_1_A,w.country_1_N))
+				break
+			elif quality == "Q47185282":
+				quality = mkNP(aSg_Det,mkCN(w.free_1_A,w.country_1_N))
+				pol     = negativePol
+				break
+			elif quality == "Q47185145":
+				quality = mkNP(aSg_Det,mkCN(mkAP(w.partly_AdA,w.free_1_A),w.country_1_N))
+				break
+			elif quality == "Q7174":
+				quality = mkNP(aSg_Det,mkCN(w.democratic_1_A,w.country_1_N))
+				break
+			quality = None
+		phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
+		yield " "+cnc.linearize(phr)
 
 
 	agents = []
@@ -1075,7 +1078,7 @@ def render(cnc, lexeme, entity):
 			median_income = mkNP(median_income,w.dollar_MU)
 			verb = copula_number(cnc, median_income)
 
-		# CHECK GINI LEVELS
+		# Checking GINI levels
 		gini = None
 		gini_list = sorted(((gini,get_time_qualifier("P585",quals) or "X") for gini,quals in get_quantities("P1125",entity)),key=lambda p: p[1],reverse=True)
 		if gini_list:
@@ -1177,11 +1180,11 @@ def render(cnc, lexeme, entity):
 		yield "</p>"
 
 
-	yield '<h2 class="gp-page-title">'+cnc.linearize(w.climate_1_N)+'</h2>'
-	
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.climate_1_N)+'</h2>'	
+
 	max_temp = False
 	temperature_list = sorted(((temperature,get_time_qualifier("P585",quals),cnc.get_lexeme_qualifiers("P276",quals)) for temperature,quals in get_quantities("P6591",entity)),key=lambda p: p[1],reverse=True)
-	if temperature_list:		
+	if temperature_list:	
 		temp,time,loc = temperature_list[0]
 		temp = mkNP(temp,w.celsius_MU)
 		np = mkNP(mkDet(the_Quant,singularNum,mkOrd(w.high_1_A)), mkCN(mkAP(w.registered_2_A), w.temperature_1_N))
@@ -1211,7 +1214,7 @@ def render(cnc, lexeme, entity):
 
 	if max_temp and min_temp:
 		#The lowest registered temperature in [country] reached [max_temp] degrees (°C) (in [place] on [day] [month] [year]), and the highest temperature dropped to [min_temp] degrees (°C) (in [place] on [day] [month] [year])
-		phr = mkPhr(mkUtt(mkS(conj, min_temp, max_temp)), fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(w.and_Conj, min_temp, max_temp)), fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
 	elif max_temp:
