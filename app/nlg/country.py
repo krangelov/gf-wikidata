@@ -565,7 +565,7 @@ def render(cnc, lexeme, entity):
 	if divisions:
 		yield '<h2 class="gp-page-title">'+cnc.linearize(mkNP(aPl_Det,mkCN(w.administrative_A,w.unit_3_N)))+'</h2>'
 		# The country has the following administrative units:
-		yield '<p>'+cnc.linearize(mkCl(mkNP(theSg_Det,w.country_1_N),mkVP(w.have_1_V2,mkNP(thePl_Det,mkCN(w.following_2_A,mkCN(w.administrative_A,w.unit_3_N))))))+':'
+		yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkCl(mkNP(theSg_Det,w.country_1_N),mkVP(w.have_1_V2,mkNP(thePl_Det,mkCN(w.following_2_A,mkCN(w.administrative_A,w.unit_3_N))))))))+':'
 		if len(divisions) < 5:
 			column_count = 1
 		elif len(divisions) < 10:
