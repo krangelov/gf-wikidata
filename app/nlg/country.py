@@ -466,7 +466,8 @@ def render(cnc, lexeme, entity):
 			elif qid == 'Q752470': # Finnish Orthodox Church --> Eastern Orthodox Christianity
 				religion.append(mkNP(mkCN(w.eastern_4_A, mkCN(w.orthodox_3_A, w.christianity_1_N))))
 			elif qid == 'Q9592' or qid == 'Q1841': # Catholic Church / Catholicism
-				religion.append(mkCN(w.catholicism_N))
+				if mkNP(w.catholicism_N) not in religion:
+					religion.append(mkNP(w.catholicism_N))
 			elif qid == 'Q163943': # Druzism
 				religion.append(mkNP(w.druzism_N))
 			elif qid == 'Q728697': # Laicism
@@ -998,7 +999,7 @@ def render(cnc, lexeme, entity):
 				quality = mkNP(aSg_Det,mkCN(w.democratic_1_A,w.country_1_N))
 				break
 			quality = None
-		phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(w.consider_6_V3,mkNP(w.it_Pron),quality)))), fullStopPunct)
+		phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
 		yield " "+cnc.linearize(phr)
 
 	# designated as terrorist state
