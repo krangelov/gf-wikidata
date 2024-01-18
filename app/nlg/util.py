@@ -199,27 +199,23 @@ class ConcrHelper:
 	def get_person_name(self, entity):
 		given_names  = self.get_lexemes("P735",entity,qual=False,link=False)
 		family_names = self.get_lexemes("P734",entity,qual=False,link=False)
-		if given_names:
-			if family_names:
-				expr = w.FullName(given_names[0],family_names[0])
-				self.addLink(expr,entity["id"])
-				return expr
+
+		if given_names and grammar.functionType(given_names[0].name).cat == "GN":
+			if family_names and grammar.functionType(family_names[0].name).cat == "SN":
+				expr = w.FullName(given_names[0], family_names[0])
 			else:
 				expr = w.GivenName(given_names[0])
-				self.addLink(expr,entity["id"])
-				return expr
+		elif family_names and grammar.functionType(family_names[0].name).cat == "SN":
+			if "Q6581072" in get_items("P21", entity):
+				expr = w.FemaleSurname(family_names[0])
+			else:
+				expr = w.MaleSurname(family_names[0])
 		else:
-			if family_names:
-				if "Q6581072" in get_items("P21",entity):
-					expr = w.FemaleSurname(family_names[0])
-					self.addLink(expr,entity["id"])
-					return expr
-				else:
-					expr = w.MaleSurname(family_names[0])
-					self.addLink(expr,entity["id"])
-					return expr
+			return None
 
-		return None
+		self.addLink(expr, entity["id"])
+		return expr
+
 
 def get_items(prop,entity,qual=True):
 	items = []
