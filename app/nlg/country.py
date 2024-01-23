@@ -509,17 +509,26 @@ def render(cnc, lexeme, entity):
 	if min_age_list:
 		min_age = int(min_age_list[0][0])
 		obj = mkCN(obj,mkAdv(w.from_Prep,mkNP(mkNum(min_age),w.year_5_N)))
+		# to customize prep for spa and fre if only min_age
+		preposition = w.out_of_2_Prep if cnc.name in ["ParseSpa"] else w.as_of_Prep
+		obj_sf = mkCN(mkCN(w.child_1_N),mkAdv(preposition,mkNP(mkNum(min_age),w.year_5_N)))
 	max_age_list = sorted(((literacy,get_time_qualifier("P585",quals) or "X") for literacy,quals in get_quantities("P3271",entity)),key=lambda p: p[1],reverse=True)
 	if max_age_list:
 		max_age = int(max_age_list[0][0])
 		obj = mkCN(obj,mkAdv(w.to_1_Prep,mkNP(mkNum(max_age),w.year_5_N)))
+
 	if min_age or max_age:
 		if cnc.name in ["ParseFre", "ParseSpa"]:
-			# La educación es obligatoria para los niños de [X] años a [Y] años / L'éducation est obligatoire pour les enfants de [X] ans à [Y] ans
-			phrsf = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(thePl_Det, obj))))), fullStopPunct)
-			yield " " + cnc.linearize(phrsf)
+			if not max_age:
+				# La educación es obligatoria para los niños a partir de [X] años / L'éducation est obligatoire pour les enfants à partir de [X] ans
+				phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(thePl_Det, obj_sf))))), fullStopPunct)
+				yield " " + cnc.linearize(phr)
+			else:
+				# La educación es obligatoria para los niños de [X] años a [Y] años / L'éducation est obligatoire pour les enfants de [X] ans à [Y] ans
+				phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(thePl_Det, obj))))), fullStopPunct)
+				yield " " + cnc.linearize(phr)
 		else:
-			# Education is obligatory for children from [X] years to [Y] years.
+			# Education is obligatory for children from [X] years to [Y] years / Education is obligatory for children from [X] years
 			phr = mkPhr(mkUtt(mkCl(mkNP(w.education_2_N), w.AdvAP(mkAP(w.obligatory_1_A), mkAdv(w.for_Prep, mkNP(aPl_Det, obj))))), fullStopPunct)
 			yield " " + cnc.linearize(phr)
 
