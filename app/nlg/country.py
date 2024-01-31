@@ -10,6 +10,8 @@ def copula_number(cnc, number):
 		return mkAdv(w.of_1_Prep, number)
 	elif cnc.name in ['ParseSpa']:
 		return w.UseComp_ser(w.CompAdv(mkAdv(w.of_1_Prep, number)))
+	elif cnc.name in ["ParseRus"]:
+		return mkVP(w.amount_to_1_V2, number)
 	else:
 		return number
 
@@ -149,6 +151,8 @@ def render(cnc, lexeme, entity):
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.ProDrop(w.she_Pron)),mkVP(w.have_1_V2,mkNP(aPl_Det,mkCN(mkCN(w.border_1_N),mkAdv(w.with_Prep,mkNP(w.and_Conj,neighbours)))))))),fullStopPunct)
 			else:
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.ProDrop(w.she_Pron)),mkVP(w.have_1_V2,mkNP(aSg_Det,mkCN(mkCN(w.border_1_N),mkAdv(w.with_Prep,neighbours[0]))))))),fullStopPunct)
+		elif cnc.name in ["ParseRus"]:
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.it_Pron), mkVP(mkVP(w.border_5_V), mkAdv(w.with_Prep, mkNP(w.and_Conj, neighbours)))))),fullStopPunct)
 		else:
 			if len(neighbours) > 1:
 				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.it_Pron),mkVP(w.have_1_V2,mkNP(aPl_Det,mkCN(mkCN(w.border_1_N),mkAdv(w.with_Prep,mkNP(w.and_Conj,neighbours)))))))),fullStopPunct)
@@ -173,7 +177,10 @@ def render(cnc, lexeme, entity):
     # state the capital
 	for capital, qual in cnc.get_lexemes("P36",entity):
 		if "P582" not in qual:
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,w.capital_3_N),mkNP(capital)))),fullStopPunct)
+			if cnc.name in ["ParseRus"]:
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(capital), mkNP(the_Det, w.capital_3_N)))), fullStopPunct)
+			else:
+				phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det,w.capital_3_N),mkNP(capital)))),fullStopPunct)
 			yield " " + cnc.linearize(phr)
 			break
 
@@ -201,6 +208,8 @@ def render(cnc, lexeme, entity):
 		if other_langs:
 			if cnc.name in ["ParseBul", "ParseCat", "ParseIta", "ParsePor", "ParseSpa"]:
 				vp = reflexiveVP(w.speak_3_V2)
+			elif cnc.name in ["ParseRus"]:
+				vp = passiveVP(w.spread_8_V2)
 			else:
 				vp = passiveVP(w.speak_3_V2)
 			phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(official_langs,mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))))),mkS(mkCl(other_langs,mkVP(w.also_AdV,vp))))),fullStopPunct)
