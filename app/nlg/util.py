@@ -58,7 +58,7 @@ class ConcrHelper:
 						info = None
 					text += escape(x)
 				elif isinstance(x,pgf.Bracket):
-					if x.fun == "FullName" and len(x.children) == 2 and not self.edit:
+					if x.fun == "FullName" and len(x.children) == 2 and isinstance(x.children[0],pgf.Bracket) and isinstance(x.children[1],pgf.Bracket) and not self.edit:
 						expr = w.FullName(pgf.ExprFun(x.children[0].fun),
 						                  pgf.ExprFun(x.children[1].fun))
 						info = self.links.get(expr)
@@ -70,7 +70,7 @@ class ConcrHelper:
 						flatten(x.children)
 						if tmp:
 							text += '</a>'
-					elif x.fun == "GivenName" and len(x.children) == 1 and not self.edit:
+					elif x.fun == "GivenName" and len(x.children) == 1 and isinstance(x.children[0],pgf.Bracket) and not self.edit:
 						expr = w.GivenName(pgf.ExprFun(x.children[0].fun))
 						info = self.links.get(expr)
 						tmp  = info
@@ -81,7 +81,7 @@ class ConcrHelper:
 						flatten(x.children)
 						if tmp:
 							text += '</a>'
-					elif x.fun == "MaleSurname" and len(x.children) == 1 and not self.edit:
+					elif x.fun == "MaleSurname" and len(x.children) == 1 and isinstance(x.children[0],pgf.Bracket) and not self.edit:
 						expr = w.MaleSurname(pgf.ExprFun(x.children[0].fun))
 						info = self.links.get(expr)
 						tmp  = info
@@ -92,7 +92,7 @@ class ConcrHelper:
 						flatten(x.children)
 						if tmp:
 							text += '</a>'
-					elif x.fun == "FemaleSurname" and len(x.children) == 1 and not self.edit:
+					elif x.fun == "FemaleSurname" and len(x.children) == 1 and isinstance(x.children[0],pgf.Bracket) and not self.edit:
 						expr = w.MaleSurname(pgf.ExprFun(x.children[0].fun))
 						info = self.links.get(expr)
 						tmp  = info
