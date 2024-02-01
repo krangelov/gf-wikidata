@@ -751,7 +751,7 @@ def render(cnc, lexeme, entity):
 
 	entities = get_entity([curr_head_state_qid,prev_head_state_qid,curr_head_gov_qid,prev_head_gov_qid])
 
-	yield '<h2 class="gp-page-title">'+cnc.linearize(w.politics_2_N)+'</h2>'
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.politics_5_N)+'</h2>'
 
 	# Linearizing:
 	# [Country name] is a [basic form of government], with [position] [name] as head of state. 
