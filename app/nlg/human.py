@@ -95,6 +95,8 @@ def render(cnc, lexeme, entity):
 	brothers = []
 	for sibling in get_entities("P3373",entity,qual=False):
 		name = cnc.get_person_name(sibling)
+		if not name:
+			continue
 		if "Q6581072" in get_items("P21",sibling,qual=False):
 			sisters.append(name)
 		else:
@@ -151,29 +153,32 @@ def render(cnc, lexeme, entity):
 		yield " "+cnc.linearize(phr)
 	else:
 		spouses = sorted([(spouse,
-						   get_time_qualifier("P580",quals),
+						   get_time_qualifier("P580",quals) or "X",
 						   cnc.get_lexeme_qualifiers("P2842",quals),
 						   get_time_qualifier("P582",quals),
 						   get_item_qualifier("P1534",quals)) for spouse,quals in get_entities("P26",entity)],key=lambda p: p[1])
 		for spouse,start,place,end,end_cause in spouses:
 			name = cnc.get_person_name(spouse)
-			vp = mkVP(w.marry_1_V2,name)
-			if place:
-				vp = mkVP(vp,mkAdv(place[0]))
-			stmt = mkS(useTense, mkCl(mkNP(pron), vp))
-			if start:
-				stmt = w.ExtAdvS(str2date(start),stmt)
-			phr = mkPhr(mkUtt(stmt),fullStopPunct)
-			yield " "+cnc.linearize(phr)
-
-			if end and end_cause != "Q4":
-				if "Q6581072" in get_items("P21",spouse,qual=False):
-					spouse_pron = w.she_Pron
-				else:
-					spouse_pron = w.he_Pron
-				vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
-				phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), vp))),fullStopPunct)
+			if name:
+				vp = mkVP(w.marry_1_V2,name)
+				if place:
+					vp = mkVP(vp,mkAdv(place[0]))
+				stmt = mkS(useTense, mkCl(mkNP(pron), vp))
+				if start:
+					start = str2date(start)
+					if start:
+						stmt = w.ExtAdvS(start,stmt)
+				phr = mkPhr(mkUtt(stmt),fullStopPunct)
 				yield " "+cnc.linearize(phr)
+
+				if end and end_cause != "Q4":
+					if "Q6581072" in get_items("P21",spouse,qual=False):
+						spouse_pron = w.she_Pron
+					else:
+						spouse_pron = w.he_Pron
+					vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
+					phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), vp))),fullStopPunct)
+					yield " "+cnc.linearize(phr)
 
 	deathday   = get_date("P570",entity)
 	deathplace = cnc.get_lexemes("P20", entity, qual=False)
