@@ -215,7 +215,7 @@ def render(cnc, lexeme, entity):
 			phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(official_langs,mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))))),mkS(mkCl(other_langs,mkVP(w.also_AdV,vp))))),fullStopPunct)
 		else:
 			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(my_det,mkCN(w.official_1_A,mkCN(w.language_1_N))),official_langs))),fullStopPunct)
-		yield " "+cnc.linearize(phr)
+		yield " " + cnc.linearize(phr)
 	elif other_langs:
 		if len(other_langs) > 1:
 			my_det = thePl_Det
@@ -915,7 +915,7 @@ def render(cnc, lexeme, entity):
 			current_orgs_qids.append(org_qid)
 		else:
 			prev_orgs_qids.append(org_qid)
-	
+
 	# to avoid cases where an organization is repeated with and without end time (ex.: UN, UNESCO) == current member
 	# otherwise we end up with "The country is a member of UNESCO, (...). It is also a former member of UNESCO."
 	for org_qid in prev_orgs_qids:
@@ -951,7 +951,7 @@ def render(cnc, lexeme, entity):
 
 	# adding the w.lexemes to curr_organizations
 	for item in result_curr:
-		if item not in curr_organizations:
+		if mkNP(item) not in curr_organizations:
 			curr_organizations.append(mkNP(item))
 	
 	# adding the w.lexemes to prev_organizations	
