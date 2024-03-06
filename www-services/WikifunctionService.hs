@@ -1,27 +1,28 @@
-{-# LANGUAGE CPP, MonadComprehensions, BangPatterns #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE MonadComprehensions #-}
 
-import Network.URI
-import Network.HTTP
-import Text.JSON
-import Text.JSON.Types (get_field)
-import Text.PrettyPrint
-import OpenSSL
-import qualified Data.Map as Map
-import qualified Data.ByteString.Char8 as BS
-import GF.Compile
-import qualified GF.Data.ErrM as E
-import GF.Infra.CheckM
-import GF.Infra.Option
-import GF.Grammar hiding ( VRecType, VApp )
-import GF.Term
-import System.FilePath
-import Control.Applicative(liftA2)
-import Control.Monad.ST.Unsafe
-import Control.Monad(foldM)
-import PGF2
+import           Control.Applicative     (liftA2, (<|>))
+import           Control.Monad           (foldM, filterM)
+import           Control.Monad.ST.Unsafe
+import qualified Data.ByteString.Char8   as BS
+import qualified Data.Map                as Map
+import           GF.Compile
+import qualified GF.Data.ErrM            as E
+import           GF.Grammar              hiding (VApp, VRecType)
+import           GF.Infra.CheckM
+import           GF.Infra.Option
+import           GF.Term
+import           Network.HTTP
+import           Network.URI
+import           OpenSSL
+import           PGF2
+import           System.FilePath
+import           Text.JSON
+import           Text.JSON.Types         (get_field)
+import           Text.PrettyPrint
 
 main = do
-  gr <- readNGF "/usr/local/share/x86_64-linux-ghc-8.8.4/gf-4.0.0/www/robust/Parse.ngf"
+  gr <- readNGF "Parse.ngf"
   (_,(mn,sgr)) <- batchCompile noOptions (Just gr) ["WordNet.gf"]
   withOpenSSL (simpleServer (Just 8080) Nothing (httpMain gr sgr mn))
 
@@ -93,10 +94,11 @@ executeCode gr sgr mn qid lang code =
           term'   = Abs Explicit (identS "qid") term
       term' <- renameSourceTerm sgr mn term'
       (term',typ) <- checkLType globals term' (Prod Explicit identW typeStr typeStr)
+
       checkWarn (ppTerm Unqualified 0 term')
       checkWarn (ppTerm Unqualified 0 typ)
       normalStringForm globals (App term' (K qid))
-      
+
 
 wikiPredef :: PGF -> Map.Map Ident ([Value s] -> EvalM s (ConstValue (Value s)))
 wikiPredef pgf = Map.fromList
@@ -105,9 +107,8 @@ wikiPredef pgf = Map.fromList
   , (identS "int2decimal", \[VInt n] -> int2decimal abstr n >>= \v -> return (Const v))
   , (identS "float2decimal", \[VFlt f] -> float2decimal abstr f >>= \v -> return (Const v))
   , (identS "int2numeral", \[VInt n] -> int2numeral abstr n >>= \v -> return (Const v))
-  , (identS "linearize", \[_,v] -> do let Just cnc = Map.lookup "ParseSwe" (languages pgf)
-                                      e <- value2expr v
-                                      return (Const (VStr (linearize cnc e))))
+  , (identS "markup", \[_, attrs, tag, v] -> markup' attrs tag v)
+  , (identS "linearize", linearize')
   , (cLessInt,\[v1,v2] -> return (fmap toBool (liftA2 (<) (value2int v1) (value2int v2))))
   ]
   where
@@ -116,16 +117,57 @@ wikiPredef pgf = Map.fromList
     fetch typ qid = do
       rsp <- unsafeIOToEvalM (simpleHTTP (getRequest ("https://www.wikidata.org/wiki/Special:EntityData/"++qid++".json")))
       case decode (rspBody rsp) >>= valFromObj "entities" >>= valFromObj qid >>= valFromObj "claims" of
-        Ok obj    -> filterJsonFromType obj typ
+        Ok obj    -> (filterJsonFromType obj typ)
         Error msg -> evalError (text msg)
 
-    value2expr (GF.Term.VApp (_,f) tnks) = 
+    value2expr (GF.Term.VApp (_,f) tnks) =
       foldM mkApp (EFun (showIdent f)) tnks
       where
         mkApp e1 tnk = do
           v  <- force tnk
           e2 <- value2expr v
           return (EApp e1 e2)
+
+    linearize' [_, GF.Term.VInt n] = return (Const (VStr (show n)))
+    linearize' [_, GF.Term.VStr s] = return (Const (VStr s))
+    linearize' [_, v] = do 
+                          let Just cnc = Map.lookup "ParseEng" (languages pgf)
+                          e <- value2expr v
+                          return (Const (VStr (linearize cnc e)))
+    
+    markup' (VR attrs)  (VStr tag) (VStr v) = 
+      do
+        attrs' <- constructAttrs attrs
+        return (Const 
+                (VStr
+                  (constructHtml tag (Just (concatMap escape v)) attrs')))
+    markup' (VR attrs) (VStr tag) (VC (VStr v1) (VStr v2)) = 
+      do
+        attrs' <- constructAttrs attrs
+        return (Const 
+                (VStr 
+                  (constructHtml tag (Just (v1 ++ v2))  attrs')))
+
+constructAttrs :: [(Label, Thunk s)] -> EvalM s [(String, String)]
+constructAttrs [] = return []
+constructAttrs ((LIdent l, v) : attrs) = do
+  VStr v' <- force v
+  vs <- constructAttrs attrs
+  return ((showRawIdent l, v') : vs)
+
+constructHtml :: String -> Maybe String -> [(String, String)] -> String
+constructHtml name payload attrs = "<" ++ name ++ " " ++ unwords (go attrs) ++ ">" ++ payload'
+      where go [] = [ "" ]
+            go ((lbl, val) : attrs) = (lbl ++ "=" ++ "\"" ++ (concatMap escape val) ++ "\"") : go attrs
+            payload' = case payload of
+                         Nothing -> ""
+                         Just payload -> payload ++ "</" ++ name ++ ">"
+            
+escape '<' = "&lt;"
+escape '>' = "&gt;"
+escape '&' = "&amp;"
+escape '"' = "&quot;"
+escape c   = [c]
 
 filterJsonFromType :: JSObject [JSObject JSValue] -> Value s -> EvalM s (Value s)
 filterJsonFromType obj typ =
@@ -148,10 +190,35 @@ getSpecificProperty obj (LVar n, typ) =
   evalError (text "Wikidata entities can only have named properties")
 
 transformJsonToTerm :: String -> Value s -> JSObject JSValue -> EvalM s Term
-transformJsonToTerm field typ obj = do
-  case fromJSObjectToWikiDataItem obj typ of
-    Ok assign -> return (R assign)
-    Error msg -> evalError (text msg)
+transformJsonToTerm field typ obj =
+  case typ of
+      VRecType [(LIdent l, t)] | head (showRawIdent l) == 'P'  -> case getCorrectObject obj t (showRawIdent l) of
+                                                                    Ok assign -> return (R [(LIdent l , (Nothing, R assign))])
+                                                                    Error "Could not find the correct object" -> return (FV [])
+                                                                    Error msg -> evalError (text msg)
+
+      _                                                        -> case fromJSObjectToWikiDataItem obj typ of
+                                                                  Ok assign -> return (R assign)
+                                                                  Error msg -> evalError (text msg)
+
+getCorrectObject obj typ l = do
+  let qualifiers = (do
+                      qualifiers <- valFromObj "qualifiers" obj
+                      specific   <- valFromObj l qualifiers
+                      return specific)
+    
+  let references = (do
+                      references <- (valFromObj "references" obj)
+                      references' <- valFromObj "snaks" (head references)
+                      specific    <- valFromObj l references'
+                      return specific)
+  
+  case qualifiers <|> references of
+    Ok specific -> do
+                      datavalue  <- valFromObj "datavalue" (head specific)
+                      validateTypeFromObj typ datavalue
+    Error msg   -> Error "Could not find the correct object"
+  
 
 fromJSObjectToWikiDataItem :: JSObject JSValue -> Value s -> Result [Assign]
 fromJSObjectToWikiDataItem obj typ = do
@@ -162,7 +229,9 @@ fromJSObjectToWikiDataItem obj typ = do
 validateTypeFromObj :: Value s -> JSObject JSValue -> Result [Assign]
 validateTypeFromObj typ dv = do
   typFromObj <- valFromObj "type" dv
-  matchTypeFromJSON dv typ typFromObj
+  case matchTypeFromJSON dv typ typFromObj of
+    Ok assign -> return assign
+    Error msg -> Error msg
 
 matchTypeFromJSON :: JSObject JSValue -> Value s -> String -> Result [Assign]
 matchTypeFromJSON dv (VSort id) "string" = getFieldFromString dv id
@@ -182,6 +251,8 @@ getFieldFromWikibaseEntityId dv (field@(LIdent l), t) = do
   assign field
     <$> ( case (showRawIdent l, t) of
             (l@"id",  VSort id) -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
+            (l@"id",  VMeta _ _) -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
+
             (_, _)              -> Error "Not a valid wikibase-entityid field"
         )
 
@@ -214,7 +285,7 @@ getFieldFromTime dv (field@(LIdent l), t) = do
   assign field
     <$> ( case (showRawIdent l, t) of
             (l@"time",          VSort id) -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
-            (l@"precision",     VSort id) -> if id == cInt then valFromObj l value >>= decimal EInt else fail "Not an Int"
+            (l@"precision",     VApp f []) -> if f == (cPredef, cInt) then EInt <$> valFromObj l value else fail "Not an Int"
             (l@"calendarmodel", VSort id) -> if id == cStr then K . dropURL <$> valFromObj l value else fail "Not a String"
             (_, _)                        -> fail "Not a valid time field"
         )
@@ -273,7 +344,7 @@ int2decimal abstr n = int2digits abstr (abs n) >>= sign n
         then return (VApp neg_dec [tnk])
         else return (VApp pos_dec [tnk])
 
-float2decimal abstr f = 
+float2decimal abstr f =
   let n = truncate f
   in int2decimal abstr n >>= fractions (f-fromIntegral n)
   where
