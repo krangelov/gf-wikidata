@@ -25,9 +25,9 @@ def render(cnc, lex_expr,entity):
 		renderer = nlg.city.render
 	elif "Q5" in class_qids:
 		renderer = nlg.human.render
-	elif "Q28640" in class_qids or "Q12737077" in class_qids:
+	elif "Q28640" in class_qids or "Q12737077" in class_qids or "Q828803" in class_qids:
 		renderer = nlg.profession.render
-	elif "Q3918" in class_qids:
+	elif "Q3918" in class_qids or "Q5341295" in class_qids:
 		renderer = nlg.university.render
 	else:
 		renderer = None
