@@ -57,5 +57,5 @@ def render(cnc, lexeme, entity):
 				holder = cnc.get_person_name(holder)
 				lexeme = cnc.get_lexemes("P279",office[0])
 				if not lexeme:
-					lexeme = [w.rector_N]
+					lexeme = [w.presidentMasc_5_N]
 				yield " "+cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,mkCN(w.current_A,lexeme[0][0])),holder))),fullStopPunct))
