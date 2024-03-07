@@ -242,8 +242,8 @@ def get_entities(prop,entity,qual=True):
 	items = {}
 	for prop in props:
 		for value in entity["claims"].get(prop,[]):
-            if len(items) >= 50:
-                break
+			if len(items) >= 50:
+				break
 			try:
 				items[value["mainsnak"]["datavalue"]["value"]["id"]] = value.get("qualifiers",{})
 			except KeyError:
@@ -318,7 +318,7 @@ iso8601_regex = re.compile(r"^(?P<era>\+|-)?(?P<year>\d{4})-(?P<month>\d{2})-(?P
 
 def str2date(value):
 	match = iso8601_regex.match(value)
-    if not match:
+	if not match:
 		return None
 
 	year = int(match.group("year"))
