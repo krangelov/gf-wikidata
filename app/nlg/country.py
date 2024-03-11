@@ -338,6 +338,11 @@ def render(cnc, lexeme, entity):
 				# [Country] establishes the age of majority at [X] years.
 				if cnc.name in ["ParseFre", "ParseSpa"]:
 					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_of_majority_N, mkAdv(w.in_2_Prep, mkNP(mkNum(int(majority_age)), w.year_5_N)))))))), fullStopPunct)
+				elif cnc.name in ["ParseRus"]:
+					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.age_of_majority_N), mkVP(w.establish_2_V2, mkNP(theSg_Det,
+																						 mkCN(w.age_of_majority_N,mkAdv(w.at_7_Prep, mkNP(mkNum(int(majority_age)),w.year_5_N)))))))),
+								fullStopPunct)
+
 				else:
 					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_of_majority_N, mkAdv(w.at_1_Prep, mkNP(mkNum(int(majority_age)), w.year_5_N)))))))), fullStopPunct)
 				yield " " + cnc.linearize(phr)
