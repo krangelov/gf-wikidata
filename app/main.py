@@ -98,6 +98,7 @@ def prelude(qid,lang,edit):
 
 langs = {
   "af": ("Afrikaans", "ParseAfr"),
+  "ar": ("Arabic",    "ParseAra"),
   "bg": ("Bulgarian", "ParseBul"),
   "ca": ("Catalan",   "ParseCat"),
   "zh": ("Chinese",   "ParseChi"),

@@ -58,7 +58,7 @@ class ConcrHelper:
 						info = None
 					text += escape(x)
 				elif isinstance(x,pgf.Bracket):
-					if x.fun == "FullName" and len(x.children) == 2 and not self.edit:
+					if x.fun == "FullName" and len(x.children) == 2 and isinstance(x.children[0],pgf.Bracket) and isinstance(x.children[1],pgf.Bracket) and not self.edit:
 						expr = w.FullName(pgf.ExprFun(x.children[0].fun),
 						                  pgf.ExprFun(x.children[1].fun))
 						info = self.links.get(expr)
@@ -70,7 +70,7 @@ class ConcrHelper:
 						flatten(x.children)
 						if tmp:
 							text += '</a>'
-					elif x.fun == "GivenName" and len(x.children) == 1 and not self.edit:
+					elif x.fun == "GivenName" and len(x.children) == 1 and isinstance(x.children[0],pgf.Bracket) and not self.edit:
 						expr = w.GivenName(pgf.ExprFun(x.children[0].fun))
 						info = self.links.get(expr)
 						tmp  = info
@@ -81,7 +81,7 @@ class ConcrHelper:
 						flatten(x.children)
 						if tmp:
 							text += '</a>'
-					elif x.fun == "MaleSurname" and len(x.children) == 1 and not self.edit:
+					elif x.fun == "MaleSurname" and len(x.children) == 1 and isinstance(x.children[0],pgf.Bracket) and not self.edit:
 						expr = w.MaleSurname(pgf.ExprFun(x.children[0].fun))
 						info = self.links.get(expr)
 						tmp  = info
@@ -92,7 +92,7 @@ class ConcrHelper:
 						flatten(x.children)
 						if tmp:
 							text += '</a>'
-					elif x.fun == "FemaleSurname" and len(x.children) == 1 and not self.edit:
+					elif x.fun == "FemaleSurname" and len(x.children) == 1 and isinstance(x.children[0],pgf.Bracket) and not self.edit:
 						expr = w.MaleSurname(pgf.ExprFun(x.children[0].fun))
 						info = self.links.get(expr)
 						tmp  = info
@@ -199,27 +199,23 @@ class ConcrHelper:
 	def get_person_name(self, entity):
 		given_names  = self.get_lexemes("P735",entity,qual=False,link=False)
 		family_names = self.get_lexemes("P734",entity,qual=False,link=False)
-		if given_names:
-			if family_names:
-				expr = w.FullName(given_names[0],family_names[0])
-				self.addLink(expr,entity["id"])
-				return expr
+
+		if given_names and grammar.functionType(given_names[0].name).cat == "GN":
+			if family_names and grammar.functionType(family_names[0].name).cat == "SN":
+				expr = w.FullName(given_names[0], family_names[0])
 			else:
 				expr = w.GivenName(given_names[0])
-				self.addLink(expr,entity["id"])
-				return expr
+		elif family_names and grammar.functionType(family_names[0].name).cat == "SN":
+			if "Q6581072" in get_items("P21", entity):
+				expr = w.FemaleSurname(family_names[0])
+			else:
+				expr = w.MaleSurname(family_names[0])
 		else:
-			if family_names:
-				if "Q6581072" in get_items("P21",entity):
-					expr = w.FemaleSurname(family_names[0])
-					self.addLink(expr,entity["id"])
-					return expr
-				else:
-					expr = w.MaleSurname(family_names[0])
-					self.addLink(expr,entity["id"])
-					return expr
+			return None
 
-		return None
+		self.addLink(expr, entity["id"])
+		return expr
+
 
 def get_items(prop,entity,qual=True):
 	items = []
@@ -246,6 +242,8 @@ def get_entities(prop,entity,qual=True):
 	items = {}
 	for prop in props:
 		for value in entity["claims"].get(prop,[]):
+			if len(items) >= 50:
+				break
 			try:
 				items[value["mainsnak"]["datavalue"]["value"]["id"]] = value.get("qualifiers",{})
 			except KeyError:
@@ -320,6 +318,8 @@ iso8601_regex = re.compile(r"^(?P<era>\+|-)?(?P<year>\d{4})-(?P<month>\d{2})-(?P
 
 def str2date(value):
 	match = iso8601_regex.match(value)
+	if not match:
+		return None
 
 	year = int(match.group("year"))
 	if year == 0:
