@@ -131,6 +131,8 @@ def render(cnc, lexeme, entity):
 				if direction:
 					if cnc.name in ["ParseBul"]:
 						neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(aSg_Det,direction)))
+					elif cnc.name in ["ParseRus"]:
+						neighbour_expr = mkNP(neighbour_expr,mkAdv(w.at_2_Prep,mkNP(the_Det,direction)))
 					else:
 						neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(the_Det,direction)))
 			neighbours.append(neighbour_expr)
@@ -337,6 +339,11 @@ def render(cnc, lexeme, entity):
 				# [Country] establishes the age of majority at [X] years.
 				if cnc.name in ["ParseFre", "ParseSpa"]:
 					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_of_majority_N, mkAdv(w.in_2_Prep, mkNP(mkNum(int(majority_age)), w.year_5_N)))))))), fullStopPunct)
+				elif cnc.name in ["ParseRus"]:
+					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.age_of_majority_N), mkVP(w.establish_2_V2, mkNP(theSg_Det,
+																						 mkCN(w.age_of_majority_N,mkAdv(w.at_7_Prep, mkNP(mkNum(int(majority_age)),w.year_5_N)))))))),
+								fullStopPunct)
+
 				else:
 					phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkVP(w.establish_2_V2, mkNP(theSg_Det, mkCN(w.age_of_majority_N, mkAdv(w.at_1_Prep, mkNP(mkNum(int(majority_age)), w.year_5_N)))))))), fullStopPunct)
 				yield " " + cnc.linearize(phr)
@@ -1166,7 +1173,10 @@ def render(cnc, lexeme, entity):
 
 			products = mkNP(w.and_Conj, list(products))
 			if products:
-				vat = mkNP(vat,mkAdv(w.for_Prep,products))
+				if cnc.name in ["ParseRus"]:
+					vat = mkNP(vat, mkAdv(w.on_1_Prep, products))
+				else:
+					vat = mkNP(vat,mkAdv(w.for_Prep,products))
 			vats.append(vat)
 	vats = mkNP(w.and_Conj, vats)
 
