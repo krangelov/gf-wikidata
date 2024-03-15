@@ -80,6 +80,7 @@ def render(cnc, lexeme, entity):
 	for student in get_entities(["P802","P185"],entity,qual=False):
 		name = cnc.get_person_name(student)
 		if name:
+			print('NAME: ', name)
 			students.append(name)
 	if students:
 		students = mkNP(w.and_Conj,students)	
@@ -200,3 +201,63 @@ def render(cnc, lexeme, entity):
 
 	yield "</p>"
 
+
+
+	yield '<h2 class="gp-page-title">'+cnc.linearize(w.CompoundN(w.university_3_N,w.stuff_2_N))+'</h2>'
+	yield "<p>"
+
+	university = get_items("P69", entity, qual=False)
+
+	universities = []
+	if university:
+		for qid in university:
+			uni = cnc.get_lex_fun(qid)
+			universities.append(mkNP(uni))
+	if universities:
+		universities = mkNP(w.and_Conj, universities)
+
+	# He/She attended [university name]
+	phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.attend_1_V2, universities)))))
+	yield " " + cnc.linearize(phr)
+
+
+	awards = get_items("P166", entity, qual=False)
+
+	#for item in awards:
+	#	print('item: ', item)
+	#	uni = cnc.get_lex_fun(item)
+	#	print('award: ', uni)
+
+	# if any awards: --> if only one award theSg_Det instead of thePl_Det
+	# He/She received the following awards:
+	yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
+
+	# List of awards:
+	#if len(awards) < 5:
+	#	column_count = 1
+	#elif len(awards) < 10:
+	#	column_count = 2
+	#else:
+	#	column_count = 4
+	#yield "<ul style='column-count: "+str(column_count)+"'>"
+	#for award in awards:
+	#	yield "<li>"+cnc.linearize(award)+"</li>"
+	#yield '</ul></p>'
+
+
+	# He/She works at [place] - EX.: He works at Chalmers University of Technology
+	# Also, if date is provided, we can add former workplaces? - He worked at...
+	# employer property - P108
+	employer = get_items("P108", entity, qual=False)
+
+	workplace = []
+	if employer:
+		for qid in employer:
+			place = cnc.get_lex_fun(qid)
+			workplace.append(mkNP(place))
+	if workplace:
+		workplace = mkNP(w.and_Conj, workplace)
+
+	# He/She works [university name]
+	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(mkVP(w.work_2_V), mkAdv(w.at_1_Prep, workplace))))))
+	yield " " + cnc.linearize(phr)
