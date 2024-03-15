@@ -4,7 +4,6 @@ from wordnet import *
 from nlg.util import *
 from nlg.lists import *
 
-
 def copula_number(cnc, number):
 	if cnc.name in ['ParseFre']:
 		return mkAdv(w.of_1_Prep, number)
@@ -806,6 +805,8 @@ def render(cnc, lexeme, entity):
 			if curr_head_state:
 				if cnc.name in ["ParseFre"]:
 					bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(the_Det, w.head_of_state_N)))))
+				elif cnc.name in ["ParseRus"]:
+					bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.in_1_Prep, mkNP(mkCN(w.capacity_5_N, mkAdv(w.of_3_Prep, mkNP(w.head_of_state_N))))))))
 				else:
 					bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(w.head_of_state_N)))))
 
@@ -1002,8 +1003,12 @@ def render(cnc, lexeme, entity):
 			quality = mkNP(a_Quant,mkCN(w.hybrid_A,w.regime_1_N))
 		else:
 			quality = mkNP(a_Quant,mkCN(w.authoritarian_1_A,w.regime_1_N))
-		phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), mkVP(passiveVP(mkVPSlash(w.rank_2_V2)),mkAdv(w.as_Prep,quality)))))), fullStopPunct)
+		if cnc.name in ["ParseRus"]:
+			phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), passiveVP(w.Slash3V3(w.consider_6_V3, quality)))))), fullStopPunct)
+		else:
+			phr = mkPhr(mkUtt(w.ExtAdvS(adv,mkS(mkCl(mkNP(lexeme), mkVP(passiveVP(mkVPSlash(w.rank_2_V2)),mkAdv(w.as_Prep,quality)))))), fullStopPunct)
 		yield " " + cnc.linearize(phr)
+
 
 
 	pol = positivePol
