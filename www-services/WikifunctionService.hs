@@ -251,7 +251,7 @@ getFieldFromWikibaseEntityId dv (field@(LIdent l), t) = do
   assign field
     <$> ( case (showRawIdent l, t) of
             (l@"id",  VSort id) -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
-            (l@"id",  VMeta _ _) -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
+            (l@"id",  VMeta _ _) -> valFromObj l value >>= (Ok . K)
 
             (_, _)              -> Error "Not a valid wikibase-entityid field"
         )
