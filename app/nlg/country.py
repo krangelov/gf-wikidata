@@ -208,7 +208,7 @@ def render(cnc, lexeme, entity):
 		official_langs = mkNP(w.and_Conj,official_langs)
 		other_langs = mkNP(w.and_Conj,other_langs)
 		if other_langs:
-			if cnc.name in ["ParseBul", "ParseCat", "ParseIta", "ParsePor"]:
+			if cnc.name in ["ParseBul", "ParseCat", "ParseIta", "ParsePor", "ParseSpa"]:
 				vp = reflexiveVP(w.speak_3_V2)
 			elif cnc.name in ["ParseRus"]:
 				vp = passiveVP(w.spread_8_V2)

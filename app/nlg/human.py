@@ -80,7 +80,6 @@ def render(cnc, lexeme, entity):
 	for student in get_entities(["P802","P185"],entity,qual=False):
 		name = cnc.get_person_name(student)
 		if name:
-			print('NAME: ', name)
 			students.append(name)
 	if students:
 		students = mkNP(w.and_Conj,students)	
@@ -282,10 +281,5 @@ def render(cnc, lexeme, entity):
 		# He/She speaks [...]
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron),mkVP(w.speak_3_V2, other_langs)))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
-
-	
-
-
-
 
 	
