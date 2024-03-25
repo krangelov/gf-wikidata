@@ -181,6 +181,27 @@ def render(cnc, lexeme, entity):
 					phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), vp))),fullStopPunct)
 					yield " "+cnc.linearize(phr)
 
+	
+	# He has three children: Donald Jr. (born 1977), Ivanka (1981), and Eric (1984)
+	# Property P1971: number of children
+	children = None
+	number_children = get_quantities("P1971",entity)
+	for item in number_children:
+		children = int(item[0])
+
+	child = None
+	child_name = []
+	for child in get_entities("P40",entity,qual=False):
+		child = cnc.get_person_name(child)
+		child_name.append(child)
+	child_name = mkNP(w.and_Conj, child_name)
+
+	if children and child:
+		# He/She has X children: [list of names]
+		yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(mkNum(children), mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
+	
+	#to do: if child / if children
+	
 	deathday   = get_date("P570",entity)
 	deathplace = cnc.get_lexemes("P20", entity, qual=False)
 	if deathday or deathplace:
@@ -203,61 +224,68 @@ def render(cnc, lexeme, entity):
 
 
 
-	yield '<h2 class="gp-page-title">'+cnc.linearize(w.CompoundN(w.university_3_N,w.stuff_2_N))+'</h2>'
-	yield "<p>"
-
-	university = get_items("P69", entity, qual=False)
-
-	universities = []
+	university = cnc.get_lexemes("P69",entity,qual=False)
 	if university:
-		for qid in university:
-			uni = cnc.get_lex_fun(qid)
+		universities = []
+		for uni in university:
 			universities.append(mkNP(uni))
-	if universities:
 		universities = mkNP(w.and_Conj, universities)
 
-	# He/She attended [university name]
-	phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.attend_1_V2, universities)))))
-	yield " " + cnc.linearize(phr)
+		# He/She graduated from [university name]
+		phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
+		yield " " + cnc.linearize(phr)
 
-
-	awards = get_items("P166", entity, qual=False)
-
-	#for item in awards:
-	#	print('item: ', item)
-	#	uni = cnc.get_lex_fun(item)
-	#	print('award: ', uni)
-
+	
+	awards = cnc.get_lexemes("P166",entity,qual=False)
 	# if any awards: --> if only one award theSg_Det instead of thePl_Det
 	# He/She received the following awards:
 	yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
 
 	# List of awards:
-	#if len(awards) < 5:
-	#	column_count = 1
-	#elif len(awards) < 10:
-	#	column_count = 2
-	#else:
-	#	column_count = 4
-	#yield "<ul style='column-count: "+str(column_count)+"'>"
-	#for award in awards:
-	#	yield "<li>"+cnc.linearize(award)+"</li>"
-	#yield '</ul></p>'
+	if len(awards) < 5:
+		column_count = 1
+	elif len(awards) < 10:
+		column_count = 2
+	else:
+		column_count = 4
+	yield "<ul style='column-count: "+str(column_count)+"'>"
+	for award in awards:
+		yield "<li>"+cnc.linearize(award)+"</li>"
+	yield '</ul></p>'
 
 
-	# He/She works at [place] - EX.: He works at Chalmers University of Technology
-	# Also, if date is provided, we can add former workplaces? - He worked at...
-	# employer property - P108
-	employer = get_items("P108", entity, qual=False)
 
-	workplace = []
-	if employer:
-		for qid in employer:
-			place = cnc.get_lex_fun(qid)
-			workplace.append(mkNP(place))
-	if workplace:
-		workplace = mkNP(w.and_Conj, workplace)
+	# Property native language - P103
+	native_language_qid = cnc.get_lexemes("P103",entity,qual=False)
+	native_lang = []	
+	if native_language_qid:
+		for qid in native_language_qid:
+			native_lang.append(mkNP(qid))
+	
+	# Property languages spoken, written or signed - P1412
+	other_langs = []
+	for qid in cnc.get_lexemes("P1412",entity,qual=False):
+		if qid not in native_language_qid:
+			other_langs.append(mkNP(qid))
 
-	# He/She works [university name]
-	phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(mkVP(w.work_2_V), mkAdv(w.at_1_Prep, workplace))))))
-	yield " " + cnc.linearize(phr)
+	if native_lang:
+		native_lang = mkNP(w.and_Conj,native_lang)
+		other_langs = mkNP(w.and_Conj,other_langs)
+		if other_langs:
+			# His/Her native lang is [...] but he also speaks [...]
+			phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(mkNP(mkDet(pron), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
+		else:
+			# His/Her native lang is [...]
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkDet(pron), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
+		yield " " + cnc.linearize(phr)
+	elif other_langs: #not native langs but other langs
+		# He/She speaks [...]
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron),mkVP(w.speak_3_V2, other_langs)))),fullStopPunct)
+		yield " " + cnc.linearize(phr)
+
+	
+
+
+
+
+	
