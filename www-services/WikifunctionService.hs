@@ -9,9 +9,11 @@ import qualified Data.Map                as Map
 import           GF.Compile
 import qualified GF.Data.ErrM            as E
 import           GF.Grammar              hiding (VApp, VRecType)
+import           GF.Grammar.Lookup
 import           GF.Infra.CheckM
 import           GF.Infra.Option
 import           GF.Term
+import           GF.Compile.Rename
 import           Network.HTTP
 import           Network.URI
 import           OpenSSL
@@ -19,8 +21,12 @@ import           PGF2
 import           System.FilePath
 import           Text.JSON
 import           Text.JSON.Types         (get_field)
+<<<<<<< Updated upstream
 import           Text.PrettyPrint
 import           Data.Digest.Pure.MD5
+=======
+import           GF.Text.Pretty
+>>>>>>> Stashed changes
 
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as E
@@ -28,7 +34,7 @@ import qualified Data.ByteString.Lazy as BL
 
 import            Data.Maybe
 main = do
-  gr <- readNGF "Parse.ngf"
+  gr <- readNGF "/usr/local/share/x86_64-linux-ghc-8.8.4/gf-4.0.0/www/robust/Parse.ngf"
   (_,(mn,sgr)) <- batchCompile noOptions (Just gr) ["WordNet.gf"]
   withOpenSSL (simpleServer (Just 8080) Nothing (httpMain gr sgr mn))
 
@@ -66,13 +72,13 @@ httpMain gr sgr mn rq
       qid  <- valFromObj "qid"  query
       lang <- valFromObj "lang" query
       code <- valFromObj "code" query
-      return (executeCode gr sgr mn qid lang code)
+      return (executeCode gr sgr mn "" qid lang code)
 
-executeCode :: PGF -> SourceGrammar -> ModuleName -> String -> String -> String -> IO Response
-executeCode gr sgr mn qid lang code =
-  case runP pTerm (BS.pack code) of
-    Right term     ->
-      case runCheck (checkComputeTerm term) of
+executeCode :: PGF -> SourceGrammar -> ModuleName -> String -> String -> String -> String -> IO Response
+executeCode gr sgr mn cwd qid lang code =
+  case runLangP NLG pNLG (BS.pack code) of
+    Right prog ->
+      case runCheck (checkComputeProg prog) of
         E.Ok (value,msg)
                    -> return (Response
                                 { rspCode = 200
@@ -80,13 +86,13 @@ executeCode gr sgr mn qid lang code =
                                 , rspHeaders = [Header HdrContentType "text/plain; charset=UTF8"]
                                 , rspBody = if null msg
                                               then unlines value
-                                              else unlines (msg:value)
+                                              else unlines (("<pre>"++concatMap escape msg++"</pre>"):value)
                                 })
         E.Bad msg  -> return (Response
                                 { rspCode = 400
                                 , rspReason = "Invalid Expression"
                                 , rspHeaders = [Header HdrContentType "text/plain; charset=UTF8"]
-                                , rspBody = msg
+                                , rspBody = "<pre>"++concatMap escape msg++"</pre>"
                                 })
     Left (pos,msg) -> return (Response
                                 { rspCode = 400
@@ -95,16 +101,61 @@ executeCode gr sgr mn qid lang code =
                                 , rspBody = (show pos ++ msg)
                                 })
   where
-    checkComputeTerm term = do
-      let globals = Gl sgr (wikiPredef gr)
-          term'   = Abs Explicit (identS "qid") term
-      term' <- renameSourceTerm sgr mn term'
-      (term',typ) <- checkLType globals term' (Prod Explicit identW typeStr typeStr)
+    checkComputeProg jments = do
+      let nlg_mn = moduleNameS (msrc nlg_mi)
+          nlg_mi = ModInfo {
+                     mtype   = MTResource,
+                     mstatus = MSComplete,
+                     mflags  = noOptions,
+                     mextend = [],
+                     mwith   = Nothing,
+                     mopens  = [OSimple mn],
+                     mexdeps = [],
+                     msrc    = "<NLG module>",
+                     mseqs   = Nothing,
+                     jments  = jments
+                   }
+      nlg_m <- renameModule cwd sgr (nlg_mn, nlg_mi)
+
+      infoss <- checkInModule cwd nlg_mi NoLoc empty $ topoSortJments2 nlg_m
+      let sgr'    = prependModule sgr nlg_m
+          globals = Gl sgr (wikiPredef gr)
+      nlg_m <- foldM (foldM (checkInfo (mflags nlg_mi) cwd globals)) nlg_m infoss
+
+      let sgr' = prependModule sgr nlg_m
+          globals' = Gl sgr' (wikiPredef gr)
+
+      term' <- lookupResDef sgr' (nlg_mn,identS "main")
 
       checkWarn (ppTerm Unqualified 0 term')
-      checkWarn (ppTerm Unqualified 0 typ)
-      normalStringForm globals (App term' (K qid))
+      return ["??"]
+      --normalStringForm globals' (App term' (K qid))
 
+    checkInfo :: Options -> FilePath -> Globals -> SourceModule -> (Ident,Info) -> Check SourceModule
+    checkInfo opts cwd globals sm (c,info) = checkInModule cwd (snd sm) NoLoc empty $ do
+       case info of
+         ResOper pty pde -> do
+            (pty', pde') <- case (pty,pde) of
+                (Just (L loct ty), Just (L locd de)) -> do
+                     ty'     <- chIn loct "operation" $ do
+                                   (ty,_) <- checkLType globals ty typeType
+                                   normalForm globals ty
+                     (de',_) <- chIn locd "operation" $
+                                   checkLType globals de ty'
+                     return (Just (L loct ty'), Just (L locd de'))
+                (Nothing         , Just (L locd de)) -> do
+                     (de',ty') <- chIn locd "operation" $
+                                     inferLType globals de
+                     return (Just (L locd ty'), Just (L locd de'))
+                (Just (L loct ty), Nothing) -> do
+                     chIn loct "operation" $
+                        checkError (pp "No definition given to the operation")
+            update sm c (ResOper pty' pde')
+       where
+         gr = prependModule sgr sm
+         chIn loc cat = checkInModule cwd (snd sm) loc ("Happened in" <+> cat <+> c)
+
+         update (mn,mi) c info = return (mn,mi{jments=Map.insert c info (jments mi)})
 
 wikiPredef :: PGF -> Map.Map Ident ([Value s] -> EvalM s (ConstValue (Value s)))
 wikiPredef pgf = Map.fromList
@@ -113,7 +164,7 @@ wikiPredef pgf = Map.fromList
   , (identS "int2decimal", \[VInt n] -> int2decimal abstr n >>= \v -> return (Const v))
   , (identS "float2decimal", \[VFlt f] -> float2decimal abstr f >>= \v -> return (Const v))
   , (identS "int2numeral", \[VInt n] -> int2numeral abstr n >>= \v -> return (Const v))
-  , (identS "markup", \[_, attrs, tag, v] -> markup' attrs tag v)
+  , (identS "markup", \[_, tag, attrs, v] -> markup' tag attrs v)
   , (identS "linearize", linearize')
   , (cLessInt,\[v1,v2] -> return (fmap toBool (liftA2 (<) (value2int v1) (value2int v2))))
   ]
@@ -123,8 +174,13 @@ wikiPredef pgf = Map.fromList
     fetch typ qid = do
       rsp <- unsafeIOToEvalM (simpleHTTP (getRequest ("https://www.wikidata.org/wiki/Special:EntityData/"++qid++".json")))
       case decode (rspBody rsp) >>= valFromObj "entities" >>= valFromObj qid >>= valFromObj "claims" of
+<<<<<<< Updated upstream
         Ok obj    -> filterJsonFromType obj typ
         Error msg -> evalError (text msg)
+=======
+        Ok obj    -> (filterJsonFromType obj typ)
+        Error msg -> evalError (pp msg)
+>>>>>>> Stashed changes
 
     value2expr (GF.Term.VApp (_,f) tnks) =
       foldM mkApp (EFun (showIdent f)) tnks
@@ -149,16 +205,34 @@ wikiPredef pgf = Map.fromList
         return (Const (VStr (s1 ++ s2)))
     linearize' [_, v] = do
                           let Just cnc = Map.lookup "ParseEng" (languages pgf)
+<<<<<<< Updated upstream
                           e <- value2expr  v
                           return (Const (VStr (concatMap escape (linearize cnc e))))
 
     markup' (VR attrs)  (VStr tag) VEmpty =
+=======
+                          e <- value2expr v
+                          return (Const (VStr (linearize cnc e)))
+    
+    markup' (VStr tag) (VR attrs) VEmpty = 
+      do
+        attrs' <- constructAttrs attrs
+        return (Const 
+                (VStr
+                  (constructHtml tag (Just "") attrs')))
+    markup' (VStr tag) (VR attrs) (VStr v) = 
+>>>>>>> Stashed changes
       do
         attrs' <- constructAttrs attrs
         return (Const
                 (VStr
+<<<<<<< Updated upstream
                   (constructHtml tag Nothing attrs')))
     markup' (VR attrs)  (VStr tag) (VStr v) =
+=======
+                  (constructHtml tag (Just (concatMap escape v)) attrs')))
+    markup' (VStr tag) (VR attrs) (VC (VStr v1) (VStr v2)) = 
+>>>>>>> Stashed changes
       do
         attrs' <- constructAttrs attrs
         return (Const
@@ -206,7 +280,7 @@ filterJsonFromType obj typ =
   case typ of
    VRecType fields -> do fields <- mapM (getSpecificProperty obj) fields
                          return (VR fields)
-   _               -> evalError (text "Wikidata entities are always records")
+   _               -> evalError (pp "Wikidata entities are always records")
 
 getSpecificProperty :: JSObject [JSObject JSValue] -> (Label, Value s) -> EvalM s (Label, Thunk s)
 getSpecificProperty obj (LIdent field, typ) =
@@ -219,7 +293,7 @@ getSpecificProperty obj (LIdent field, typ) =
   where
     label = showRawIdent field
 getSpecificProperty obj (LVar n, typ) =
-  evalError (text "Wikidata entities can only have named properties")
+  evalError (pp "Wikidata entities can only have named properties")
 
 transformJsonToTerm :: String -> Value s -> JSObject JSValue -> EvalM s Term
 transformJsonToTerm field typ obj =
@@ -227,11 +301,11 @@ transformJsonToTerm field typ obj =
       VRecType [(LIdent l, t)] | head (showRawIdent l) == 'P'  -> case getCorrectObject obj t (showRawIdent l) of
                                                                     Ok assign -> return (R [(LIdent l , (Nothing, R assign))])
                                                                     Error "Could not find the correct object" -> return (FV [])
-                                                                    Error msg -> evalError (text msg)
+                                                                    Error msg -> evalError (pp msg)
 
       _                                                        -> case fromJSObjectToWikiDataItem obj typ of
-                                                                  Ok assign -> return (R assign)
-                                                                  Error msg -> evalError (text msg)
+                                                                    Ok assign -> return (R assign)
+                                                                    Error msg -> evalError (pp msg)
 
 getCorrectObject obj typ l = do
   let qualifiers = (do
@@ -362,7 +436,7 @@ decimal c s =
 
 int2digits abstr n
   | n >= 0    = digits n
-  | otherwise = evalError (text "Cant convert" <+> integer n)
+  | otherwise = evalError (pp "Can't convert" <+> pp n)
   where
     idig    = (abstr,identS "IDig")
     iidig   = (abstr,identS "IIDig")
@@ -381,6 +455,7 @@ int2digits abstr n
       tnk2 <- newEvaluatedThunk t
       rest n2 (VApp iidig [tnk1, tnk2])
 
+int2decimal :: ModuleName -> Integer -> EvalM s (Value s)
 int2decimal abstr n = int2digits abstr (abs n) >>= sign n
   where
     neg_dec = (abstr,identS "NegDecimal")
@@ -392,6 +467,7 @@ int2decimal abstr n = int2digits abstr (abs n) >>= sign n
         then return (VApp neg_dec [tnk])
         else return (VApp pos_dec [tnk])
 
+float2decimal :: ModuleName -> Double -> EvalM s (Value s)
 float2decimal abstr f =
   let n = truncate f
   in int2decimal abstr n >>= fractions (f-fromIntegral n)
@@ -468,7 +544,7 @@ int2numeral abstr n
 
     n2d n = app0 ('n':show n)
 
-    range_error n = evalError (integer n <+> text "cannot be represented as a numeral")
+    range_error n = evalError (pp n <+> pp "cannot be represented as a numeral")
 
     app0 fn = return (VApp (abstr,identS fn) [])
 
