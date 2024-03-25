@@ -44,57 +44,57 @@ def autorize(code, start_response):
                  ])
   yield b''
 
-#def prelude(qid,lang,edit):
-#  yield b'<html>'
-#  yield b' <title>GFpedia</title>'
-#  yield b' <head>'
-#  yield b'     <link rel="stylesheet" type="text/css" href="../wordnet/gf-wordnet.css">'
-#  yield b'     <link rel="stylesheet" type="text/css" href="gf-wikidata.css">'
-#  yield b' </head>'
-#  if edit:
-#    yield b' <body onload="init_editor()">'
-#  else:
-#    yield b' <body>'
-#  yield b'     <div class="gp-head">'
-#  yield b'        <div id="p-personal">'
-#  yield b'           <a id="logIn" href="https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=3b54eb78b27f94e182d0">Log In</a>'
-#  yield b'&nbsp;&nbsp;'
-#  yield b'           <a id="commit" href="javascript:gfwordnet.commit(this)" style="display: none">Commit</a>'
-#  yield b'        </div>'
-#
-#  yield b'        <div id="right-navigation">'
-#  if qid:
-#    yield b'<ul class="gp-navigation">'
-#    if edit:
-#        yield b'<li><a href="index.wsgi?id='+bytes(qid,"utf-8")+b'&lang='+bytes(lang,"utf-8")+b'">Page</a></li><li class="selected">Edit</li>'
-#    else:
-#        yield b'<li class="selected">Page</li><li><a href="index.wsgi?id='+bytes(qid,"utf-8")+b'&lang='+bytes(lang,"utf-8")+b'&edit=1">Edit</a></li>'  
-#    yield b'</ul>'
-#
-#  yield b'          <form class="search-box">'
-#  yield b'             <input class="search-box-input" type="search" name="search"'
-#  yield b'                    placeholder="Search GFpedia" aria-label="Search GFpedia"'
-#  yield b'                    autocapitalize="sentences" title="Search GFpedia" id="searchInput"'
-#  yield b'                    autocomplete="off"'
-#  yield b'                    oninput="showSearches(this)"'
-#  yield b'                    onkeypress="searchInputOnKeyPress(event)"'
-#  yield b'                    onkeydown="searchInputOnKeyDown(event)">'
-#  yield b'             <img class="search-box-button" src="search.svg">'
-#  yield b'             <table class="search-box-results" id="searchResults"></table>'
-#  yield b'         </form>'
-#  yield b'       </div>'
-#  yield b'     </div>'
-#  yield b'     <div class="gp-panel">'
-#  yield b'         <img class="gp-logo" src="gp-logo.svg">'
-#  yield b'         <div class="gp-panel-section">'
-#  yield b'           <table>'
-#
-#  if qid:
-#    yield b'             <tr><td><a href="https://cloud.grammaticalframework.org/wikidata/index.wsgi">Main page</a></td></tr>'
-#    yield b'             <tr><td><a href="https://www.wikidata.org/wiki/'+bytes(qid,"utf8")+b'">Wikidata item</a></td></tr>'
-#
-#  yield b'           </table>'
-#  yield b'         </div>'
+def prelude(qid,lang,edit):
+  yield b'<html>'
+  yield b' <title>GFpedia</title>'
+  yield b' <head>'
+  yield b'     <link rel="stylesheet" type="text/css" href="../wordnet/gf-wordnet.css">'
+  yield b'     <link rel="stylesheet" type="text/css" href="gf-wikidata.css">'
+  yield b' </head>'
+  if edit:
+    yield b' <body onload="init_editor()">'
+  else:
+    yield b' <body>'
+  yield b'     <div class="gp-head">'
+  yield b'        <div id="p-personal">'
+  yield b'           <a id="logIn" href="https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=3b54eb78b27f94e182d0">Log In</a>'
+  yield b'&nbsp;&nbsp;'
+  yield b'           <a id="commit" href="javascript:gfwordnet.commit(this)" style="display: none">Commit</a>'
+  yield b'        </div>'
+
+  yield b'        <div id="right-navigation">'
+  if qid:
+    yield b'<ul class="gp-navigation">'
+    if edit:
+        yield b'<li><a href="index.wsgi?id='+bytes(qid,"utf-8")+b'&lang='+bytes(lang,"utf-8")+b'">Page</a></li><li class="selected">Edit</li>'
+    else:
+        yield b'<li class="selected">Page</li><li><a href="index.wsgi?id='+bytes(qid,"utf-8")+b'&lang='+bytes(lang,"utf-8")+b'&edit=1">Edit</a></li>'  
+    yield b'</ul>'
+
+  yield b'          <form class="search-box">'
+  yield b'             <input class="search-box-input" type="search" name="search"'
+  yield b'                    placeholder="Search GFpedia" aria-label="Search GFpedia"'
+  yield b'                    autocapitalize="sentences" title="Search GFpedia" id="searchInput"'
+  yield b'                    autocomplete="off"'
+  yield b'                    oninput="showSearches(this)"'
+  yield b'                    onkeypress="searchInputOnKeyPress(event)"'
+  yield b'                    onkeydown="searchInputOnKeyDown(event)">'
+  yield b'             <img class="search-box-button" src="search.svg">'
+  yield b'             <table class="search-box-results" id="searchResults"></table>'
+  yield b'         </form>'
+  yield b'       </div>'
+  yield b'     </div>'
+  yield b'     <div class="gp-panel">'
+  yield b'         <img class="gp-logo" src="gp-logo.svg">'
+  yield b'         <div class="gp-panel-section">'
+  yield b'           <table>'
+
+  if qid:
+    yield b'             <tr><td><a href="https://cloud.grammaticalframework.org/wikidata/index.wsgi">Main page</a></td></tr>'
+    yield b'             <tr><td><a href="https://www.wikidata.org/wiki/'+bytes(qid,"utf8")+b'">Wikidata item</a></td></tr>'
+
+  yield b'           </table>'
+  yield b'         </div>'
 
 langs = {
   "af": ("Afrikaans", "ParseAfr"),
@@ -161,31 +161,31 @@ def render_page(query, start_response):
 
     edit = query.get("edit",["0"])[0]=="1"
 
-    #for line in prelude(qid,lang,edit):
-    #    yield line
-#
-    #yield b'         <div class="gp-panel-section">'
-    #yield b'           <h3 class="gp-page-title">Languages</h3>'
-    #yield b'           <table id="from">'
-    #for code,(name,cnc) in langs.items():
-    #    yield b'             <tr>'
-    #    if code != lang:
-    #        if qid != None:
-    #            if edit:
-    #                yield bytes('<td><a href="index.wsgi?id='+qid+'&lang='+code+'&edit=1">'+name+'</a></td>','utf8')
-    #            else:
-    #                yield bytes('<td><a href="index.wsgi?id='+qid+'&lang='+code+'">'+name+'</a></td>','utf8')
-    #        else:
-    #            yield bytes('<td><a href="index.wsgi?lang='+code+'">'+name+'</a></td>','utf8')
-    #    else:
-    #        yield bytes('<td><b>'+name+'</b></td>','utf8')
-    #    if edit:
-    #        yield bytes('<td><input type="checkbox" name="'+cnc+'" onchange="select_language()"></td>','utf8')
-    #    yield b'</tr>'
-    #yield b'         </table>'
-    #yield b'       </div>'
-    #yield b'     </div>'
-    #yield b'     <div class="gp-body" id="content" data-lang="'+bytes(lang,"utf8")+b'">'
+    for line in prelude(qid,lang,edit):
+        yield line
+
+    yield b'         <div class="gp-panel-section">'
+    yield b'           <h3 class="gp-page-title">Languages</h3>'
+    yield b'           <table id="from">'
+    for code,(name,cnc) in langs.items():
+        yield b'             <tr>'
+        if code != lang:
+            if qid != None:
+                if edit:
+                    yield bytes('<td><a href="index.wsgi?id='+qid+'&lang='+code+'&edit=1">'+name+'</a></td>','utf8')
+                else:
+                    yield bytes('<td><a href="index.wsgi?id='+qid+'&lang='+code+'">'+name+'</a></td>','utf8')
+            else:
+                yield bytes('<td><a href="index.wsgi?lang='+code+'">'+name+'</a></td>','utf8')
+        else:
+            yield bytes('<td><b>'+name+'</b></td>','utf8')
+        if edit:
+            yield bytes('<td><input type="checkbox" name="'+cnc+'" onchange="select_language()"></td>','utf8')
+        yield b'</tr>'
+    yield b'         </table>'
+    yield b'       </div>'
+    yield b'     </div>'
+    yield b'     <div class="gp-body" id="content" data-lang="'+bytes(lang,"utf8")+b'">'
 
     import wordnet
     from nlg import render, render_list
@@ -216,12 +216,12 @@ def render_page(query, start_response):
             for e in cnc.exprs:
                 yield bytes("<p>"+str(e)+"</p>","utf8")
             yield b"</div>"
-    #else:
-    #    for line in home:
-    #        yield line
-#
-    #for line in epilogue:
-    #    yield line
+    else:
+        for line in home:
+            yield line
+
+    for line in epilogue:
+        yield line
 
 def application(env, start_response):
     query = parse_qs(env["QUERY_STRING"])
