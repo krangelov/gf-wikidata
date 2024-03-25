@@ -12,6 +12,8 @@ oper float2decimal : Float -> Decimal = variants {} ;
 oper int2numeral : Int -> Numeral = variants {} ;
 oper markup : ({a} : Type) -> a -> Str -> Str -> Str = variants {} ;
 oper linearize : ({a} : Type) -> a -> Str = variants {} ;
+oper reset : ({a} : Type) -> a -> a = variants {} ;
+oper first : ({a} : Type) -> a -> a = variants {} ;
 
 
 oper lessInt : Int -> Int -> Bool = variants {} ;

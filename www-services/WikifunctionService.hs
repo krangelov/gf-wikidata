@@ -20,7 +20,13 @@ import           System.FilePath
 import           Text.JSON
 import           Text.JSON.Types         (get_field)
 import           Text.PrettyPrint
+import           Data.Digest.Pure.MD5
 
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Lazy.Encoding as E
+import qualified Data.ByteString.Lazy as BL
+
+import            Data.Maybe
 main = do
   gr <- readNGF "Parse.ngf"
   (_,(mn,sgr)) <- batchCompile noOptions (Just gr) ["WordNet.gf"]
@@ -117,7 +123,7 @@ wikiPredef pgf = Map.fromList
     fetch typ qid = do
       rsp <- unsafeIOToEvalM (simpleHTTP (getRequest ("https://www.wikidata.org/wiki/Special:EntityData/"++qid++".json")))
       case decode (rspBody rsp) >>= valFromObj "entities" >>= valFromObj qid >>= valFromObj "claims" of
-        Ok obj    -> (filterJsonFromType obj typ)
+        Ok obj    -> filterJsonFromType obj typ
         Error msg -> evalError (text msg)
 
     value2expr (GF.Term.VApp (_,f) tnks) =
@@ -127,26 +133,52 @@ wikiPredef pgf = Map.fromList
           v  <- force tnk
           e2 <- value2expr v
           return (EApp e1 e2)
-
-    linearize' [_, GF.Term.VInt n] = return (Const (VStr (show n)))
-    linearize' [_, GF.Term.VStr s] = return (Const (VStr s))
-    linearize' [_, v] = do 
-                          let Just cnc = Map.lookup "ParseEng" (languages pgf)
-                          e <- value2expr v
-                          return (Const (VStr (linearize cnc e)))
     
-    markup' (VR attrs)  (VStr tag) (VStr v) = 
+    linearize' :: [Value s] -> EvalM s (ConstValue (Value s))
+    linearize' [_, GF.Term.VInt n] = return (Const (VStr (show n)))
+    linearize' [_, GF.Term.VStr s] = return (Const (VStr (concatMap escape s)))
+    linearize' [_, GF.Term.VEmpty] = return (Const (VStr ""))
+    linearize' [_, GF.Term.VR [(_, tnk)]] =
+      do
+        v  <- force tnk
+        return (Const v)
+    linearize' [x, GF.Term.VC v1 v2] =
+      do
+        (Const (VStr s1)) <- linearize' [x, v1]
+        (Const (VStr s2)) <- linearize' [x, v2]
+        return (Const (VStr (s1 ++ s2)))
+    linearize' [_, v] = do
+                          let Just cnc = Map.lookup "ParseEng" (languages pgf)
+                          e <- value2expr  v
+                          return (Const (VStr (concatMap escape (linearize cnc e))))
+
+    markup' (VR attrs)  (VStr tag) VEmpty =
       do
         attrs' <- constructAttrs attrs
-        return (Const 
+        return (Const
                 (VStr
-                  (constructHtml tag (Just (concatMap escape v)) attrs')))
-    markup' (VR attrs) (VStr tag) (VC (VStr v1) (VStr v2)) = 
+                  (constructHtml tag Nothing attrs')))
+    markup' (VR attrs)  (VStr tag) (VStr v) =
       do
         attrs' <- constructAttrs attrs
-        return (Const 
-                (VStr 
-                  (constructHtml tag (Just (v1 ++ v2))  attrs')))
+        return (Const
+                (VStr
+                  (constructHtml tag (Just v) attrs')))
+    markup' (VR attrs)  (VStr tag) vc@(VC _ _) =
+      do
+        attrs' <- constructAttrs attrs
+        return (Const
+                (VStr
+                  (constructHtml tag (constructFromConcat vc) attrs')))
+    markup' attrs tag v = evalError (text "Invalid markup")
+
+constructFromConcat :: Value s -> Maybe String
+constructFromConcat (VStr v) = Just v
+constructFromConcat VEmpty = Nothing
+constructFromConcat (VC v1 v2) = case constructFromConcat v1 of
+                                    Just str -> Just (str ++ Data.Maybe.fromMaybe "" (constructFromConcat v2))
+                                    Nothing -> constructFromConcat v2
+constructFromConcat v = Nothing
 
 constructAttrs :: [(Label, Thunk s)] -> EvalM s [(String, String)]
 constructAttrs [] = return []
@@ -158,11 +190,11 @@ constructAttrs ((LIdent l, v) : attrs) = do
 constructHtml :: String -> Maybe String -> [(String, String)] -> String
 constructHtml name payload attrs = "<" ++ name ++ " " ++ unwords (go attrs) ++ ">" ++ payload'
       where go [] = [ "" ]
-            go ((lbl, val) : attrs) = (lbl ++ "=" ++ "\"" ++ (concatMap escape val) ++ "\"") : go attrs
+            go ((lbl, val) : attrs) = (lbl ++ "=" ++ "\"" ++ concatMap escape val ++ "\"") : go attrs
             payload' = case payload of
                          Nothing -> ""
                          Just payload -> payload ++ "</" ++ name ++ ">"
-            
+
 escape '<' = "&lt;"
 escape '>' = "&gt;"
 escape '&' = "&amp;"
@@ -204,47 +236,63 @@ transformJsonToTerm field typ obj =
 getCorrectObject obj typ l = do
   let qualifiers = (do
                       qualifiers <- valFromObj "qualifiers" obj
-                      specific   <- valFromObj l qualifiers
-                      return specific)
-    
+                      valFromObj l qualifiers
+                    )
+
   let references = (do
-                      references <- (valFromObj "references" obj)
+                      references  <- valFromObj "references" obj
                       references' <- valFromObj "snaks" (head references)
-                      specific    <- valFromObj l references'
-                      return specific)
-  
+                      valFromObj l references'
+                    )
+
   case qualifiers <|> references of
     Ok specific -> do
                       datavalue  <- valFromObj "datavalue" (head specific)
-                      validateTypeFromObj typ datavalue
+                      datatype  <- valFromObj "datatype" (head specific)
+                      validateTypeFromObj typ datavalue datatype
     Error msg   -> Error "Could not find the correct object"
-  
+
 
 fromJSObjectToWikiDataItem :: JSObject JSValue -> Value s -> Result [Assign]
 fromJSObjectToWikiDataItem obj typ = do
   mainsnak <- valFromObj "mainsnak" obj
+  datatype <- valFromObj "datatype" mainsnak
   datavalue <- valFromObj "datavalue" mainsnak
-  validateTypeFromObj typ datavalue
+  validateTypeFromObj typ datavalue datatype
 
-validateTypeFromObj :: Value s -> JSObject JSValue -> Result [Assign]
-validateTypeFromObj typ dv = do
-  typFromObj <- valFromObj "type" dv
-  case matchTypeFromJSON dv typ typFromObj of
+validateTypeFromObj :: Value s -> JSObject JSValue -> String -> Result [Assign]
+validateTypeFromObj typ dv  datatype = 
+  case matchTypeFromJSON dv typ datatype of
     Ok assign -> return assign
     Error msg -> Error msg
 
-matchTypeFromJSON :: JSObject JSValue -> Value s -> String -> Result [Assign]
-matchTypeFromJSON dv (VSort id) "string" = getFieldFromString dv id
-matchTypeFromJSON dv (VRecType labels) "wikibase-entityid" = traverse (getFieldFromWikibaseEntityId dv) labels
-matchTypeFromJSON dv (VRecType labels) "globecoordinate" = traverse (getFieldFromGlobecoordinate dv) labels
-matchTypeFromJSON dv (VRecType labels) "quantity" = traverse (getFieldFromQuantity dv) labels
-matchTypeFromJSON dv (VRecType labels) "time" = traverse (getFieldFromTime dv) labels
+matchTypeFromJSON ::  JSObject JSValue -> Value s -> String -> Result [Assign]
+matchTypeFromJSON  dv (VRecType labels) "commonsMedia" = traverse (getFieldFromCommonsMedia dv) labels
+matchTypeFromJSON  dv (VRecType labels) "quantity" = traverse (getFieldFromQuantity dv) labels
+matchTypeFromJSON dv (VRecType labels) "wikibase-item" = traverse (getFieldFromWikibaseEntityId dv) labels
+matchTypeFromJSON dv (VRecType labels) "globe-coordinate" = traverse (getFieldFromGlobecoordinate dv) labels
+matchTypeFromJSON  dv (VRecType labels) "time" = traverse (getFieldFromTime dv) labels
 matchTypeFromJSON dv (VRecType labels) "monolingualtext" = traverse (getFieldFromText dv) labels
-matchTypeFromJSON _ _ _ = Error "Error"
+matchTypeFromJSON _ v t = Error $ "Error" ++ showValue v ++ t
 
-getFieldFromString dv id
-  | id == cStr = valFromObj "value" dv >>= \s -> return [assign theLinLabel (K s)]
-  | otherwise  = fail "Not a String"
+
+getFieldFromCommonsMedia :: JSObject JSValue -> (Label, Value s) -> Result Assign
+getFieldFromCommonsMedia dv (LIdent l, t) =
+  case (showRawIdent l, t) of 
+      ("s", VSort id) -> if id == cStr then valFromObj "value" dv >>= \s -> return $ assign theLinLabel (K (constructImgUrl s)) else fail "Not a String"
+      ("s", VMeta _ _) -> valFromObj "value" dv >>= \s -> return $ assign theLinLabel (K (constructImgUrl s))
+      (_, _) -> Error "Not a valid commons-media field"
+
+
+constructImgUrl :: String -> String
+constructImgUrl img =
+  let
+    repl ' ' = '_'
+    repl  c   = c
+    img' = map repl img
+    bImg = E.encodeUtf8 . TL.pack $ img'
+    h = show $ md5 bImg
+  in "https://upload.wikimedia.org/wikipedia/commons/" ++ [head h] ++ "/" ++ take 2 h ++ "/" ++ img'
 
 getFieldFromWikibaseEntityId dv (field@(LIdent l), t) = do
   value <- valFromObj "value" dv
@@ -257,7 +305,7 @@ getFieldFromWikibaseEntityId dv (field@(LIdent l), t) = do
         )
 
 getFieldFromGlobecoordinate dv (field@(LIdent l), t) = do
-  value <- valFromObj "value" dv -- globecoordinate
+  value <- valFromObj "value" dv
   assign field
     <$> ( case (showRawIdent l, t) of
             (l@"latitude",  VApp f []) -> if f == (cPredef,cFloat) then valFromObj l value >>= (Ok . EFloat) else fail "Not a Float"

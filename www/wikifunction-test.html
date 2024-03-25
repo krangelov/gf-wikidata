@@ -13,7 +13,7 @@
         <table>
             <tr><td><button id="eval">Eval</button></td></tr>
             <tr><td id='editor'></td></tr>
-            <tr><td><pre id='output' style="width: 500px; height: 300px"></pre></td></tr>
+            <tr><td><div id='output' style="width: 500px; height: 300px"></div></td></tr>
         </table>
         <script>
             const evalBtn = document.getElementById("eval");
@@ -33,7 +33,7 @@
                     {method: "POST",
                      body: JSON.stringify(data),
                     });
-                output.innerText = await response.text()
+                output.innerHTML = await response.text()
             }
         </script>
     </body>
