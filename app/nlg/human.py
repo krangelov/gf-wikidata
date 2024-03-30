@@ -268,18 +268,36 @@ def render(cnc, lexeme, entity):
 			other_langs.append(mkNP(qid))
 
 	if native_lang:
+		num = singularNum if len(native_lang) == 1 else pluralNum
 		native_lang = mkNP(w.and_Conj,native_lang)
 		other_langs = mkNP(w.and_Conj,other_langs)
 		if other_langs:
-			# His/Her native lang is [...] but he also speaks [...]
-			phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(mkNP(mkDet(pron), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
+			# His/Her native lang(s) is/are [...] but he also speaks [...]
+			phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
 		else:
-			# His/Her native lang is [...]
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkDet(pron), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
+			# His/Her native lang(s) is/are [...]
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
-	elif other_langs: #not native langs but other langs
+	elif other_langs:
+		other_langs = mkNP(w.and_Conj,other_langs)
 		# He/She speaks [...]
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron),mkVP(w.speak_3_V2, other_langs)))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
 	
+	
+	# member of - P463
+	institutions = []
+	for qid,qual in get_items("P463",entity):
+		inst = cnc.get_lex_fun(qid)
+		if "P582" not in qual and inst != None:
+			institutions.append(mkNP(inst))
+
+	if institutions:
+		# He/She is a member of [...]
+		institutions = mkNP(w.and_Conj, list(institutions))
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkNP(aSg_Det, w.PossNP(mkCN(w.member_4_N), institutions))))),fullStopPunct)
+		yield " " + cnc.linearize(phr)
+
+
+
