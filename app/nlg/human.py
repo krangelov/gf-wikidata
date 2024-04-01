@@ -234,24 +234,42 @@ def render(cnc, lexeme, entity):
 		phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
-	
-	awards = cnc.get_lexemes("P166",entity,qual=False)
-	# if any awards: --> if only one award theSg_Det instead of thePl_Det
-	# He/She received the following awards:
-	yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
+
+	# award received:
+	qid_time = []
+	for qid,qual in get_items("P166",entity):
+		if "P585" in qual and cnc.get_lex_fun(qid) != None:
+			time = get_time_qualifier("P585",qual)
+			qid_time.append((qid,time))
+
+	awards_dict = {}
+	for qid, time in qid_time:
+		award = cnc.get_lex_fun(qid)
+		if award not in awards_dict:
+			awards_dict[award] = []
+		awards_dict[award].append(time)
+
+	if qid_time:
+		# He/She received the following awards:
+		yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
 
 	# List of awards:
-	if len(awards) < 5:
+	if len(awards_dict) < 5:
 		column_count = 1
-	elif len(awards) < 10:
+	elif len(awards_dict) < 10:
 		column_count = 2
 	else:
 		column_count = 4
 	yield "<ul style='column-count: "+str(column_count)+"'>"
-	for award in awards:
-		yield "<li>"+cnc.linearize(award)+"</li>"
+	for key,value in awards_dict.items():
+		dates = value
+		if len(dates) > 1:
+			# it extracts the year part (ex.: 2019) from each date string (ex.: '+2019-00-00T00:00:00Z') and constructs the date_string with years only
+			date_string = ", ".join([date.split('-')[0].lstrip('+') for date in dates])
+			yield "<li>"+cnc.linearize(key)+" (in " + date_string +")"+"</li>"
+		else: 
+			yield "<li>"+cnc.linearize(key)+"</li>"
 	yield '</ul></p>'
-
 
 
 	# Property native language - P103
