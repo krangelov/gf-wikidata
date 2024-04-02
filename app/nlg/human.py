@@ -234,24 +234,42 @@ def render(cnc, lexeme, entity):
 		phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
-	
-	awards = cnc.get_lexemes("P166",entity,qual=False)
-	# if any awards: --> if only one award theSg_Det instead of thePl_Det
-	# He/She received the following awards:
-	yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
+
+	# award received:
+	qid_time = []
+	for qid,qual in get_items("P166",entity):
+		if "P585" in qual and cnc.get_lex_fun(qid) != None:
+			time = get_time_qualifier("P585",qual)
+			qid_time.append((qid,time))
+
+	awards_dict = {}
+	for qid, time in qid_time:
+		award = cnc.get_lex_fun(qid)
+		if award not in awards_dict:
+			awards_dict[award] = []
+		awards_dict[award].append(time)
+
+	if qid_time:
+		# He/She received the following awards:
+		yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
 
 	# List of awards:
-	if len(awards) < 5:
+	if len(awards_dict) < 5:
 		column_count = 1
-	elif len(awards) < 10:
+	elif len(awards_dict) < 10:
 		column_count = 2
 	else:
 		column_count = 4
 	yield "<ul style='column-count: "+str(column_count)+"'>"
-	for award in awards:
-		yield "<li>"+cnc.linearize(award)+"</li>"
+	for key,value in awards_dict.items():
+		dates = value
+		if len(dates) > 1:
+			# it extracts the year part (ex.: 2019) from each date string (ex.: '+2019-00-00T00:00:00Z') and constructs the date_string with years only
+			date_string = ", ".join([date.split('-')[0].lstrip('+') for date in dates])
+			yield "<li>"+cnc.linearize(key)+" (in " + date_string +")"+"</li>"
+		else: 
+			yield "<li>"+cnc.linearize(key)+"</li>"
 	yield '</ul></p>'
-
 
 
 	# Property native language - P103
@@ -268,18 +286,36 @@ def render(cnc, lexeme, entity):
 			other_langs.append(mkNP(qid))
 
 	if native_lang:
+		num = singularNum if len(native_lang) == 1 else pluralNum
 		native_lang = mkNP(w.and_Conj,native_lang)
 		other_langs = mkNP(w.and_Conj,other_langs)
 		if other_langs:
-			# His/Her native lang is [...] but he also speaks [...]
-			phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(mkNP(mkDet(pron), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
+			# His/Her native lang(s) is/are [...] but he also speaks [...]
+			phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
 		else:
-			# His/Her native lang is [...]
-			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkDet(pron), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
+			# His/Her native lang(s) is/are [...]
+			phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
-	elif other_langs: #not native langs but other langs
+	elif other_langs:
+		other_langs = mkNP(w.and_Conj,other_langs)
 		# He/She speaks [...]
 		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron),mkVP(w.speak_3_V2, other_langs)))),fullStopPunct)
 		yield " " + cnc.linearize(phr)
 
 	
+	
+	# member of - P463
+	institutions = []
+	for qid,qual in get_items("P463",entity):
+		inst = cnc.get_lex_fun(qid)
+		if "P582" not in qual and inst != None:
+			institutions.append(mkNP(inst))
+
+	if institutions:
+		# He/She is a member of [...]
+		institutions = mkNP(w.and_Conj, list(institutions))
+		phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkNP(aSg_Det, w.PossNP(mkCN(w.member_4_N), institutions))))),fullStopPunct)
+		yield " " + cnc.linearize(phr)
+
+
+
