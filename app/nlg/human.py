@@ -192,7 +192,8 @@ def render(cnc, lexeme, entity):
     child_name = []
     for child in get_entities("P40",entity,qual=False):
         child = cnc.get_person_name(child)
-        child_name.append(child)
+        if child:
+            child_name.append(child)
     child_name = mkNP(w.and_Conj, child_name)
 
     if children and child:
