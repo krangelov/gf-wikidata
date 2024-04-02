@@ -6,6 +6,7 @@ import nlg.capital
 import nlg.city
 import nlg.human
 import nlg.profession
+import nlg.language
 import nlg.university
 from nlg.util import *
 
@@ -29,10 +30,12 @@ def render(cnc, lex_expr,entity):
 		renderer = nlg.profession.render
 	elif "Q3918" in class_qids or "Q5341295" in class_qids or "Q875538" in class_qids:
 		renderer = nlg.university.render
+	elif "Q34770" in class_qids:
+		renderer = nlg.language.render
 	else:
 		renderer = None
 		yield "<p>Define a renderer for at least one of the following classes: "+", ".join(class_qids)+"</p>"
-		
+
 	if renderer:
 		for s in renderer(cnc,lex_expr,entity):
 			yield s
