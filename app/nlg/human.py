@@ -23,6 +23,7 @@ def render(cnc, lexeme, entity):
 			occupations = mkCN(w.human_N)
 
 	all_adjs,ds = cnc.get_demonyms("P27", entity)
+		
 	if ds:
 		if all_adjs:
 			ap = mkAP(w.and_Conj,[mkAP(adj) for adj in ds])
@@ -158,9 +159,38 @@ def render(cnc, lexeme, entity):
 						   get_time_qualifier("P582",quals),
 						   get_item_qualifier("P1534",quals)) for spouse,quals in get_entities("P26",entity)],key=lambda p: p[1])
 		for spouse,start,place,end,end_cause in spouses:
+			#occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", spouse, qual=False)])
+			occupations = cnc.get_lexemes("P106", spouse, qual=False)
+			occupations = mkCN(occupations[0])
+			if not occupations:
+				if get_items("P184",entity):
+					occupations = mkCN(w.scientist_N)
+				elif "Q6581097" in gender:
+					occupations = mkCN(w.man_1_N)
+				elif "Q6581072" in gender:
+					occupations = mkCN(w.woman_1_N)
+				else:
+					occupations = mkCN(w.human_N)
+
+			all_adjs,ds = cnc.get_demonyms("P27", spouse)
+
+			if ds:
+				ds = list(ds)[0] #converting the set to a list to access the first item
+				if all_adjs:
+					#ap = mkAP(w.and_Conj,[mkAP(adj) for adj in ds])
+					ap = mkAP(ds)
+					description = mkCN(ap,occupations)
+				else:
+					#np = mkNP(w.and_Conj,[mkNP(pn) for pn in ds])
+					np = mkNP(ds)
+					description = mkCN(occupations,mkAdv(w.from_Prep,np))
+			else:
+				description = occupations
+
 			name = cnc.get_person_name(spouse)
 			if name:
-				vp = mkVP(w.marry_1_V2,name)
+				name = mkCN(description, name)
+				vp = mkVP(w.marry_1_V2,mkNP(name))
 				if place:
 					vp = mkVP(vp,mkAdv(place[0]))
 				stmt = mkS(useTense, mkCl(mkNP(pron), vp))
@@ -253,23 +283,23 @@ def render(cnc, lexeme, entity):
 		# He/She received the following awards:
 		yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
 
-	# List of awards:
-	if len(awards_dict) < 5:
-		column_count = 1
-	elif len(awards_dict) < 10:
-		column_count = 2
-	else:
-		column_count = 4
-	yield "<ul style='column-count: "+str(column_count)+"'>"
-	for key,value in awards_dict.items():
-		dates = value
-		if len(dates) > 1:
-			# it extracts the year part (ex.: 2019) from each date string (ex.: '+2019-00-00T00:00:00Z') and constructs the date_string with years only
-			date_string = ", ".join([date.split('-')[0].lstrip('+') for date in dates])
-			yield "<li>"+cnc.linearize(key)+" (in " + date_string +")"+"</li>"
-		else: 
-			yield "<li>"+cnc.linearize(key)+"</li>"
-	yield '</ul></p>'
+		# List of awards:
+		if len(awards_dict) < 5:
+			column_count = 1
+		elif len(awards_dict) < 10:
+			column_count = 2
+		else:
+			column_count = 4
+		yield "<ul style='column-count: "+str(column_count)+"'>"
+		for key,value in awards_dict.items():
+			dates = value
+			if len(dates) > 1:
+				# it extracts the year part (ex.: 2019) from each date string (ex.: '+2019-00-00T00:00:00Z') and constructs the date_string with years only
+				date_string = ", ".join([date.split('-')[0].lstrip('+') for date in dates])
+				yield "<li>"+cnc.linearize(key)+" (in " + date_string +")"+"</li>"
+			else: 
+				yield "<li>"+cnc.linearize(key)+"</li>"
+		yield '</ul></p>'
 
 
 	# Property native language - P103
