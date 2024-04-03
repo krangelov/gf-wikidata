@@ -105,12 +105,16 @@ def render(cnc, lexeme, entity):
     if brothers:
         if len(brothers) == 1:
             det = aSg_Det
+        elif len(brothers) < 10:
+            det = mkDet(a_Quant,mkNum(mkNumeral(len(brothers))))
         else:
             det = mkDet(a_Quant,mkNum(len(brothers)))
         siblings.append(mkNP(det,mkCN(w.brother_1_N, mkNP(w.and_Conj,brothers))))
     if sisters:
         if len(sisters) == 1:
             det = aSg_Det
+        elif len(sisters) < 10:
+            det = mkDet(a_Quant,mkNum(mkNumeral(len(sisters))))
         else:
             det = mkDet(a_Quant,mkNum(len(sisters)))
         siblings.append(mkNP(det,mkCN(w.sister_1_N, mkNP(w.and_Conj,sisters))))
@@ -226,7 +230,11 @@ def render(cnc, lexeme, entity):
 
     if children and child:
         # He/She has X children: [list of names]
-        yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(mkNum(children), mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
+        if children < 10:
+            det = mkDet(a_Quant,mkNum(mkNumeral(children)))
+        else:
+            det = mkDet(a_Quant,mkNum(children))
+        yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
 
     #to do: if child / if children
 
