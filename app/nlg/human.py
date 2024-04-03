@@ -164,8 +164,9 @@ def render(cnc, lexeme, entity):
         for spouse,start,place,end,end_cause in spouses:
 		    #occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", spouse, qual=False)])
             occupations = cnc.get_lexemes("P106", spouse, qual=False)
-            occupations = mkCN(occupations[0])
-            if not occupations:
+            if occupations:
+                occupations = mkCN(occupations[0])
+            else:
                 if get_items("P184",entity):
                     occupations = mkCN(w.scientist_N)
                 elif "Q6581097" in gender:
