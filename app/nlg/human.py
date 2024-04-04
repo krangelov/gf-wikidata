@@ -304,7 +304,7 @@ def render(cnc, lexeme, entity):
             if len(dates) > 1:
                 # it extracts the year part (ex.: 2019) from each date string (ex.: '+2019-00-00T00:00:00Z') and constructs the date_string with years only
                 date_string = ", ".join([date.split('-')[0].lstrip('+') for date in dates])
-                yield "<li>"+cnc.linearize(key)+" (in " + date_string +")"+"</li>"
+                yield "<li>"+cnc.linearize(key) + " (" + cnc.linearize(w.in_1_Prep) + " " + date_string +")"+"</li>"
             else:
                 yield "<li>"+cnc.linearize(key)+"</li>"
         yield '</ul></p>'
