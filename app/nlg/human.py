@@ -237,7 +237,7 @@ def render(cnc, lexeme, entity):
                 phr = mkPhr(mkUtt(stmt),fullStopPunct)
                 yield " "+cnc.linearize(phr)
 
-                if end and end_cause != "Q4":
+                if end and end_cause not in ["Q4", "Q99521170"]:
                     if "Q6581072" in get_items("P21",spouse,qual=False):
                         spouse_pron = w.she_Pron
                     else:
