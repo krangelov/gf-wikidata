@@ -209,7 +209,6 @@ def render(cnc, lexeme, entity):
         for spouse,start,place,end,end_cause in spouses:
             occupation = cnc.get_lexemes("P106", spouse, qual=False)
             occupation = mkCN(occupation[0]) if occupation else None
-
             all_adjs, ds = cnc.get_demonyms("P27", spouse)
             if ds:
                 ds = list(ds)[0] #converting the set to a list to access the first item
@@ -219,6 +218,19 @@ def render(cnc, lexeme, entity):
                     description = occupation
             else:
                 description = occupation
+
+            child = None
+            child_name = []
+            children = get_items("P40",entity,qual=False)
+            spouse_children = get_items("P40",spouse,qual=False)
+            for child_qid in spouse_children:
+                if child_qid in children:
+                    child_entity = get_entity(child_qid)
+                    child = cnc.get_person_name(child_entity)
+                    if child:
+                        child_name.append(child)
+            number_children = len(child_name)
+            child_name = mkNP(w.and_Conj, child_name)
 
             name = cnc.get_person_name(spouse)
             if name:
@@ -236,7 +248,15 @@ def render(cnc, lexeme, entity):
                         stmt = w.ExtAdvS(start,stmt)
                 phr = mkPhr(mkUtt(stmt),fullStopPunct)
                 yield " "+cnc.linearize(phr)
-
+                
+                if child_name:
+                # They have X children: [list of names]
+                    if number_children < 10:
+                        det = mkDet(a_Quant,mkNum(mkNumeral(number_children)))
+                    else:
+                        det = mkDet(a_Quant,mkNum(number_children))
+                    yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
+            
                 if end and end_cause not in ["Q4", "Q99521170"]:
                     if "Q6581072" in get_items("P21",spouse,qual=False):
                         spouse_pron = w.she_Pron
@@ -246,41 +266,6 @@ def render(cnc, lexeme, entity):
                     phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), vp))),fullStopPunct)
                     yield " "+cnc.linearize(phr)
 
-
-    # He has three children: Donald Jr. (born 1977), Ivanka (1981), and Eric (1984)
-    # Property P1971: number of children - I don't think I need this property anymore
-    children = None
-    number_children = get_quantities("P1971",entity)
-    for item in number_children:
-        children = int(item[0])
-
-    child = None
-    child_name = []
-    for child in get_entities("P40",entity,qual=False):
-        child = cnc.get_person_name(child)
-        if child:
-            child_name.append(child)
-    number = len(child_name) #ADDED
-    print(number) #ADDED
-    print('CHILD NAME 1: ', child_name)
-    child_name = mkNP(w.and_Conj, child_name)
-
-    #if children and child:
-    #    print('CHILDREN: ', children) #prop number of children shouldn't be used
-    #    print('CHILD: ', child)
-    #if children and child_name:
-    if child_name:
-        # He/She has X children: [list of names]
-        #if children < 10:
-        if number < 10: #ADDED
-            #det = mkDet(a_Quant,mkNum(mkNumeral(children)))
-            det = mkDet(a_Quant,mkNum(mkNumeral(number))) #ADDED
-        else:
-            #det = mkDet(a_Quant,mkNum(children))
-            det = mkDet(a_Quant,mkNum(number)) #ADDED
-        yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
-
-    #to do: if child / if children
 
     deathday   = get_date("P570",entity)
     deathplace = cnc.get_lexemes("P20", entity, qual=False)
