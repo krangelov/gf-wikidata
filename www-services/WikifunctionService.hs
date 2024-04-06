@@ -1,32 +1,29 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE MonadComprehensions #-}
 
-import           Control.Applicative     (liftA2, (<|>))
-import           Control.Monad           (foldM, filterM)
-import           Control.Monad.ST.Unsafe
+import Control.Applicative     (liftA2, (<|>))
+import Control.Monad           (foldM, filterM)
+import Control.Monad.ST.Unsafe
 import qualified Data.ByteString.Char8   as BS
 import qualified Data.Map                as Map
-import           GF.Compile
+import GF.Compile
 import qualified GF.Data.ErrM            as E
-import           GF.Grammar              hiding (VApp, VRecType)
-import           GF.Grammar.Lookup
-import           GF.Infra.CheckM
-import           GF.Infra.Option
-import           GF.Term
-import           GF.Compile.Rename
-import           Network.HTTP
-import           Network.URI
-import           OpenSSL
-import           PGF2
-import           System.FilePath
-import           Text.JSON
-import           Text.JSON.Types         (get_field)
-<<<<<<< Updated upstream
-import           Text.PrettyPrint
-import           Data.Digest.Pure.MD5
-=======
-import           GF.Text.Pretty
->>>>>>> Stashed changes
+import GF.Grammar              hiding (VApp, VRecType)
+import GF.Grammar.Lookup
+import GF.Infra.CheckM
+import GF.Infra.Option
+import GF.Term
+import GF.Compile.Rename
+import Network.HTTP
+import Network.HTTP.MD5
+import Network.URI
+import OpenSSL
+import PGF2
+import System.IO ( utf8 )
+import System.FilePath
+import Text.JSON
+import Text.JSON.Types         (get_field)
+import GF.Text.Pretty
 
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as E
@@ -174,13 +171,8 @@ wikiPredef pgf = Map.fromList
     fetch typ qid = do
       rsp <- unsafeIOToEvalM (simpleHTTP (getRequest ("https://www.wikidata.org/wiki/Special:EntityData/"++qid++".json")))
       case decode (rspBody rsp) >>= valFromObj "entities" >>= valFromObj qid >>= valFromObj "claims" of
-<<<<<<< Updated upstream
         Ok obj    -> filterJsonFromType obj typ
-        Error msg -> evalError (text msg)
-=======
-        Ok obj    -> (filterJsonFromType obj typ)
         Error msg -> evalError (pp msg)
->>>>>>> Stashed changes
 
     value2expr (GF.Term.VApp (_,f) tnks) =
       foldM mkApp (EFun (showIdent f)) tnks
@@ -205,15 +197,9 @@ wikiPredef pgf = Map.fromList
         return (Const (VStr (s1 ++ s2)))
     linearize' [_, v] = do
                           let Just cnc = Map.lookup "ParseEng" (languages pgf)
-<<<<<<< Updated upstream
                           e <- value2expr  v
                           return (Const (VStr (concatMap escape (linearize cnc e))))
 
-    markup' (VR attrs)  (VStr tag) VEmpty =
-=======
-                          e <- value2expr v
-                          return (Const (VStr (linearize cnc e)))
-    
     markup' (VStr tag) (VR attrs) VEmpty = 
       do
         attrs' <- constructAttrs attrs
@@ -221,18 +207,12 @@ wikiPredef pgf = Map.fromList
                 (VStr
                   (constructHtml tag (Just "") attrs')))
     markup' (VStr tag) (VR attrs) (VStr v) = 
->>>>>>> Stashed changes
       do
         attrs' <- constructAttrs attrs
         return (Const
                 (VStr
-<<<<<<< Updated upstream
                   (constructHtml tag Nothing attrs')))
     markup' (VR attrs)  (VStr tag) (VStr v) =
-=======
-                  (constructHtml tag (Just (concatMap escape v)) attrs')))
-    markup' (VStr tag) (VR attrs) (VC (VStr v1) (VStr v2)) = 
->>>>>>> Stashed changes
       do
         attrs' <- constructAttrs attrs
         return (Const
@@ -244,7 +224,7 @@ wikiPredef pgf = Map.fromList
         return (Const
                 (VStr
                   (constructHtml tag (constructFromConcat vc) attrs')))
-    markup' attrs tag v = evalError (text "Invalid markup")
+    markup' attrs tag v = evalError (pp "Invalid markup")
 
 constructFromConcat :: Value s -> Maybe String
 constructFromConcat (VStr v) = Just v
@@ -361,12 +341,9 @@ getFieldFromCommonsMedia dv (LIdent l, t) =
 constructImgUrl :: String -> String
 constructImgUrl img =
   let
-    repl ' ' = '_'
-    repl  c   = c
-    img' = map repl img
-    bImg = E.encodeUtf8 . TL.pack $ img'
-    h = show $ md5 bImg
-  in "https://upload.wikimedia.org/wikipedia/commons/" ++ [head h] ++ "/" ++ take 2 h ++ "/" ++ img'
+    name = map (\c -> if c == ' ' then '_' else c) (unEscapeString img)
+    h    = md5ss utf8 name    
+  in "https://upload.wikimedia.org/wikipedia/commons/"++take 1 h++"/"++take 2 h++"/"++name
 
 getFieldFromWikibaseEntityId dv (field@(LIdent l), t) = do
   value <- valFromObj "value" dv
