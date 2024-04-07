@@ -3,10 +3,14 @@ from wordnet import *
 from nlg.util import *
 
 def render(cnc, lexeme, entity):
-    yield "<div class='infobox'><table border=1>"
+    yield "<div class='infobox'><table border=1><tr><table>"
     for media,qual in get_medias("P18",entity):
         yield "<tr><td><img src='"+escape(media)+"' width=250/></td></tr>"
-    yield "</table></div>"
+        break
+    for media,qual in get_medias("P109",entity):
+        yield "<tr><td><img src='"+escape(media)+"' width=250/></td></tr>"
+        break
+    yield "</table></tr></table></div>"
 
     gender = get_items("P21",entity,qual=False)
 
@@ -257,7 +261,7 @@ def render(cnc, lexeme, entity):
                         det = mkDet(a_Quant,mkNum(number_children))
                     yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
             
-                if end and end_cause not in ["Q4", "Q99521170"]:
+                if end and end_cause not in ["Q4", "Q99521170", "Q24037741"]:
                     if "Q6581072" in get_items("P21",spouse,qual=False):
                         spouse_pron = w.she_Pron
                     else:
@@ -303,24 +307,33 @@ def render(cnc, lexeme, entity):
 
     yield "</p>"
 
-    yield '<h2 class="gp-page-title">'+cnc.linearize(mkNP(aPl_Det,w.award_3_N))+'</h2>'
-    yield "<p>"
+    notable_works = get_entities(["P800"],entity,qual=False)
+    if notable_works:
+        yield '<h2 class="gp-page-title">'+cnc.linearize(mkUtt(mkNP(aPl_Det,mkCN(w.notable_2_A,w.work_2_N))))+'</h2>'
+        yield "<ul>"
+        for notable_work in notable_works:
+            lbl = notable_work["labels"]
+            lbl = lbl.get(cnc.lang) or lbl.get("en")
+            if lbl:
+                lbl = lbl["value"]
+                yield "<li>"+lbl+"</li>"
+        yield "</ul>"
 
     # award received:
-    qid_time = []
-    for qid,qual in get_items("P166",entity):
-        if "P585" in qual and cnc.get_lex_fun(qid) != None:
-            time = get_time_qualifier("P585",qual)
-            qid_time.append((qid,time))
-
     awards_dict = {}
-    for qid, time in qid_time:
+    for qid, qual in get_items("P166",entity):
         award = cnc.get_lex_fun(qid)
-        if award not in awards_dict:
-            awards_dict[award] = []
-        awards_dict[award].append(time)
+        if not award:
+            continue
 
-    if qid_time:
+        dates = awards_dict.setdefault(award,[])
+        if "P585" in qual:
+            date = get_time_qualifier("P585",qual)
+            dates.append(date)
+
+    if awards_dict:
+        yield '<h2 class="gp-page-title">'+cnc.linearize(mkNP(aPl_Det,w.award_3_N))+'</h2>'
+
         # He/She received the following awards:
         yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
         
@@ -332,8 +345,7 @@ def render(cnc, lexeme, entity):
         else:
             column_count = 4
         yield "<ul style='column-count: "+str(column_count)+"'>"
-        for key,value in awards_dict.items():
-            dates = value
+        for key,dates in awards_dict.items():
             if len(dates) > 1:
                 # it extracts the year part (ex.: 2019) from each date string (ex.: '+2019-00-00T00:00:00Z') and constructs the date_string with years only
                 date_string = ", ".join([date.split('-')[0].lstrip('+') for date in dates])
@@ -341,13 +353,3 @@ def render(cnc, lexeme, entity):
             else:
                 yield "<li>"+cnc.linearize(key)+"</li>"
         yield '</ul></p>'
-
-
-    
-
-    
-
-
-    yield "</p>"
-
-
