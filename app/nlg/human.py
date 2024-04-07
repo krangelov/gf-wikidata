@@ -165,6 +165,13 @@ def render(cnc, lexeme, entity):
         siblings.append(mkNP(det,mkCN(w.sister_1_N, mkNP(w.and_Conj,sisters))))
     siblings = mkNP(w.and_Conj, siblings)
 
+    children = get_entities("P40",entity, qual=False)
+
+    number_children_prop = get_quantities("P1971",entity)
+    number = None
+    for item in number_children_prop:
+        number = int(item[0])
+
     father = None
     for father in get_entities("P22",entity,qual=False):
         father = cnc.get_person_name(father)
@@ -221,14 +228,12 @@ def render(cnc, lexeme, entity):
 
             child = None
             child_name = []
-            children = get_items("P40",entity,qual=False)
-            spouse_children = get_items("P40",spouse,qual=False)
-            for child_qid in spouse_children:
-                if child_qid in children:
-                    child_entity = get_entity(child_qid)
-                    child = cnc.get_person_name(child_entity)
-                    if child:
-                        child_name.append(child)
+            if children:
+                for kid in children:
+                    if any(mother == spouse or father == spouse for mother in get_entities("P25", kid, qual=False) for father in get_entities("P22", kid, qual=False)):
+                        child = cnc.get_person_name(kid)
+                        if child:
+                            child_name.append(child)
             number_children = len(child_name)
             child_name = mkNP(w.and_Conj, child_name)
 
@@ -256,7 +261,6 @@ def render(cnc, lexeme, entity):
                     else:
                         det = mkDet(a_Quant,mkNum(number_children))
                     yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
-            
                 if end and end_cause not in ["Q4", "Q99521170"]:
                     if "Q6581072" in get_items("P21",spouse,qual=False):
                         spouse_pron = w.she_Pron
@@ -265,7 +269,42 @@ def render(cnc, lexeme, entity):
                     vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
                     phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), vp))),fullStopPunct)
                     yield " "+cnc.linearize(phr)
+            
+    spouse = get_entities("P26",entity, qual=False)
+    if spouse and not children and number_children_prop:
+        det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
+        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
+        yield " " + cnc.linearize(phr)
 
+    # If there is no spouse but there are children
+    child = None
+    child_name = []
+    if not spouse:
+        if children:
+            for child in children:
+                child = cnc.get_person_name(child)
+                if child:
+                    child_name.append(child)
+        number_children = len(child_name)
+        child_name = mkNP(w.and_Conj, child_name)
+
+        if child_name:
+            if number:
+                det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
+            else:
+                det = mkDet(a_Quant, mkNum(mkNumeral(number_children))) if number_children < 10 else mkDet(a_Quant, mkNum(number_children))
+
+            if not number or number_children == number or number_children > number:
+                yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
+            elif number and number_children < number:
+                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
+                yield " " + cnc.linearize(phr)
+        else:
+            # No children name but number of children property
+            if number:
+                det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
+                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
+                yield " " + cnc.linearize(phr)
 
     deathday   = get_date("P570",entity)
     deathplace = cnc.get_lexemes("P20", entity, qual=False)
@@ -341,12 +380,6 @@ def render(cnc, lexeme, entity):
             else:
                 yield "<li>"+cnc.linearize(key)+"</li>"
         yield '</ul></p>'
-
-
-    
-
-    
-
 
     yield "</p>"
 
