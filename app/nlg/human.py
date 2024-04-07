@@ -85,6 +85,51 @@ def render(cnc, lexeme, entity):
         students = mkNP(w.and_Conj,students)
         phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisor_1_N),students))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
+    
+
+    # Property native language - P103
+    native_language_qid = cnc.get_lexemes("P103",entity,qual=False)
+    native_lang = []
+    if native_language_qid:
+        for qid in native_language_qid:
+            native_lang.append(mkNP(qid))
+
+    # Property languages spoken, written or signed - P1412
+    other_langs = []
+    for qid in cnc.get_lexemes("P1412",entity,qual=False):
+        if qid not in native_language_qid:
+            other_langs.append(mkNP(qid))
+
+    if native_lang:
+        num = singularNum if len(native_lang) == 1 else pluralNum
+        native_lang = mkNP(w.and_Conj,native_lang)
+        other_langs = mkNP(w.and_Conj,other_langs)
+        if other_langs:
+            # His/Her native lang(s) is/are [...] but he also speaks [...]
+            phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
+        else:
+            # His/Her native lang(s) is/are [...]
+            phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
+        yield " " + cnc.linearize(phr)
+    elif other_langs:
+        other_langs = mkNP(w.and_Conj,other_langs)
+        # He/She speaks [...]
+        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron),mkVP(w.speak_3_V2, other_langs)))),fullStopPunct)
+        yield " " + cnc.linearize(phr)
+    
+
+    # member of - P463
+    institutions = []
+    for qid,qual in get_items("P463",entity):
+        inst = cnc.get_lex_fun(qid)
+        if "P582" not in qual and inst != None:
+            institutions.append(mkNP(inst))
+
+    if institutions:
+        # He/She is a member of [...]
+        institutions = mkNP(w.and_Conj, list(institutions))
+        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkNP(aSg_Det, w.PossNP(mkCN(w.member_4_N), institutions))))),fullStopPunct)
+        yield " " + cnc.linearize(phr)
 
     yield "</p>"
 
@@ -162,38 +207,38 @@ def render(cnc, lexeme, entity):
                            get_time_qualifier("P582",quals),
                            get_item_qualifier("P1534",quals)) for spouse,quals in get_entities("P26",entity)],key=lambda p: p[1])
         for spouse,start,place,end,end_cause in spouses:
-		    #occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", spouse, qual=False)])
-            occupations = cnc.get_lexemes("P106", spouse, qual=False)
-            if occupations:
-                occupations = mkCN(occupations[0])
-            else:
-                if get_items("P184",entity):
-                    occupations = mkCN(w.scientist_N)
-                elif "Q6581097" in gender:
-                    occupations = mkCN(w.man_1_N)
-                elif "Q6581072" in gender:
-                    occupations = mkCN(w.woman_1_N)
-                else:
-                    occupations = mkCN(w.human_N)
-            
-            all_adjs,ds = cnc.get_demonyms("P27", spouse)
+            occupation = cnc.get_lexemes("P106", spouse, qual=False)
+            occupation = mkCN(occupation[0]) if occupation else None
+            all_adjs, ds = cnc.get_demonyms("P27", spouse)
             if ds:
                 ds = list(ds)[0] #converting the set to a list to access the first item
                 if all_adjs:
-                    #ap = mkAP(w.and_Conj,[mkAP(adj) for adj in ds])
-                    ap = mkAP(ds)
-                    description = mkCN(ap,occupations)
+                    description = mkCN(mkAP(ds), occupation) if occupation else None
                 else:
-					#np = mkNP(w.and_Conj,[mkNP(pn) for pn in ds])
-                    np = mkNP(ds)
-                    description = mkCN(occupations,mkAdv(w.from_Prep,np))
+                    description = occupation
             else:
-                description = occupations
-            
+                description = occupation
+
+            child = None
+            child_name = []
+            children = get_items("P40",entity,qual=False)
+            spouse_children = get_items("P40",spouse,qual=False)
+            for child_qid in spouse_children:
+                if child_qid in children:
+                    child_entity = get_entity(child_qid)
+                    child = cnc.get_person_name(child_entity)
+                    if child:
+                        child_name.append(child)
+            number_children = len(child_name)
+            child_name = mkNP(w.and_Conj, child_name)
+
             name = cnc.get_person_name(spouse)
             if name:
-                name = mkCN(description, name)
-                vp = mkVP(w.marry_1_V2,mkNP(name))
+                if description:
+                    name = mkCN(description, name)
+                    vp = mkVP(w.marry_1_V2,mkNP(name))
+                else:
+                    vp = mkVP(w.marry_1_V2,name)
                 if place:
                     vp = mkVP(vp,mkAdv(place[0]))
                 stmt = mkS(useTense, mkCl(mkNP(pron), vp))
@@ -203,8 +248,16 @@ def render(cnc, lexeme, entity):
                         stmt = w.ExtAdvS(start,stmt)
                 phr = mkPhr(mkUtt(stmt),fullStopPunct)
                 yield " "+cnc.linearize(phr)
-
-                if end and end_cause != "Q4":
+                
+                if child_name:
+                # They have X children: [list of names]
+                    if number_children < 10:
+                        det = mkDet(a_Quant,mkNum(mkNumeral(number_children)))
+                    else:
+                        det = mkDet(a_Quant,mkNum(number_children))
+                    yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
+            
+                if end and end_cause not in ["Q4", "Q99521170"]:
                     if "Q6581072" in get_items("P21",spouse,qual=False):
                         spouse_pron = w.she_Pron
                     else:
@@ -213,31 +266,6 @@ def render(cnc, lexeme, entity):
                     phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), vp))),fullStopPunct)
                     yield " "+cnc.linearize(phr)
 
-
-    # He has three children: Donald Jr. (born 1977), Ivanka (1981), and Eric (1984)
-    # Property P1971: number of children
-    children = None
-    number_children = get_quantities("P1971",entity)
-    for item in number_children:
-        children = int(item[0])
-
-    child = None
-    child_name = []
-    for child in get_entities("P40",entity,qual=False):
-        child = cnc.get_person_name(child)
-        if child:
-            child_name.append(child)
-    child_name = mkNP(w.and_Conj, child_name)
-
-    if children and child:
-        # He/She has X children: [list of names]
-        if children < 10:
-            det = mkDet(a_Quant,mkNum(mkNumeral(children)))
-        else:
-            det = mkDet(a_Quant,mkNum(children))
-        yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
-
-    #to do: if child / if children
 
     deathday   = get_date("P570",entity)
     deathplace = cnc.get_lexemes("P20", entity, qual=False)
@@ -259,7 +287,8 @@ def render(cnc, lexeme, entity):
 
     yield "</p>"
 
-
+    yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_2_N)+'</h2>'
+    yield "<p>"
 
     university = cnc.get_lexemes("P69",entity,qual=False)
     if university:
@@ -272,6 +301,10 @@ def render(cnc, lexeme, entity):
         phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
         yield " " + cnc.linearize(phr)
 
+    yield "</p>"
+
+    yield '<h2 class="gp-page-title">'+cnc.linearize(mkNP(aPl_Det,w.award_3_N))+'</h2>'
+    yield "<p>"
 
     # award received:
     qid_time = []
@@ -304,54 +337,17 @@ def render(cnc, lexeme, entity):
             if len(dates) > 1:
                 # it extracts the year part (ex.: 2019) from each date string (ex.: '+2019-00-00T00:00:00Z') and constructs the date_string with years only
                 date_string = ", ".join([date.split('-')[0].lstrip('+') for date in dates])
-                yield "<li>"+cnc.linearize(key)+" (in " + date_string +")"+"</li>"
+                yield "<li>"+cnc.linearize(key) + " (" + cnc.linearize(w.in_1_Prep) + " " + date_string +")"+"</li>"
             else:
                 yield "<li>"+cnc.linearize(key)+"</li>"
         yield '</ul></p>'
 
 
-    # Property native language - P103
-    native_language_qid = cnc.get_lexemes("P103",entity,qual=False)
-    native_lang = []
-    if native_language_qid:
-        for qid in native_language_qid:
-            native_lang.append(mkNP(qid))
+    
 
-    # Property languages spoken, written or signed - P1412
-    other_langs = []
-    for qid in cnc.get_lexemes("P1412",entity,qual=False):
-        if qid not in native_language_qid:
-            other_langs.append(mkNP(qid))
+    
 
-    if native_lang:
-        num = singularNum if len(native_lang) == 1 else pluralNum
-        native_lang = mkNP(w.and_Conj,native_lang)
-        other_langs = mkNP(w.and_Conj,other_langs)
-        if other_langs:
-            # His/Her native lang(s) is/are [...] but he also speaks [...]
-            phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
-        else:
-            # His/Her native lang(s) is/are [...]
-            phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
-        yield " " + cnc.linearize(phr)
-    elif other_langs:
-        other_langs = mkNP(w.and_Conj,other_langs)
-        # He/She speaks [...]
-        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron),mkVP(w.speak_3_V2, other_langs)))),fullStopPunct)
-        yield " " + cnc.linearize(phr)
 
-    # member of - P463
-    institutions = []
-    for qid,qual in get_items("P463",entity):
-        inst = cnc.get_lex_fun(qid)
-        if "P582" not in qual and inst != None:
-            institutions.append(mkNP(inst))
-
-    if institutions:
-        # He/She is a member of [...]
-        institutions = mkNP(w.and_Conj, list(institutions))
-        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkNP(aSg_Det, w.PossNP(mkCN(w.member_4_N), institutions))))),fullStopPunct)
-        yield " " + cnc.linearize(phr)
-
+    yield "</p>"
 
 
