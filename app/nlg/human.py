@@ -370,11 +370,11 @@ def render(cnc, lexeme, entity):
 
     yield "</p>"
 
-    yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_2_N)+'</h2>'
-    yield "<p>"
-
     university = cnc.get_lexemes("P69",entity,qual=False)
     if university:
+        yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_2_N)+'</h2>'
+        yield "<p>"
+
         universities = []
         for uni in university:
             universities.append(mkNP(uni))
@@ -384,7 +384,7 @@ def render(cnc, lexeme, entity):
         phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
         yield " " + cnc.linearize(phr)
 
-    yield "</p>"
+        yield "</p>"
 
     notable_works = get_entities(["P800"],entity,qual=False)
     if notable_works:
