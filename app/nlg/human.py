@@ -356,7 +356,7 @@ def render(cnc, lexeme, entity):
             lbl = lbl.get(cnc.lang) or lbl.get("en")
             if lbl:
                 lbl = lbl["value"]
-                yield "<li>"+lbl+"</li>"
+                yield "<li><a href=\"index.wsgi?id="+notable_work["id"]+"&lang="+cnc.lang+"\">"+lbl+"</a></li>"
         yield "</ul>"
 
     # award received:
