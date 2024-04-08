@@ -15,6 +15,28 @@ def render(cnc, lexeme, entity):
     gender = get_items("P21",entity,qual=False)
 
     yield "<p>"
+
+    if "Q6581072" in gender:
+        pron = w.she_Pron
+    else:
+        pron = w.he_Pron
+
+    if cnc.name in ["ParseBul"]:
+        useTense = presentTense
+    else:
+        useTense = pastTense
+
+
+    current_position = []
+    prev_position = []
+    for position, qual in cnc.get_lexemes("P39", entity):
+        if 'P582' in qual:
+            prev_position.append(mkCN(position))
+        else:
+            current_position.append(mkCN(position))
+    current_position = mkCN(w.and_Conj, current_position)
+    prev_position = mkCN(w.and_Conj, prev_position)
+
     occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False)])
     if not occupations:
         if get_items("P184",entity):
@@ -26,16 +48,33 @@ def render(cnc, lexeme, entity):
         else:
             occupations = mkCN(w.human_N)
 
+    extra_description = False
+    past_description = False
     all_adjs,ds = cnc.get_demonyms("P27", entity)
     if ds:
         if all_adjs:
             ap = mkAP(w.and_Conj,[mkAP(adj) for adj in ds])
-            description = mkCN(ap,occupations)
+            if current_position:
+                description = mkCN(ap,current_position)
+                extra_description = occupations
+            else:
+                description = mkCN(ap,occupations)
         else:
             np = mkNP(w.and_Conj,[mkNP(pn) for pn in ds])
             description = mkCN(occupations,mkAdv(w.from_Prep,np))
+            if current_position:
+                description = mkCN(current_position,mkAdv(w.from_Prep,np))
+                extra_description = occupations
+            else:
+                description = mkCN(occupations,mkAdv(w.from_Prep,np))
+                past_description = True
     else:
-        description = occupations
+        if current_position:
+            description = current_position
+            extra_description = occupations
+        else:
+            description = occupations
+            past_description = True
 
     birthday   = get_date("P569",entity)
     birthplace = cnc.get_lexemes("P19", entity, qual=False)
@@ -50,16 +89,15 @@ def render(cnc, lexeme, entity):
     phr = mkPhr(mkUtt(mkS(mkCl(lexeme,mkNP(aSg_Det,description)))),fullStopPunct)
     yield cnc.linearize(phr)
 
-    if "Q6581072" in gender:
-        pron = w.she_Pron
-    else:
-        pron = w.he_Pron
+    if extra_description:
+        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,extra_description)))))),fullStopPunct)
+        yield cnc.linearize(phr)
+    
+    if past_description:
+        phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron),mkNP(aSg_Det,prev_position)))),fullStopPunct)
+        yield cnc.linearize(phr)
 
-    if cnc.name in ["ParseBul"]:
-        useTense = presentTense
-    else:
-        useTense = pastTense
-
+    
     advisors = []
     for advisor in get_entities(["P184"],entity,qual=False):
         name = cnc.get_person_name(advisor)
@@ -72,9 +110,10 @@ def render(cnc, lexeme, entity):
 
     teachers = []
     for teacher in get_entities(["P1066"],entity,qual=False):
-        name = cnc.get_person_name(teacher)
-        if name:
-            teachers.append(name)
+        if teacher not in get_entities(["P184"],entity,qual=False):
+            name = cnc.get_person_name(teacher)
+            if name:
+                teachers.append(name)
     if teachers:
         num = singularNum if len(teachers) == 1 else pluralNum
         teachers = mkNP(w.and_Conj,teachers)
