@@ -92,8 +92,8 @@ def render(cnc, lexeme, entity):
     if extra_description:
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,extra_description)))))),fullStopPunct)
         yield cnc.linearize(phr)
-    
-    if past_description:
+
+    if past_description and prev_position:
         phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron),mkNP(aSg_Det,prev_position)))),fullStopPunct)
         yield cnc.linearize(phr)
 
