@@ -192,11 +192,12 @@ class ConcrHelper:
 
 				for lexeme2 in lexeme.synset().lexemes():
 					if not adj:
-						adj_lexemes = lexeme2.derived()
-						if adj_lexemes:
+						for adj_lexeme in lexeme2.derived():
+							if w.__pgf__.functionType(adj_lexeme.lex_fun).cat != "A":
+								continue
 							if link:
-								self.addLink(adj_lexemes[0], qid)
-							adjs.add(pgf.ExprFun(adj_lexemes[0].lex_fun))
+								self.addLink(adj_lexeme, qid)
+							adjs.add(pgf.ExprFun(adj_lexeme.lex_fun))
 							adj = True
 			if not adj:
 				all_adjs = False
