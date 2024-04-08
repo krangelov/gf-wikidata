@@ -181,18 +181,25 @@ class ConcrHelper:
 			except KeyError:
 				continue
 
-			lexemes = wikilexemes(qid)
-			if lexemes:
-				if link:
-					self.addLink(lexemes[0], qid)
-				pns.add(pgf.ExprFun(lexemes[0].lex_fun))
-				adj_lexemes = lexemes[0].derived()
-				if adj_lexemes:
+			pn  = False
+			adj = False
+			for lexeme in wikilexemes(qid):
+				if not pn:
 					if link:
-						self.addLink(adj_lexemes[0], qid)
-					adjs.add(pgf.ExprFun(adj_lexemes[0].lex_fun))
-				else:
-					all_adjs = False
+						self.addLink(lexeme, qid)
+					pns.add(pgf.ExprFun(lexeme.lex_fun))
+					pn = True
+
+				for lexeme2 in lexeme.synset().lexemes():
+					if not adj:
+						adj_lexemes = lexeme2.derived()
+						if adj_lexemes:
+							if link:
+								self.addLink(adj_lexemes[0], qid)
+							adjs.add(pgf.ExprFun(adj_lexemes[0].lex_fun))
+							adj = True
+			if not adj:
+				all_adjs = False
 
 		return (all_adjs, adjs if all_adjs else pns)
 
