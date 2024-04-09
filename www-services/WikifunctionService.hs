@@ -171,7 +171,7 @@ executeCode gr sgr mn cwd qid lang code =
     toCell (QC (m,c)) t
       | m == abs_mn    = let Just cnc = Map.lookup "ParseEng" (languages gr)
                          in fmap (linearize cnc) (toExpr t)
-    toCell ty        t = return (render (ppTerm Unqualified 0 t <+> ":" <+> ppTerm Unqualified 0 ty))
+    toCell ty        t = return (render (ppTerm Unqualified 0 t))
 
     toExpr (App t1 t2) = liftM2 EApp (toExpr t1) (toExpr t2)
     toExpr (QC (_,c))  = return (EFun (showIdent c))
