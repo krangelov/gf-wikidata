@@ -117,8 +117,7 @@ def render(cnc, lexeme, entity):
     if teachers:
         num = singularNum if len(teachers) == 1 else pluralNum
         teachers = mkNP(w.and_Conj,teachers)
-        yield " "+cnc.linearize(mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(aSg_Det,w.PossNP(mkCN(w.studentMasc_1_N),teachers))))),fullStopPunct))
-
+        yield " "+cnc.linearize(mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,w.PossNP(mkCN(w.studentMasc_1_N),teachers))))))),fullStopPunct))
     students = []
     for student in get_entities(["P802","P185"],entity,qual=False):
         name = cnc.get_person_name(student)
