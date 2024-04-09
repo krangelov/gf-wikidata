@@ -2,7 +2,7 @@
 {-# LANGUAGE MonadComprehensions #-}
 
 import Control.Applicative     (liftA2, (<|>))
-import Control.Monad           (foldM, filterM)
+import Control.Monad           (foldM, filterM, liftM2, mzero)
 import Control.Monad.ST.Unsafe
 import qualified Data.ByteString.Char8   as BS
 import qualified Data.Map                as Map
@@ -47,6 +47,15 @@ httpMain gr sgr mn rq
                 , rspHeaders = [Header HdrContentType "text/html; charset=UTF8"]
                 , rspBody = html
                 })
+  | takeExtension path == ".js" = do
+      print path
+      code <- readFile ("../www"++path)
+      return (Response
+                { rspCode = 200
+                , rspReason = "OK"
+                , rspHeaders = [Header HdrContentType "application/json; charset=UTF8"]
+                , rspBody = code
+                })
   | path == "/execute" =
       case decode (rqBody rq) >>= parseQuery of
         Ok f      -> f
@@ -76,28 +85,32 @@ executeCode gr sgr mn cwd qid lang code =
   case runLangP NLG pNLG (BS.pack code) of
     Right prog ->
       case runCheck (checkComputeProg prog) of
-        E.Ok (value,msg)
+        E.Ok ((headers,dataset),msg)
                    -> return (Response
                                 { rspCode = 200
                                 , rspReason = "OK"
-                                , rspHeaders = [Header HdrContentType "text/plain; charset=UTF8"]
-                                , rspBody = if null msg
-                                              then unlines value
-                                              else unlines (("<pre>"++concatMap escape msg++"</pre>"):value)
+                                , rspHeaders = [Header HdrContentType "application/json; charset=UTF8"]
+                                , rspBody = encode $
+                                              makeObj [("msg",showJSON msg),
+                                                       ("headers",showJSON headers),
+                                                       ("dataset",showJSON dataset)]
                                 })
         E.Bad msg  -> return (Response
                                 { rspCode = 400
                                 , rspReason = "Invalid Expression"
                                 , rspHeaders = [Header HdrContentType "text/plain; charset=UTF8"]
-                                , rspBody = "<pre>"++concatMap escape msg++"</pre>"
+                                , rspBody = msg
                                 })
-    Left (pos,msg) -> return (Response
+    Left (Pn row col,msg)
+                   -> return (Response
                                 { rspCode = 400
                                 , rspReason = "Parse Error"
                                 , rspHeaders = [Header HdrContentType "text/plain; charset=UTF8"]
-                                , rspBody = (show pos ++ msg)
+                                , rspBody = (show row ++ ":" ++ show col ++ ":" ++ msg)
                                 })
   where
+    abs_mn = moduleNameS (abstractName gr)
+
     checkComputeProg jments = do
       let nlg_mn = moduleNameS (msrc nlg_mi)
           nlg_mi = ModInfo {
@@ -106,7 +119,7 @@ executeCode gr sgr mn cwd qid lang code =
                      mflags  = noOptions,
                      mextend = [],
                      mwith   = Nothing,
-                     mopens  = [OSimple mn],
+                     mopens  = [OSimple mn, OSimple abs_mn],
                      mexdeps = [],
                      msrc    = "<NLG module>",
                      mseqs   = Nothing,
@@ -121,12 +134,64 @@ executeCode gr sgr mn cwd qid lang code =
 
       let sgr' = prependModule sgr nlg_m
           globals' = Gl sgr' (wikiPredef gr)
+          qident = (nlg_mn,identS "main")
 
-      term' <- lookupResDef sgr' (nlg_mn,identS "main")
+      term' <- lookupResDef  sgr' qident
+      ty    <- lookupResType sgr' qident
 
       checkWarn (ppTerm Unqualified 0 term')
-      return ["??"]
-      --normalStringForm globals' (App term' (K qid))
+
+      let (_,res_ty) = typeFormCnc ty
+
+      t <- normalForm globals' (App (App term' Empty) (K qid))
+      return (toHeaders res_ty, toDataset res_ty t)
+
+    toHeaders (RecType lbls) = [render (pp l <+> ':' <+> ppTerm Unqualified 0 ty) | (l,ty) <- lbls]
+    toHeaders ty             = [render (ppTerm Unqualified 0 ty)]
+
+    toDataset ty (FV ts) = ts >>= toRecord ty
+    toDataset ty t       = toRecord ty t
+
+    toRecord (RecType lbls) (R as) = toCells lbls as
+    toRecord ty             t      = [[c] | c <- toCell ty t]
+
+    toCells []            as = return []
+    toCells ((l,ty):lbls) as =
+      case lookup l as of
+        Just (_,t) -> do c  <- toCell ty t
+                         cs <- toCells lbls as
+                         return (c:cs)
+        Nothing    -> toCells lbls as
+
+    toCell (Sort s)  t
+      | s == cStr =
+          case toStr t of
+            Just s  -> return s
+            Nothing -> return (render (ppTerm Unqualified 0 t))
+    toCell (QC (m,c)) t
+      | m == abs_mn    = let Just cnc = Map.lookup "ParseEng" (languages gr)
+                         in fmap (linearize cnc) (toExpr t)
+    toCell ty        t = return (render (ppTerm Unqualified 0 t <+> ":" <+> ppTerm Unqualified 0 ty))
+
+    toExpr (App t1 t2) = liftM2 EApp (toExpr t1) (toExpr t2)
+    toExpr (QC (_,c))  = return (EFun (showIdent c))
+    toExpr (EInt n)    = return (ELit (LInt n))
+    toExpr (EFloat d)  = return (ELit (LFlt d))
+    toExpr (ImplArg t) = fmap EImplArg (toExpr t)
+    toExpr (Meta i)    = return (EMeta i)
+    toExpr (FV ts)     = ts >>= toExpr
+    toExpr t           = case toStr t of
+                           Just s  -> return (ELit (LStr s))
+                           Nothing -> mzero
+
+    toStr (K s)        = Just s
+    toStr (C t1 t2)    = do s1 <- toStr t1
+                            s2 <- toStr t2
+                            return (s1 ++ " " ++ s2)
+    toStr (Glue t1 t2) = do s1 <- toStr t1
+                            s2 <- toStr t2
+                            return (s1 ++ s2)
+    toStr _            = Nothing
 
     checkInfo :: Options -> FilePath -> Globals -> SourceModule -> (Ident,Info) -> Check SourceModule
     checkInfo opts cwd globals sm (c,info) = checkInModule cwd (snd sm) NoLoc empty $ do
