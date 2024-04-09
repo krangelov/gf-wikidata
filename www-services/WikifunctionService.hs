@@ -149,11 +149,9 @@ executeCode gr sgr mn cwd qid lang code =
     toHeaders (RecType lbls) = [render (pp l <+> ':' <+> ppTerm Unqualified 0 ty) | (l,ty) <- lbls]
     toHeaders ty             = [render (ppTerm Unqualified 0 ty)]
 
-    toDataset ty (FV ts) = ts >>= toRecord ty
-    toDataset ty t       = toRecord ty t
-
-    toRecord (RecType lbls) (R as) = toCells lbls as
-    toRecord ty             t      = [[c] | c <- toCell ty t]
+    toDataset ty             (FV ts) = ts >>= toDataset ty
+    toDataset (RecType lbls) (R as)  = toCells lbls as
+    toDataset ty             t       = [[c] | c <- toCell ty t]
 
     toCells []            as = return []
     toCells ((l,ty):lbls) as =
@@ -163,6 +161,7 @@ executeCode gr sgr mn cwd qid lang code =
                          return (c:cs)
         Nothing    -> toCells lbls as
 
+    toCell ty  (FV ts) = ts >>= toCell ty
     toCell (Sort s)  t
       | s == cStr =
           case toStr t of
