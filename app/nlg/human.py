@@ -364,7 +364,10 @@ def render(cnc, lexeme, entity):
         if deathday:
             vp = mkVP(vp,deathday)
         if deathplace:
-            vp = mkVP(vp,mkAdv(deathplace[0]))
+            if deathplace[0].name.endswith("_PN"):
+                vp = mkVP(vp,mkAdv(w.in_1_Prep, deathplace[0]))
+            else:
+                vp = mkVP(vp,mkAdv(deathplace[0]))
         phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), vp))),fullStopPunct)
         yield " "+cnc.linearize(phr)
 
