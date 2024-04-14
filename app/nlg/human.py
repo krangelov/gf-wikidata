@@ -24,12 +24,14 @@ def render(cnc, lexeme, entity):
     if cnc.name in ["ParseBul"]:
         useTense = presentTense
         usePastTense = presentTense
+        usePastSimpleTense = presentTense
     else:
         if get_date("P570",entity):  # dead
             useTense = pastTense
         else:
             useTense = presentTense
         usePastTense = pastTense
+        usePastSimpleTense = pastSimpleTense
 
     current_position = []
     prev_position = []
@@ -388,13 +390,13 @@ def render(cnc, lexeme, entity):
         yield '<h2 class="gp-page-title">'+cnc.linearize(w.education_2_N)+'</h2>'
         yield "<p>"
 
-        universities = []
+        universities = set()
         for uni in university:
-            universities.append(mkNP(uni))
-        universities = mkNP(w.and_Conj, universities)
+            universities.add(mkNP(uni))
+        universities = mkNP(w.and_Conj, list(universities))
 
         # He/She graduated from [university name]
-        phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
+        phr = mkPhr(mkUtt(mkS(usePastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
         yield " " + cnc.linearize(phr)
 
         yield "</p>"
