@@ -111,7 +111,7 @@ def render(cnc, lexeme, entity):
     teachers = []
     adviser_teacher = False
     for teacher in get_entities(["P1066"],entity,qual=False):
-        if teacher not in get_entities(["P184"],entity,qual=False):
+        if teacher["id"] not in get_items("P184",entity,qual=False):
             name = cnc.get_person_name(teacher)
             if name:
                 teachers.append(name)
@@ -254,6 +254,7 @@ def render(cnc, lexeme, entity):
         yield " "+cnc.linearize(phr)
 
     if has_novalue("P26",entity):
+        spouses = None
         phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), mkVP(w.never_1_AdV,mkVP(w.marry_in_V))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
     else:
@@ -279,7 +280,7 @@ def render(cnc, lexeme, entity):
             child_name = []
             if children:
                 for kid in children:
-                    if any(mother == spouse or father == spouse for mother in get_entities("P25", kid, qual=False) for father in get_entities("P22", kid, qual=False)):
+                    if any(mother == spouse["id"] or father == spouse["id"] for mother in get_items("P25", kid, qual=False) for father in get_items("P22", kid, qual=False)):
                         child = cnc.get_person_name(kid)
                         if child:
                             child_name.append(child)
@@ -319,9 +320,8 @@ def render(cnc, lexeme, entity):
                     vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
                     phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), vp))),fullStopPunct)
                     yield " "+cnc.linearize(phr)
-            
-    spouse = get_entities("P26",entity, qual=False)
-    if spouse and not children and number_children_prop:
+
+    if spouses and not children and number_children_prop:
         det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
         yield " " + cnc.linearize(phr)
@@ -329,7 +329,7 @@ def render(cnc, lexeme, entity):
     # If there is no spouse but there are children
     child = None
     child_name = []
-    if not spouse:
+    if not spouses:
         if children:
             for child in children:
                 child = cnc.get_person_name(child)
