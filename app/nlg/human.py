@@ -109,16 +109,22 @@ def render(cnc, lexeme, entity):
         yield " "+cnc.linearize(mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(mkDet(pron,num),mkCN(w.doctoral_adviser_N)),advisors))),fullStopPunct))
 
     teachers = []
+    adviser_teacher = False
     for teacher in get_entities(["P1066"],entity,qual=False):
         if teacher not in get_entities(["P184"],entity,qual=False):
             name = cnc.get_person_name(teacher)
             if name:
                 teachers.append(name)
+        else:
+            adviser_teacher = True
     if teachers:
         num = singularNum if len(teachers) == 1 else pluralNum
         teachers = mkNP(w.and_Conj,teachers)
-        yield " "+cnc.linearize(mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(aSg_Det,w.PossNP(mkCN(w.studentMasc_1_N),teachers))))),fullStopPunct))
-
+        if adviser_teacher:
+            yield " "+cnc.linearize(mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,w.PossNP(mkCN(w.studentMasc_1_N),teachers))))))),fullStopPunct))
+        else:
+            yield " "+cnc.linearize(mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(aSg_Det,w.PossNP(mkCN(w.studentMasc_1_N),teachers))))),fullStopPunct))
+    
     students = []
     for student in get_entities(["P802","P185"],entity,qual=False):
         name = cnc.get_person_name(student)
