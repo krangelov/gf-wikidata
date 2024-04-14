@@ -23,9 +23,13 @@ def render(cnc, lexeme, entity):
 
     if cnc.name in ["ParseBul"]:
         useTense = presentTense
+        usePastTense = presentTense
     else:
-        useTense = pastTense
-
+        if get_date("P570",entity):  # dead
+            useTense = pastTense
+        else:
+            useTense = presentTense
+        usePastTense = pastTense
 
     current_position = []
     prev_position = []
@@ -86,16 +90,16 @@ def render(cnc, lexeme, entity):
             verb = mkVPSlash(verb,mkAdv(birthplace[0]))
         description = mkCN(mkAP(verb),description)
 
-    phr = mkPhr(mkUtt(mkS(mkCl(lexeme,mkNP(aSg_Det,description)))),fullStopPunct)
-    yield cnc.linearize(phr)
+    phr = mkPhr(mkUtt(mkS(useTense,mkCl(lexeme,mkNP(aSg_Det,description)))),fullStopPunct)
+    yield " "+cnc.linearize(phr)
 
     if extra_description:
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,extra_description)))))),fullStopPunct)
-        yield cnc.linearize(phr)
+        yield " "+cnc.linearize(phr)
 
     if past_description and prev_position:
         phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron),mkNP(aSg_Det,prev_position)))),fullStopPunct)
-        yield cnc.linearize(phr)
+        yield " "+cnc.linearize(phr)
 
     
     advisors = []
@@ -155,15 +159,15 @@ def render(cnc, lexeme, entity):
         other_langs = mkNP(w.and_Conj,other_langs)
         if other_langs:
             # His/Her native lang(s) is/are [...] but he also speaks [...]
-            phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
+            phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(useTense,mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(useTense,mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
         else:
             # His/Her native lang(s) is/are [...]
-            phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
+            phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
         yield " " + cnc.linearize(phr)
     elif other_langs:
         other_langs = mkNP(w.and_Conj,other_langs)
         # He/She speaks [...]
-        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron),mkVP(w.speak_3_V2, other_langs)))),fullStopPunct)
+        phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkVP(w.speak_3_V2, other_langs)))),fullStopPunct)
         yield " " + cnc.linearize(phr)
     
 
@@ -232,10 +236,10 @@ def render(cnc, lexeme, entity):
     if mother and father:
         vp = mkVP(passiveVP(w.bear_2_V2), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
         if siblings:
-            vp = w.ConjVPS(w.and_Conj,w.BaseVPS(w.MkVPS(mkTemp(useTense,simultaneousAnt),positivePol,vp), w.MkVPS(mkTemp(presentTense,simultaneousAnt),positivePol,mkVP(w.have_1_V2,siblings))))
+            vp = w.ConjVPS(w.and_Conj,w.BaseVPS(w.MkVPS(mkTemp(usePastTense,simultaneousAnt),positivePol,vp), w.MkVPS(mkTemp(presentTense,simultaneousAnt),positivePol,mkVP(w.have_1_V2,siblings))))
             phr = mkPhr(mkUtt(w.PredVPS(mkNP(pron),vp)),fullStopPunct)
         else:
-            phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),vp))),fullStopPunct)
+            phr = mkPhr(mkUtt(mkS(usePastTense,mkCl(mkNP(pron),vp))),fullStopPunct)
         yield " "+cnc.linearize(phr)
     elif mother:
         stmt = mkS(useTense,mkCl(mkNP(mkDet(pron,singularNum),mkCN(w.mother_1_N)),mother))
@@ -296,7 +300,7 @@ def render(cnc, lexeme, entity):
                     vp = mkVP(w.marry_1_V2,name)
                 if place:
                     vp = mkVP(vp,mkAdv(place[0]))
-                stmt = mkS(useTense, mkCl(mkNP(pron), vp))
+                stmt = mkS(usePastTense, mkCl(mkNP(pron), vp))
                 if start:
                     start = str2date(start)
                     if start:
@@ -318,7 +322,7 @@ def render(cnc, lexeme, entity):
                     else:
                         spouse_pron = w.he_Pron
                     vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
-                    phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), vp))),fullStopPunct)
+                    phr = mkPhr(mkUtt(mkS(usePastTense, mkCl(mkNP(pron), vp))),fullStopPunct)
                     yield " "+cnc.linearize(phr)
 
     if spouses and not children and number_children_prop:
