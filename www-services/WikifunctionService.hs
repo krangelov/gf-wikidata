@@ -143,45 +143,40 @@ executeCode gr sgr mn cwd qid lang code =
 
       let (_,res_ty) = typeFormCnc ty
 
-      t <- normalForm globals' (App (App term' Empty) (K qid))
-      return (toHeaders res_ty, toDataset res_ty t)
+      ts <- normalFlatForm globals' (App (App term' Empty) (K qid))
+      return (toHeaders res_ty, [toRecord res_ty t | t <- ts])
 
     toHeaders (RecType lbls) = [render (pp l <+> ':' <+> ppTerm Unqualified 0 ty) | (l,ty) <- lbls]
     toHeaders ty             = [render (ppTerm Unqualified 0 ty)]
 
-    toDataset ty             (FV ts) = ts >>= toDataset ty
-    toDataset (RecType lbls) (R as)  = toCells lbls as
-    toDataset ty             t       = [[c] | c <- toCell ty t]
+    toRecord (RecType lbls) (R as)  = toCells lbls as
+    toRecord ty             t       = [toCell ty t]
 
-    toCells []            as = return []
+    toCells []            as = []
     toCells ((l,ty):lbls) as =
       case lookup l as of
-        Just (_,t) -> do c  <- toCell ty t
-                         cs <- toCells lbls as
-                         return (c:cs)
-        Nothing    -> toCells lbls as
+        Just (_,t) -> toCell ty t : toCells lbls as
+        Nothing    -> "?"         : toCells lbls as
 
-    toCell ty  (FV ts) = ts >>= toCell ty
     toCell (Sort s)  t
       | s == cStr =
           case toStr t of
-            Just s  -> return s
-            Nothing -> return (render (ppTerm Unqualified 0 t))
+            Just s  -> s
+            Nothing -> render (ppTerm Unqualified 0 t)
     toCell (QC (m,c)) t
       | m == abs_mn    = let Just cnc = Map.lookup "ParseEng" (languages gr)
-                         in fmap (linearize cnc) (toExpr t)
-    toCell ty        t = return (render (ppTerm Unqualified 0 t))
+                         in linearize cnc (toExpr t)
+    toCell ty        t = render (ppTerm Unqualified 0 t)
 
-    toExpr (App t1 t2) = liftM2 EApp (toExpr t1) (toExpr t2)
-    toExpr (QC (_,c))  = return (EFun (showIdent c))
-    toExpr (EInt n)    = return (ELit (LInt n))
-    toExpr (EFloat d)  = return (ELit (LFlt d))
-    toExpr (ImplArg t) = fmap EImplArg (toExpr t)
-    toExpr (Meta i)    = return (EMeta i)
-    toExpr (FV ts)     = ts >>= toExpr
+    toExpr (App t1 t2) = EApp (toExpr t1) (toExpr t2)
+    toExpr (QC (_,c))  = EFun (showIdent c)
+    toExpr (EInt n)    = ELit (LInt n)
+    toExpr (EFloat d)  = ELit (LFlt d)
+    toExpr (ImplArg t) = EImplArg (toExpr t)
+    toExpr (Meta i)    = EMeta i
     toExpr t           = case toStr t of
-                           Just s  -> return (ELit (LStr s))
-                           Nothing -> mzero
+                           Just s  -> ELit (LStr s)
+                           Nothing -> EMeta 0
 
     toStr (K s)        = Just s
     toStr (C t1 t2)    = do s1 <- toStr t1
