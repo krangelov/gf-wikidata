@@ -98,7 +98,7 @@ def render(cnc, lexeme, entity):
     if extra_description:
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,extra_description)))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
-
+    # double check this! (ex. Trump)
     if past_description and prev_position:
         phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron),mkNP(aSg_Det,prev_position)))),fullStopPunct)
         yield " "+cnc.linearize(phr)
@@ -221,7 +221,6 @@ def render(cnc, lexeme, entity):
     siblings = mkNP(w.and_Conj, siblings)
 
     children = get_entities("P40",entity, qual=False)
-    print('LEN CHILD: ', len(children))
 
     number_children_prop = get_quantities("P1971",entity)
     number = None
@@ -262,6 +261,11 @@ def render(cnc, lexeme, entity):
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2,siblings)))),fullStopPunct)
         yield " "+cnc.linearize(phr)
 
+    unmarried_partners = sorted([(partner,
+                           get_time_qualifier("P580",quals) or "X",
+                           get_time_qualifier("P582",quals),
+                           get_item_qualifier("P1534",quals)) for partner,quals in get_entities("P451",entity)],key=lambda p: p[1])
+
     if has_novalue("P26",entity):
         spouses = None
         phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), mkVP(w.never_1_AdV,mkVP(w.marry_in_V))))),fullStopPunct)
@@ -277,27 +281,59 @@ def render(cnc, lexeme, entity):
             occupation = mkCN(occupation[0]) if occupation else None
             all_adjs, ds = cnc.get_demonyms("P27", spouse)
             if ds:
-                ds = list(ds)[0] #converting the set to a list to access the first item
+                ds = list(ds)[0]
                 if all_adjs:
                     description = mkCN(mkAP(ds), occupation) if occupation else None
                 else:
                     description = occupation
             else:
                 description = occupation
+            
+            partner_spouse = False
 
             child = None
             child_name = []
+            no_names = False
+            same_parent_child = 0
             if children:
                 for kid in children:
                     if any(mother == spouse["id"] or father == spouse["id"] for mother in get_items("P25", kid, qual=False) for father in get_items("P22", kid, qual=False)):
+                        same_parent_child += 1
                         child = cnc.get_person_name(kid)
                         if child:
                             child_name.append(child)
+                        else:
+                            no_names = True
             number_children = len(child_name)
             child_name = mkNP(w.and_Conj, child_name)
 
             name = cnc.get_person_name(spouse)
-            if name:
+            spouse_pron = w.she_Pron if "Q6581072" in get_items("P21",spouse,qual=False) else w.he_Pron
+
+            for partner,start_up,end_up,end_cause_up in unmarried_partners:
+                if partner["id"] == spouse["id"] and end_cause_up == 'Q8445':
+                    partner_spouse = True
+                    if name:
+                        name = mkCN(description, name)
+                        vp = mkVP(w.start_2_V2, mkNP(mkNP(aSg_Det, w.relationship_2_N), mkAdv(w.with_Prep, mkNP(name))))
+                        stmt = mkS(pastSimpleTense, mkCl(mkNP(pron), vp))
+                        if start_up:
+                                start_date = str2date(start_up)
+                                if start_date:
+                                    stmt = w.ExtAdvS(start_date,stmt)
+                        vp = mkVP(w.marry_1_V2,mkNP(spouse_pron))
+                        if place:
+                            vp = mkVP(vp,mkAdv(place[0]))
+                        if start:
+                            start_date = str2date(start)
+                            if start_date:
+                                vp = mkVP(vp, start_date)
+                        stmt2 = mkS(usePastTense, mkCl(mkNP(pron), vp))
+                        phr = mkPhr(mkUtt(mkS(w.and_Conj, stmt, stmt2)), fullStopPunct)
+                        yield " "+cnc.linearize(phr)
+                        break
+
+            if not partner_spouse and name:
                 if description:
                     name = mkCN(description, name)
                     vp = mkVP(w.marry_1_V2,mkNP(name))
@@ -313,6 +349,12 @@ def render(cnc, lexeme, entity):
                 phr = mkPhr(mkUtt(stmt),fullStopPunct)
                 yield " "+cnc.linearize(phr)
                 
+            if no_names:
+                child_count += same_parent_child
+                det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if number < 10 else mkDet(a_Quant, mkNum(same_parent_child))
+                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
+                yield " " + cnc.linearize(phr)
+            else:
                 if child_name:
                 # They have X children: [list of names]
                     if number_children < 10:
@@ -321,32 +363,19 @@ def render(cnc, lexeme, entity):
                         det = mkDet(a_Quant,mkNum(number_children))
                     child_count += number_children
                     yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
-            
-                if end and end_cause not in ["Q4", "Q99521170", "Q24037741"]:
-                    if "Q6581072" in get_items("P21",spouse,qual=False):
-                        spouse_pron = w.she_Pron
-                    else:
-                        spouse_pron = w.he_Pron
-                    vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
-                    phr = mkPhr(mkUtt(mkS(usePastTense, mkCl(mkNP(pron), vp))),fullStopPunct)
-                    yield " "+cnc.linearize(phr)
-<<<<<<< HEAD
-            
-    spouse = get_entities("P26",entity, qual=False)
-    if spouse and not children and number_children_prop:
-        child_count += number
-=======
+        
+            if end and end_cause not in ["Q4", "Q99521170", "Q24037741"]:
+                vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
+                phr = mkPhr(mkUtt(mkS(usePastTense, mkCl(mkNP(pron), vp))),fullStopPunct)
+                yield " "+cnc.linearize(phr)
 
     if spouses and not children and number_children_prop:
->>>>>>> 8d64f22ef22ee24df8a3b95751b5905d53f4a7b6
+        child_count += number
         det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
         yield " " + cnc.linearize(phr)
 
-    unmarried_partners = sorted([(partner,
-                           get_time_qualifier("P580",quals) or "X",
-                           get_time_qualifier("P582",quals)) for partner,quals in get_entities("P451",entity)],key=lambda p: p[1])
-    for partner,start,end in unmarried_partners:
+    for partner,start,end,end_cause in unmarried_partners:
         occupation = cnc.get_lexemes("P106", partner, qual=False)
         occupation = mkCN(occupation[0]) if occupation else None
         all_adjs, ds = cnc.get_demonyms("P27", partner)
@@ -365,7 +394,7 @@ def render(cnc, lexeme, entity):
         same_parent_child = 0
         if children:
             for kid in children:
-                if any(mother == partner or father == partner for mother in get_entities("P25", kid, qual=False) for father in get_entities("P22", kid, qual=False)):
+                if any(mother == partner["id"] or father == partner["id"] for mother in get_items("P25", kid, qual=False) for father in get_items("P22", kid, qual=False)):
                     same_parent_child += 1
                     child = cnc.get_person_name(kid)
                     if child:
@@ -375,7 +404,6 @@ def render(cnc, lexeme, entity):
         number_children = len(child_name)
         child_name = mkNP(w.and_Conj, child_name)
 
-        # TO DO: Previous relationships
         name = cnc.get_person_name(partner)
         if name and not end:
             name = mkCN(description, name)
@@ -403,82 +431,19 @@ def render(cnc, lexeme, entity):
                     child_count += number_children
                     yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
 
-
-    # WORK IN PROGRESS
-    # If there is no spouse and no unmarried partner but we know the mother/father of the child
-    # [entity] has a child with [child's mother/father]
-    if not spouse and not unmarried_partners:
-        if children:
-            for child in children:
-                mother = get_entities("P25", child, qual=False)
-                father = get_entities("P22", child, qual=False)
-
-                for dad in father:
-                    dad_name = cnc.get_person_name(dad)
-                    if dad_name == lexeme:
-                        #if I have the first condition, I don't need this (?)
-                        if not any(mom in get_entities("P451",entity, qual=False) or mom in spouse for mom in mother):
-                            print('mom not partner or spouse')
-                            mom_name = cnc.get_person_name(mom)
-                            phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(aSg_Det, mkCN(w.child_2_N, mkAdv(w.with_Prep, mom_name))))))), fullStopPunct)
-                            yield " " + cnc.linearize(phr)
-                        else:
-                            print('check this option - child but no mom info')
-
-                for mom in mother:
-                    mom_name = cnc.get_person_name(mom)
-                    if mom_name == lexeme:
-                        if not any(dad in get_entities("P451",entity, qual=False) or dad in spouse for dad in father):
-                            print('dad not partner or spouse')
-                            dad_name = cnc.get_person_name(dad)
-                            phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(aSg_Det, mkCN(w.child_2_N, mkAdv(w.with_Prep, dad_name))))))), fullStopPunct)
-                            yield " " + cnc.linearize(phr)
-                        else:
-                            print('check this option - child but no dad info')
-
-
     # If the entity has other children but we have no info about their parents
     # [entity] has other X children.
-    # TO DO: if it's just one, it doesn't work properly
+    # TO DO: x MORE child(ren)
     if number:
         other_child = number - child_count
-        if number != other_child:
-            other_child = number - child_count
-            det = mkDet(a_Quant, mkNum(mkNumeral(other_child))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
-            phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, mkCN(w.other_1_A, w.child_2_N)))))), fullStopPunct)
-            yield " " + cnc.linearize(phr)
-
-    '''
-    # If there is no spouse but there are children
-    child = None
-    child_name = []
-    if not spouses:
-        if children:
-            for child in children:
-                child = cnc.get_person_name(child)
-                if child:
-                    child_name.append(child)
-        number_children = len(child_name)
-        child_name = mkNP(w.and_Conj, child_name)
-
-        if child_name:
-            if number:
-                det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
+        if other_child > 0:
+            if other_child == 1:
+                phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.also_AdV, mkVP(w.have_1_V2, mkNP(w.another_1_Quant, w.child_2_N)))))), fullStopPunct)
+                yield " " + cnc.linearize(phr)
             else:
-                det = mkDet(a_Quant, mkNum(mkNumeral(number_children))) if number_children < 10 else mkDet(a_Quant, mkNum(number_children))
-
-            if not number or number_children == number or number_children > number:
-                yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
-            elif number and number_children < number:
-                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
+                det = mkDet(a_Quant, mkNum(mkNumeral(other_child))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
+                phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, mkCN(w.other_1_A, w.child_2_N)))))), fullStopPunct)
                 yield " " + cnc.linearize(phr)
-        else:
-            # No children name but number of children property
-            if number:
-                det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
-                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
-                yield " " + cnc.linearize(phr)
-    '''
 
 
     deathday   = get_date("P570",entity)
@@ -568,38 +533,15 @@ def render(cnc, lexeme, entity):
         yield '</ul></p>'
 
     #Nominated for - P1411
-    nominations_dict = {}
-    for qid, qual in get_items("P1411",entity):
-        #print('qid: ', qid)
-        nomination = cnc.get_lex_fun(qid)
-        #print(nomination)
-        if not nomination:
-            continue
-
-        dates = nominations_dict.setdefault(nomination,[])
-        if "P585" in qual:
-            date = get_time_qualifier("P585",qual)
-            dates.append(date)
-
-    if nominations_dict:
-        print('NOMINATIONS HERE')
-        # He/She was nominated for the following awards:
-        # He received the following nominations:
-        # He was nominated for:
-        #yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
-        
-        # List of nominations:
-        if len(nominations_dict) < 5:
-            column_count = 1
-        elif len(nominations_dict) < 10:
-            column_count = 2
-        else:
-            column_count = 4
-        yield "<ul style='column-count: "+str(column_count)+"'>"
-        for key,dates in nominations_dict.items():
-            if len(dates) > 1:
-                date_string = ", ".join([date.split('-')[0].lstrip('+') for date in dates])
-                yield "<li>"+cnc.linearize(key) + " (" + cnc.linearize(w.in_1_Prep) + " " + date_string +")"+"</li>"
-            else:
-                yield "<li>"+cnc.linearize(key)+"</li>"
-        yield '</ul></p>'
+    #TO DO: Add year?
+    nominations = get_entities(["P1411"],entity,qual=False)
+    if nominations:
+        yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(passiveVP(mkVPSlash(w.nominate_1_V2)), mkAdv(w.for_Prep, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))))+':'
+        yield "<ul>"
+        for nomination in nominations:
+            lbl = nomination["labels"]
+            lbl = lbl.get(cnc.lang) or lbl.get("en")
+            if lbl:
+                lbl = lbl["value"]
+                yield "<li><a href=\"index.wsgi?id="+nomination["id"]+"&lang="+cnc.lang+"\">"+lbl+"</a></li>"
+        yield "</ul>"
