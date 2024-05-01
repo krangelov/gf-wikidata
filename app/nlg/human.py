@@ -322,6 +322,7 @@ def render(cnc, lexeme, entity):
                                 if start_date:
                                     stmt = w.ExtAdvS(start_date,stmt)
                         vp = mkVP(w.marry_1_V2,mkNP(spouse_pron))
+                        #Spanish / French: they married (se casaron/ils se sont mariés)
                         if place:
                             vp = mkVP(vp,mkAdv(place[0]))
                         if start:
