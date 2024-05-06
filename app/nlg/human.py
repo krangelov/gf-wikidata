@@ -355,7 +355,7 @@ def render(cnc, lexeme, entity):
                     #    vp = mkVP(mkVP(w.marry_1_V), mkAdv(w.with_Prep, name))
                     else:
                         name = mkCN(description, name)
-                        vp = mkVP(w.marry_1_V2,name)        
+                        vp = mkVP(w.marry_1_V2,mkNP(name))
                 if place:
                     vp = mkVP(vp,mkAdv(place[0]))
                 stmt = mkS(usePastTense, mkCl(mkNP(pron), vp))
@@ -459,18 +459,14 @@ def render(cnc, lexeme, entity):
                     yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
 
     # If the entity has other children but we have no info about their parents
-    # [entity] has other X children.
-    # TO DO: x MORE child(ren)
+    # [entity] has X more child(ren).
+    # TO DO: Needs some specific work for SPA and FRE
     if number:
         other_child = number - child_count
         if other_child > 0:
-            if other_child == 1:
-                phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.also_AdV, mkVP(w.have_1_V2, mkNP(w.another_1_Quant, w.child_2_N)))))), fullStopPunct)
-                yield " " + cnc.linearize(phr)
-            else:
-                det = mkDet(a_Quant, mkNum(mkNumeral(other_child))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
-                phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, mkCN(w.other_1_A, w.child_2_N)))))), fullStopPunct)
-                yield " " + cnc.linearize(phr)
+            det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
+            phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
+            yield " " + cnc.linearize(phr)
 
 
     deathday   = get_date("P570",entity)
@@ -506,9 +502,13 @@ def render(cnc, lexeme, entity):
             universities.add(mkNP(uni))
         universities = mkNP(w.and_Conj, list(universities))
 
-        # He/She graduated from [university name]
-        phr = mkPhr(mkUtt(mkS(usePastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
+        if cnc.name in ["ParseFre"]: #Il/Elle a obtenu son diplôme de [la/le/l'] + institution(s)
+            phr = mkPhr(mkUtt(mkS(usePastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.obtain_1_V2, mkNP(mkQuant(pron), w.degree_3_N)), mkAdv(w.from_Prep, universities))))),fullStopPunct)
+        else:
+            # He/She graduated from [university name]
+            phr = mkPhr(mkUtt(mkS(usePastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
         yield " " + cnc.linearize(phr)
+
 
         yield "</p>"
 
