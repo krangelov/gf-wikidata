@@ -188,8 +188,14 @@ def render(cnc, lexeme, entity):
 
     yield "</p>"
 
-    yield '<h2 class="gp-page-title">'+cnc.linearize(mkCN(w.personal_1_A,w.life_3_N))+'</h2>'
-    yield "<p>"
+    father = None
+    for father in get_entities("P22",entity,qual=False):
+        father = cnc.get_person_name(father)
+        break
+    mother = None
+    for mother in get_entities("P25",entity,qual=False):
+        mother = cnc.get_person_name(mother)
+        break
 
     sisters  = []
     brothers = []
@@ -226,17 +232,27 @@ def render(cnc, lexeme, entity):
     number = None
     for item in number_children_prop:
         number = int(item[0])
-
     child_count = 0
 
-    father = None
-    for father in get_entities("P22",entity,qual=False):
-        father = cnc.get_person_name(father)
-        break
-    mother = None
-    for mother in get_entities("P25",entity,qual=False):
-        mother = cnc.get_person_name(mother)
-        break
+    unmarried_partners = sorted([(partner,
+                           get_time_qualifier("P580",quals) or "X",
+                           get_time_qualifier("P582",quals),
+                           get_item_qualifier("P1534",quals)) for partner,quals in get_entities("P451",entity)],key=lambda p: p[1])
+
+    spouse_novalue = has_novalue("P26",entity)
+    spouses = sorted([(spouse,
+                       get_time_qualifier("P580",quals) or "X",
+                       cnc.get_lexeme_qualifiers("P2842",quals),
+                       get_time_qualifier("P582",quals),
+                       get_item_qualifier("P1534",quals)) for spouse,quals in get_entities("P26",entity)],key=lambda p: p[1])
+
+    deathday   = get_date("P570",entity)
+    deathplace = cnc.get_lexemes("P20", entity, qual=False)
+
+    if mother or father or sisters or brothers or siblings or children or number_children_prop or number or unmarried_partners or spouses or spouse_novalue or deathday or deathplace:
+        yield '<h2 class="gp-page-title">'+cnc.linearize(mkCN(w.personal_1_A,w.life_3_N))+'</h2>'
+        yield "<p>"
+
     if mother and father:
         #if cnc.name in ["ParseFre", "ParseSpa"]:
         #    vp = mkVP(mkVP(w.bear_1_V), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
@@ -265,21 +281,11 @@ def render(cnc, lexeme, entity):
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2,siblings)))),fullStopPunct)
         yield " "+cnc.linearize(phr)
 
-    unmarried_partners = sorted([(partner,
-                           get_time_qualifier("P580",quals) or "X",
-                           get_time_qualifier("P582",quals),
-                           get_item_qualifier("P1534",quals)) for partner,quals in get_entities("P451",entity)],key=lambda p: p[1])
-
-    if has_novalue("P26",entity):
+    if spouse_novalue:
         spouses = None
         phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), mkVP(w.never_1_AdV,mkVP(w.marry_in_V))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
     else:
-        spouses = sorted([(spouse,
-                           get_time_qualifier("P580",quals) or "X",
-                           cnc.get_lexeme_qualifiers("P2842",quals),
-                           get_time_qualifier("P582",quals),
-                           get_item_qualifier("P1534",quals)) for spouse,quals in get_entities("P26",entity)],key=lambda p: p[1])
         for spouse,start,place,end,end_cause in spouses:
             occupation = cnc.get_lexemes("P106", spouse, qual=False)
             occupation = mkCN(occupation[0]) if occupation else None
@@ -469,8 +475,6 @@ def render(cnc, lexeme, entity):
             yield " " + cnc.linearize(phr)
 
 
-    deathday   = get_date("P570",entity)
-    deathplace = cnc.get_lexemes("P20", entity, qual=False)
     if deathday or deathplace:
         deathmanner= get_items("P1196", entity, qual=False)
         killer = get_entities("P157", entity, qual=False)
