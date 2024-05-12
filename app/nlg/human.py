@@ -138,7 +138,7 @@ def render(cnc, lexeme, entity):
             students.append(name)
     if students:
         students = mkNP(w.and_Conj,students)
-        phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisor_1_N),students))))),fullStopPunct)
+        phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisorMasc_1_N),students))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
     
 
