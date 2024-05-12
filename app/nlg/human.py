@@ -350,18 +350,17 @@ def render(cnc, lexeme, entity):
                         phr = mkPhr(mkUtt(mkS(w.and_Conj, stmt, stmt2)), fullStopPunct)
                         yield " "+cnc.linearize(phr)
                         break
-            
+
             if not partner_spouse and name:
                 if description:
                     if cnc.name in ["ParseFre", "ParseSpa", "ParseBul"]: #["ParseFre", "ParseBul"]
                         name = mkNP(the_Det, mkCN(description, name))
-                        vp = mkVP(w.marry_1_V2,name)
                     #elif cnc.name in ["ParseSpa"]:
                     #    name = mkNP(the_Det, mkCN(description, name))
                     #    vp = mkVP(mkVP(w.marry_1_V), mkAdv(w.with_Prep, name))
                     else:
-                        name = mkCN(description, name)
-                        vp = mkVP(w.marry_1_V2,mkNP(name))
+                        name = mkNP(mkCN(description, name))
+                vp = mkVP(w.marry_1_V2,name)
                 if place:
                     vp = mkVP(vp,mkAdv(place[0]))
                 stmt = mkS(usePastTense, mkCl(mkNP(pron), vp))
@@ -371,7 +370,7 @@ def render(cnc, lexeme, entity):
                         stmt = w.ExtAdvS(start,stmt)
                 phr = mkPhr(mkUtt(stmt),fullStopPunct)
                 yield " "+cnc.linearize(phr)
-                
+
             if no_names:
                 child_count += same_parent_child
                 det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if number < 10 else mkDet(a_Quant, mkNum(same_parent_child))
