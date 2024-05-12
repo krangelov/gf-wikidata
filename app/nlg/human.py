@@ -46,7 +46,7 @@ def render(cnc, lexeme, entity):
     occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False)])
     if not occupations:
         if get_items("P184",entity):
-            occupations = mkCN(w.scientist_N)
+            occupations = mkCN(w.scientistMasc_N)
         elif "Q6581097" in gender:
             occupations = mkCN(w.man_1_N)
         elif "Q6581072" in gender:
