@@ -43,10 +43,11 @@ def render(cnc, lexeme, entity):
     current_position = mkCN(w.and_Conj, current_position)
     prev_position = mkCN(w.and_Conj, prev_position)
 
-    occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False)])
+    filter = "Fem" if "Q6581072" in gender else "Masc"
+    occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False, filter=filter)])
     if not occupations:
         if get_items("P184",entity):
-            occupations = mkCN(w.scientistMasc_N)
+            occupations = mkCN(w.scientistFem_N if "Q6581072" in gender else w.scientistMasc_N)
         elif "Q6581097" in gender:
             occupations = mkCN(w.man_1_N)
         elif "Q6581072" in gender:
