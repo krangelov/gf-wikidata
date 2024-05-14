@@ -288,7 +288,8 @@ def render(cnc, lexeme, entity):
         yield " "+cnc.linearize(phr)
     else:
         for spouse,start,place,end,end_cause in spouses:
-            occupation = cnc.get_lexemes("P106", spouse, qual=False)
+            filter = "Fem" if "Q6581072" in get_items("P21",spouse,qual=False) else "Masc"
+            occupation = cnc.get_lexemes("P106", spouse, qual=False, filter=filter)
             occupation = mkCN(occupation[0]) if occupation else None
             all_adjs, ds = cnc.get_demonyms("P27", spouse)
             if ds:
