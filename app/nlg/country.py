@@ -804,7 +804,7 @@ def render(cnc, lexeme, entity):
                 
             if curr_head_state:
                 if cnc.name in ["ParseFre"]:
-                    bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(the_Det, w.head_of_state_N)))))
+                    bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(the_Det, w.head_of_stateMasc_N)))))
                 elif cnc.name in ["ParseRus"]:
                     bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.in_1_Prep, mkNP(mkCN(w.capacity_5_N, mkAdv(w.of_3_Prep, mkNP(w.head_of_state_N))))))))
                 else:
