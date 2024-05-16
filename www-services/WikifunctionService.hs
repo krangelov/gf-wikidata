@@ -2,10 +2,8 @@
 {-# LANGUAGE MonadComprehensions #-}
 
 import Control.Applicative     (liftA2, (<|>))
-import Control.Monad           (foldM, filterM, liftM2, mzero)
+import Control.Monad  (foldM, filterM, liftM2, mzero, msum, mplus)
 import Control.Monad.ST.Unsafe
-import qualified Data.ByteString.Char8   as BS
-import qualified Data.Map                as Map
 import GF.Compile
 import qualified GF.Data.ErrM            as E
 import GF.Grammar              hiding (VApp, VRecType)
@@ -21,41 +19,32 @@ import OpenSSL
 import PGF2
 import System.IO ( utf8 )
 import System.FilePath
+import System.Directory ( doesFileExist )
 import Text.JSON
 import Text.JSON.Types         (get_field)
+import Text.Regex
 import GF.Text.Pretty
+import Database.Daison
+import SenseSchema
 
+import qualified Data.ByteString.Char8   as BS
+import qualified Data.Map                as Map
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as E
 import qualified Data.ByteString.Lazy as BL
+import Data.Char ( isDigit )
+import Data.Maybe
+import Debug.Trace
 
-import            Data.Maybe
 main = do
   gr <- readNGF "/usr/local/share/x86_64-linux-ghc-8.8.4/gf-4.0.0/www/robust/Parse.ngf"
+  db <- openDB "/usr/local/share/x86_64-linux-ghc-8.8.4/gf-4.0.0/www/robust/semantics.db"
   (_,(mn,sgr)) <- batchCompile noOptions (Just gr) ["WordNet.gf"]
-  withOpenSSL (simpleServer (Just 8080) Nothing (httpMain gr sgr mn))
+  withOpenSSL (simpleServer (Just 8080) Nothing (httpMain db gr sgr mn))
 
 
-httpMain :: PGF -> SourceGrammar -> ModuleName -> Request -> IO Response
-httpMain gr sgr mn rq
-  | takeExtension path == ".html" = do
-      print path
-      html <- readFile ("../www"++path)
-      return (Response
-                { rspCode = 200
-                , rspReason = "OK"
-                , rspHeaders = [Header HdrContentType "text/html; charset=UTF8"]
-                , rspBody = html
-                })
-  | takeExtension path == ".js" = do
-      print path
-      code <- readFile ("../www"++path)
-      return (Response
-                { rspCode = 200
-                , rspReason = "OK"
-                , rspHeaders = [Header HdrContentType "application/json; charset=UTF8"]
-                , rspBody = code
-                })
+httpMain :: Database -> PGF -> SourceGrammar -> ModuleName -> Request -> IO Response
+httpMain db gr sgr mn rq
   | path == "/execute" =
       case decode (rqBody rq) >>= parseQuery of
         Ok f      -> f
@@ -65,12 +54,30 @@ httpMain gr sgr mn rq
                                , rspHeaders = [Header HdrContentType "text/plain; charset=UTF8"]
                                , rspBody = msg
                                })
-  | otherwise    =  return (Response
-                               { rspCode = 400
-                               , rspReason = "Not found"
-                               , rspHeaders = []
-                               , rspBody = ""
-                               })
+  | otherwise    =  
+      case lookup (takeExtension path) mimeTypes of
+        Just ty -> do let fpath = "../www"++path
+                      exist <- doesFileExist fpath
+                      if exist
+                        then do txt <- readFile fpath
+                                return (Response
+                                          { rspCode = 200
+                                          , rspReason = "OK"
+                                          , rspHeaders = [Header HdrContentType ty]
+                                          , rspBody = txt
+                                          })
+                        else do return (Response
+                                          { rspCode = 400
+                                          , rspReason = "Not found"
+                                          , rspHeaders = []
+                                          , rspBody = ""
+                                          })
+        Nothing -> do return (Response
+                                { rspCode = 500
+                                , rspReason = "Unsupported file type"
+                                , rspHeaders = []
+                                , rspBody = ""
+                                })
   where
     path = uriPath (rqURI rq)
 
@@ -78,10 +85,18 @@ httpMain gr sgr mn rq
       qid  <- valFromObj "qid"  query
       lang <- valFromObj "lang" query
       code <- valFromObj "code" query
-      return (executeCode gr sgr mn "" qid lang code)
+      return (executeCode db gr sgr mn "" qid lang code)
 
-executeCode :: PGF -> SourceGrammar -> ModuleName -> String -> String -> String -> String -> IO Response
-executeCode gr sgr mn cwd qid lang code =
+    mimeTypes =
+      [(".html", "text/html; charset=UTF8")
+      ,(".js",   "text/javascript; charset=UTF8")
+      ,(".css",  "text/css")
+      ,(".svg",  "image/svg+xml")
+      ]
+
+
+executeCode :: Database -> PGF -> SourceGrammar -> ModuleName -> String -> String -> String -> String -> IO Response
+executeCode db gr sgr mn cwd qid lang code =
   case runLangP NLG pNLG (BS.pack code) of
     Right prog ->
       case runCheck (checkComputeProg prog) of
@@ -129,21 +144,21 @@ executeCode gr sgr mn cwd qid lang code =
 
       infoss <- checkInModule cwd nlg_mi NoLoc empty $ topoSortJments2 nlg_m
       let sgr'    = prependModule sgr nlg_m
-          globals = Gl sgr (wikiPredef gr)
+          globals = Gl sgr (wikiPredef db gr)
       nlg_m <- foldM (foldM (checkInfo (mflags nlg_mi) cwd globals)) nlg_m infoss
 
       let sgr' = prependModule sgr nlg_m
-          globals' = Gl sgr' (wikiPredef gr)
+          globals' = Gl sgr' (wikiPredef db gr)
           qident = (nlg_mn,identS "main")
 
       term' <- lookupResDef  sgr' qident
-      ty    <- lookupResType sgr' qident
+      
+      (term,res_ty) <- inferLType globals' (App (Q qident) (K qid))
 
       checkWarn (ppTerm Unqualified 0 term')
+      checkWarn (ppTerm Unqualified 0 term)
 
-      let (_,res_ty) = typeFormCnc ty
-
-      ts <- normalFlatForm globals' (App (App term' Empty) (K qid))
+      ts <- normalFlatForm globals' term
       return (toHeaders res_ty, [toRecord res_ty t | t <- ts])
 
     toHeaders (RecType lbls) = [render (pp l <+> ':' <+> ppTerm Unqualified 0 ty) | (l,ty) <- lbls]
@@ -213,8 +228,8 @@ executeCode gr sgr mn cwd qid lang code =
 
          update (mn,mi) c info = return (mn,mi{jments=Map.insert c info (jments mi)})
 
-wikiPredef :: PGF -> Map.Map Ident ([Value s] -> EvalM s (ConstValue (Value s)))
-wikiPredef pgf = Map.fromList
+wikiPredef :: Database -> PGF -> Map.Map Ident ([Value s] -> EvalM s (ConstValue (Value s)))
+wikiPredef db pgf = Map.fromList
   [ (identS "entity", \[typ,VStr qid] -> fetch typ qid >>= \v -> return (Const v))
   , (identS "int2digits", \[VInt n] -> int2digits abstr n >>= \v -> return (Const v))
   , (identS "int2decimal", \[VInt n] -> int2decimal abstr n >>= \v -> return (Const v))
@@ -222,6 +237,16 @@ wikiPredef pgf = Map.fromList
   , (identS "int2numeral", \[VInt n] -> int2numeral abstr n >>= \v -> return (Const v))
   , (identS "markup", \[_, tag, attrs, v] -> markup' tag attrs v)
   , (identS "linearize", linearize')
+  , (identS "expr", \[typ,x] -> 
+        case x of
+          VStr qid -> get_expr qid
+          _ -> error (showValue x)
+    )
+  , (identS "time2adv", \[x] -> 
+        case x of
+          VStr time -> fmap Const (time2adv abstr time)
+          _ -> error (showValue x)
+    )
   , (cLessInt,\[v1,v2] -> return (fmap toBool (liftA2 (<) (value2int v1) (value2int v2))))
   ]
   where
@@ -258,6 +283,12 @@ wikiPredef pgf = Map.fromList
                           let Just cnc = Map.lookup "ParseEng" (languages pgf)
                           e <- value2expr  v
                           return (Const (VStr (concatMap escape (linearize cnc e))))
+
+    get_expr qid = do
+      res <- unsafeIOToEvalM $ 
+               runDaison db ReadOnlyMode $
+                 select [return (Const (VApp (abstr,identS (lex_fun lex)) [])) | (_,lex) <- fromIndex lexemes_qid (at qid)]
+      msum res
 
     markup' (VStr tag) (VR attrs) VEmpty = 
       do
@@ -321,100 +352,75 @@ filterJsonFromType obj typ =
                          return (VR fields)
    _               -> evalError (pp "Wikidata entities are always records")
 
+isProperty ('P':cs) = all isDigit cs
+isProperty _        = False
+
 getSpecificProperty :: JSObject [JSObject JSValue] -> (Label, Value s) -> EvalM s (Label, Thunk s)
-getSpecificProperty obj (LIdent field, typ) =
-  case Text.JSON.Types.get_field obj label of
-    Nothing   -> do tnk <- newThunk [] (FV [])
-                    return (LIdent field, tnk)
-    Just objs -> do terms <- mapM (transformJsonToTerm label typ) objs
-                    tnk <- newThunk [] (FV terms)
-                    return (LIdent field, tnk)
+getSpecificProperty obj (LIdent field, typ)
+  | isProperty label =
+      case Text.JSON.Types.get_field obj label of
+        Nothing   -> do tnk <- newThunk [] (FV [])
+                        return (LIdent field, tnk)
+        Just objs -> do terms <- mapM (transformJsonToTerm typ) objs
+                        tnk <- newThunk [] (FV terms)
+                        return (LIdent field, tnk)
+  | otherwise = evalError (pp field <+> "is an invalid Wikidata property")
   where
     label = showRawIdent field
+
+    transformJsonToTerm :: Value s -> JSObject JSValue -> EvalM s Term
+    transformJsonToTerm typ obj =
+      case fromJSObjectToTerm obj typ of
+        Ok ass    -> return (R ass)
+        Error msg -> evalError (pp msg)
 getSpecificProperty obj (LVar n, typ) =
   evalError (pp "Wikidata entities can only have named properties")
 
-transformJsonToTerm :: String -> Value s -> JSObject JSValue -> EvalM s Term
-transformJsonToTerm field typ obj =
-  case typ of
-      VRecType [(LIdent l, t)] | head (showRawIdent l) == 'P'  -> case getCorrectObject obj t (showRawIdent l) of
-                                                                    Ok assign -> return (R [(LIdent l , (Nothing, R assign))])
-                                                                    Error "Could not find the correct object" -> return (FV [])
-                                                                    Error msg -> evalError (pp msg)
-
-      _                                                        -> case fromJSObjectToWikiDataItem obj typ of
-                                                                    Ok assign -> return (R assign)
-                                                                    Error msg -> evalError (pp msg)
-
-getCorrectObject obj typ l = do
-  let qualifiers = (do
-                      qualifiers <- valFromObj "qualifiers" obj
-                      valFromObj l qualifiers
-                    )
-
-  let references = (do
-                      references  <- valFromObj "references" obj
-                      references' <- valFromObj "snaks" (head references)
-                      valFromObj l references'
-                    )
-
-  case qualifiers <|> references of
-    Ok specific -> do
-                      datavalue  <- valFromObj "datavalue" (head specific)
-                      datatype  <- valFromObj "datatype" (head specific)
-                      validateTypeFromObj typ datavalue datatype
-    Error msg   -> Error "Could not find the correct object"
-
-
-fromJSObjectToWikiDataItem :: JSObject JSValue -> Value s -> Result [Assign]
-fromJSObjectToWikiDataItem obj typ = do
+fromJSObjectToTerm :: JSObject JSValue -> Value s -> Result [Assign]
+fromJSObjectToTerm obj typ = do
   mainsnak <- valFromObj "mainsnak" obj
-  datatype <- valFromObj "datatype" mainsnak
   datavalue <- valFromObj "datavalue" mainsnak
-  validateTypeFromObj typ datavalue datatype
+  datatype  <- valFromObj "datatype"  mainsnak
+  qualifiers <- fmap fromJSObject (valFromObj "qualifiers" obj) `mplus` return []
+  references <- fmap fromJSObject (valFromObj "references" obj) `mplus` return []
+  matchTypeFromJSON (qualifiers++references) datavalue datatype typ
 
-validateTypeFromObj :: Value s -> JSObject JSValue -> String -> Result [Assign]
-validateTypeFromObj typ dv  datatype = 
-  case matchTypeFromJSON dv typ datatype of
-    Ok assign -> return assign
-    Error msg -> Error msg
+matchTypeFromJSON qs dv dt@"commonsMedia"     (VRecType labels) = traverse (getFieldFromCommonsMedia qs dv dt) labels
+matchTypeFromJSON qs dv dt@"quantity"         (VRecType labels) = traverse (getFieldFromQuantity qs dv dt) labels
+matchTypeFromJSON qs dv dt@"wikibase-item"    (VRecType labels) = traverse (getFieldFromWikibaseEntityId qs dv dt) labels
+matchTypeFromJSON qs dv dt@"globe-coordinate" (VRecType labels) = traverse (getFieldFromGlobecoordinate qs dv dt) labels
+matchTypeFromJSON qs dv dt@"time"             (VRecType labels) = traverse (getFieldFromTime qs dv dt) labels
+matchTypeFromJSON qs dv dt@"monolingualtext"  (VRecType labels) = traverse (getFieldFromText qs dv dt) labels
+matchTypeFromJSON qs dv dt                    typ               = Error $ "Error" ++ showValue typ ++ dt
 
-matchTypeFromJSON ::  JSObject JSValue -> Value s -> String -> Result [Assign]
-matchTypeFromJSON  dv (VRecType labels) "commonsMedia" = traverse (getFieldFromCommonsMedia dv) labels
-matchTypeFromJSON  dv (VRecType labels) "quantity" = traverse (getFieldFromQuantity dv) labels
-matchTypeFromJSON dv (VRecType labels) "wikibase-item" = traverse (getFieldFromWikibaseEntityId dv) labels
-matchTypeFromJSON dv (VRecType labels) "globe-coordinate" = traverse (getFieldFromGlobecoordinate dv) labels
-matchTypeFromJSON  dv (VRecType labels) "time" = traverse (getFieldFromTime dv) labels
-matchTypeFromJSON dv (VRecType labels) "monolingualtext" = traverse (getFieldFromText dv) labels
-matchTypeFromJSON _ v t = Error $ "Error" ++ showValue v ++ t
+getFieldFromCommonsMedia qs dv dt (field@(LIdent l), t) =
+  assign field
+    <$> ( case (showRawIdent l, t) of 
+            ("s", VSort id ) -> if id == cStr then valFromObj "value" dv >>= \s -> return (K (constructImgUrl s)) else fail "Not a String"
+            ("s", VMeta _ _) -> valFromObj "value" dv >>= \s -> return (K (constructImgUrl s))
+            (_, _)           -> getQualifierOrReference qs dt l t
+        )
+  where
+    constructImgUrl :: String -> String
+    constructImgUrl img =
+      let name = map (\c -> if c == ' ' then '_' else c) (unEscapeString img)
+          h    = md5ss utf8 name    
+      in "https://upload.wikimedia.org/wikipedia/commons/"++take 1 h++"/"++take 2 h++"/"++name
+getFieldFromCommonsMedia qs dv dt (LVar n, typ) =
+  fail "Wikidata entities can only have named properties"
 
-
-getFieldFromCommonsMedia :: JSObject JSValue -> (Label, Value s) -> Result Assign
-getFieldFromCommonsMedia dv (LIdent l, t) =
-  case (showRawIdent l, t) of 
-      ("s", VSort id) -> if id == cStr then valFromObj "value" dv >>= \s -> return $ assign theLinLabel (K (constructImgUrl s)) else fail "Not a String"
-      ("s", VMeta _ _) -> valFromObj "value" dv >>= \s -> return $ assign theLinLabel (K (constructImgUrl s))
-      (_, _) -> Error "Not a valid commons-media field"
-
-
-constructImgUrl :: String -> String
-constructImgUrl img =
-  let
-    name = map (\c -> if c == ' ' then '_' else c) (unEscapeString img)
-    h    = md5ss utf8 name    
-  in "https://upload.wikimedia.org/wikipedia/commons/"++take 1 h++"/"++take 2 h++"/"++name
-
-getFieldFromWikibaseEntityId dv (field@(LIdent l), t) = do
+getFieldFromWikibaseEntityId qs dv dt (field@(LIdent l), t) = do
   value <- valFromObj "value" dv
   assign field
     <$> ( case (showRawIdent l, t) of
-            (l@"id",  VSort id) -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
+            (l@"id",  VSort id)  -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
             (l@"id",  VMeta _ _) -> valFromObj l value >>= (Ok . K)
-
-            (_, _)              -> Error "Not a valid wikibase-entityid field"
+            (_, _)               -> getQualifierOrReference qs dt l t
         )
+getFieldFromWikibaseEntityId qs dv dt (LVar n, typ) =
+  fail "Wikidata entities can only have named properties"
 
-getFieldFromGlobecoordinate dv (field@(LIdent l), t) = do
+getFieldFromGlobecoordinate qs dv dt (field@(LIdent l), t) = do
   value <- valFromObj "value" dv
   assign field
     <$> ( case (showRawIdent l, t) of
@@ -423,10 +429,12 @@ getFieldFromGlobecoordinate dv (field@(LIdent l), t) = do
             (l@"precision", VApp f []) -> if f == (cPredef,cFloat) then valFromObj l value >>= (Ok . EFloat) else fail "Not a Float"
             (l@"altitude",  VApp f []) -> if f == (cPredef,cFloat) then valFromObj l value >>= (Ok . EFloat) else fail "Not a Float"
             (l@"globe",     VSort id)  -> if id == cStr            then valFromObj l value >>= (Ok . K)      else fail "Not a String"
-            (_, _)                     -> Error "Not a valid globecoordinates field"
+            (_, _)                     -> getQualifierOrReference qs dt l t
         )
+getFieldFromGlobecoordinate qs dv dt (LVar n, typ) =
+  fail "Wikidata entities can only have named properties"
 
-getFieldFromQuantity dv (field@(LIdent l), t) = do
+getFieldFromQuantity qs dv dt (field@(LIdent l), t) = do
   value <- valFromObj "value" dv -- quantity
   assign field
     <$> ( case (showRawIdent l, t) of
@@ -434,28 +442,51 @@ getFieldFromQuantity dv (field@(LIdent l), t) = do
               | f == (cPredef,cInt)   -> valFromObj l value >>= decimal EInt
               | f == (cPredef,cFloat) -> valFromObj l value >>= decimal EFloat
               | otherwise             -> fail "Not an Int or Float"
-            (l@"unit", VSort id)      -> if id == cStr            then K . dropURL <$> valFromObj l value    else fail "Not a String"
-            (_, _)                    -> fail "Not a valid quantity field"
+            (l@"unit", VSort id)      -> if id == cStr then K . dropURL <$> valFromObj l value    else fail "Not a String"
+            (_, _)                    -> getQualifierOrReference qs dt l t
         )
+getFieldFromQuantity qs dv dt (LVar n, typ) =
+  fail "Wikidata entities can only have named properties"
 
-getFieldFromTime dv (field@(LIdent l), t) = do
+getFieldFromTime qs dv dt (field@(LIdent l), t) = do
   value <- valFromObj "value" dv -- time
   assign field
     <$> ( case (showRawIdent l, t) of
-            (l@"time",          VSort id) -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
+            (l@"time",          VApp id [])-> if id == (cPredef, cTime) then fmap K (valFromObj l value) else fail "Not a String"
             (l@"precision",     VApp f []) -> if f == (cPredef, cInt) then EInt <$> valFromObj l value else fail "Not an Int"
-            (l@"calendarmodel", VSort id) -> if id == cStr then K . dropURL <$> valFromObj l value else fail "Not a String"
-            (_, _)                        -> fail "Not a valid time field"
+            (l@"calendarmodel", VSort id)  -> if id == cStr then K . dropURL <$> valFromObj l value else fail "Not a String"
+            (_, _)                         -> getQualifierOrReference qs dt l t
         )
+getFieldFromTime qs dv dt (LVar n, typ) =
+  fail "Wikidata entities can only have named properties"
 
-getFieldFromText dv (field@(LIdent l), t) = do
+cTime = identS "Time"
+
+getFieldFromText qs dv dt (field@(LIdent l), t) = do
   value <- valFromObj "value" dv -- monolingualtext
   assign field
     <$> ( case (showRawIdent l, t) of
             (l@"text",     VSort id) -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
             (l@"language", VSort id) -> if id == cStr then valFromObj l value >>= (Ok . K) else fail "Not a String"
-            (_, _)                   -> fail "Not a valid text field"
+            (_, _)                   -> getQualifierOrReference qs dt l t
         )
+getFieldFromText qs dv dt (LVar n, typ) =
+  fail "Wikidata entities can only have named properties"
+
+getQualifierOrReference qs dt l t
+  | isProperty label =
+        case lookup label qs of
+          Just snaks -> return (FV [value | snak <- snaks, Ok value <- [get_value snak]])
+          Nothing    -> return (FV [])
+  | otherwise = fail "An invalid Wikidata qualifier or reference"
+  where
+    label = showRawIdent l
+
+    get_value snak = do
+      datavalue <- valFromObj "datavalue" snak
+      datatype  <- valFromObj "datatype"  snak
+      ass <- matchTypeFromJSON [] datavalue datatype t
+      return (R ass)
 
 dropURL s = match "http://www.wikidata.org/entity/" s
   where
@@ -592,6 +623,40 @@ int2numeral abstr n
       tnk1 <- newEvaluatedThunk v1
       tnk2 <- newEvaluatedThunk v2
       return (VApp (abstr,identS fn) [tnk1,tnk2])
+
+time2adv abs_mn s =
+  case matchRegex iso8601_regex s of
+    Just [era,year,month,day,"T",_,_,_,_,_,_,_] -> do
+          y <- do y <- newEvaluatedThunk $ VInt ((if era == "-" then -1 else 1) * read year)
+                  newEvaluatedThunk $ VApp (abs_mn,identS "intYear") [y]
+          m <- case month of 
+                "00" -> return Nothing
+                "01" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "january_Month") [])
+                "02" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "february_Month") [])
+                "03" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "march_Month") [])
+                "04" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "april_Month") [])
+                "05" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "may_Month") [])
+                "06" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "june_Month") [])
+                "07" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "july_Month") [])
+                "08" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "august_Month") [])
+                "09" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "september_Month") [])
+                "10" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "october_Month") [])
+                "11" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "november_Month") [])
+                "12" -> fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "december_Month") [])
+                _    -> matchError
+          d <- case day of
+                "00" -> return Nothing
+                _    -> do d <- newEvaluatedThunk (VInt (read day))
+                           fmap Just (newEvaluatedThunk $ VApp (abs_mn,identS "intMonthday") [d])
+          case (m,d) of
+            (Just m,Just d)  -> return $ VApp (abs_mn,identS "dayMonthYearAdv") [d, m, y]
+            (Just m,Nothing) -> return $ VApp (abs_mn,identS "monthYearAdv") [m, y]
+            (Nothing,_)      -> return $ VApp (abs_mn,identS "yearAdv") [y]
+    _ -> matchError
+  where
+    matchError = evalError (pp s <+> "is not a valid timestamp")
+
+    iso8601_regex = mkRegex "^(\\+|-)?([[:digit:]]{4})-([[:digit:]]{2})-([[:digit:]]{2})(T| )([[:digit:]]{2}):([[:digit:]]{2}):([[:digit:]]{2})(Z|(\\+|-)?([[:digit:]]{2}):?([[:digit:]]{2}))?$"
 
 
 value2int (VInt n) = Const n
