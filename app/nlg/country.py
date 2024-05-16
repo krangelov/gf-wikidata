@@ -112,7 +112,7 @@ def render(cnc, lexeme, entity):
     population_list = sorted(((population,get_time_qualifier("P585",quals) or "X") for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
     if population_list:
         population = int(population_list[0][0])
-        cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(population),w.inhabitant_1_N)))
+        cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(population),w.inhabitantMasc_1_N)))
     else:
         population = None
     phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
