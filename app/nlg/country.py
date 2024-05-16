@@ -278,7 +278,7 @@ def render(cnc, lexeme, entity):
     if suicide_list:
         suicide = round(float(suicide_list[0][0]), 2)
         #The suicide rate stands at [12.4] deaths per 100,000 inhabitants yearly.
-        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(w.stand_at_V2, mkNP(mkNum(suicide), mkCN(mkCN(w.death_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.inhabitant_1_N, w.yearly_Adv))))))))), fullStopPunct)
+        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(w.stand_at_V2, mkNP(mkNum(suicide), mkCN(mkCN(w.death_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.inhabitantMasc_1_N, w.yearly_Adv))))))))), fullStopPunct)
         yield " " + cnc.linearize(phr)
 
 
@@ -287,7 +287,7 @@ def render(cnc, lexeme, entity):
     for city_qid, city_pop, country_qid in largest_cities:
         if entity["id"] == country_qid:
             city_name = cnc.get_lex_fun(city_qid)
-            city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitant_1_N))
+            city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitantMasc_1_N))
             np = mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),mkCN(w.city_1_N))
             if cnc.name in ["ParseFre", "ParseSpa"]:
                 np = mkNP(np, mkAdv(w.of_1_Prep,mkNP(lexeme)))
