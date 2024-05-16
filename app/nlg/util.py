@@ -131,7 +131,7 @@ class ConcrHelper:
 	def get_lex_fun(self, qid, link=True, filter=None):
 		lexemes = wikilexemes(qid)
 		if filter:
-			lexemes = [lexeme for lexeme in lexemes if filter in lexeme.lex_fun]
+			lexemes = [lexeme for lexeme in lexemes if filter in lexeme.lex_fun] or lexemes
 		if lexemes:
 			if link:
 				self.addLink(lexemes[0], qid)
