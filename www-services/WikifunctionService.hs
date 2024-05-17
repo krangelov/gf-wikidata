@@ -12,6 +12,8 @@ import GF.Infra.CheckM
 import GF.Infra.Option
 import GF.Term
 import GF.Compile.Rename
+import GF.Text.Pretty
+import GF.Data.XML
 import Network.HTTP
 import Network.HTTP.MD5
 import Network.URI
@@ -21,9 +23,8 @@ import System.IO ( utf8 )
 import System.FilePath
 import System.Directory ( doesFileExist )
 import Text.JSON
-import Text.JSON.Types         (get_field)
+import Text.JSON.Types (get_field, JSObject(..))
 import Text.Regex
-import GF.Text.Pretty
 import Database.Daison
 import SenseSchema
 
@@ -161,8 +162,22 @@ executeCode db gr sgr mn cwd qid lang code =
       ts <- normalFlatForm globals' term
       return (toHeaders res_ty, [toRecord res_ty t | t <- ts])
 
-    toHeaders (RecType lbls) = [render (pp l <+> ':' <+> ppTerm Unqualified 0 ty) | (l,ty) <- lbls]
-    toHeaders ty             = [render (ppTerm Unqualified 0 ty)]
+    toHeaders (RecType lbls) = [toHeader (pp l <+> ':') ty | (l,ty) <- lbls]
+    toHeaders ty             = [toHeader empty ty]
+
+    toHeader d ty = JSONObject [("label",showJSON (render (d <+> ppTerm Unqualified 0 ty)))
+                               ,("type", showJSON (toHeaderType ty))
+                               ]
+
+    toHeaderType (Sort s)
+      | s == cStr                    = "string"
+    toHeaderType (Q (m,c))
+      | m == cPredef && c == cMarkup = "markup"
+      | m == cPredef && c == cFloat  = "number"
+      | m == cPredef && c == identS "Time" = "string"
+    toHeaderType (App (Q (m,c)) _)
+      | m == cPredef && c == cInts   = "number"
+    toHeaderType ty                  = "text"
 
     toRecord (RecType lbls) (R as)  = toCells lbls as
     toRecord ty             t       = [toCell ty t]
@@ -181,6 +196,13 @@ executeCode db gr sgr mn cwd qid lang code =
     toCell (QC (m,c)) t
       | m == abs_mn    = let Just cnc = Map.lookup "ParseEng" (languages gr)
                          in linearize cnc (toExpr t)
+    toCell (Q (m,c)) t
+      | m == cPredef && c == identS "Markup"
+                       = showsXML (toXML t) ""
+      | m == cPredef && c == identS "Time"
+                       = case toStr t of
+                           Just s  -> s
+                           Nothing -> render (ppTerm Unqualified 0 t)
     toCell ty        t = render (ppTerm Unqualified 0 t)
 
     toExpr (App t1 t2) = EApp (toExpr t1) (toExpr t2)
@@ -201,6 +223,17 @@ executeCode db gr sgr mn cwd qid lang code =
                             s2 <- toStr t2
                             return (s1 ++ s2)
     toStr _            = Nothing
+
+    toXML (Markup tag as ts) = Tag (showIdent tag) (map toAttr as) (map toXML ts)
+    toXML t                  = case toStr t of
+                                 Just s  -> Data s
+                                 Nothing -> let Just cnc = Map.lookup "ParseEng" (languages gr)
+                                            in Data (linearize cnc (toExpr t))
+
+    toAttr (id,t) =
+      case toStr t of
+        Just s  -> (showIdent id, s)
+        Nothing -> (showIdent id, render (ppTerm Unqualified 0 t))
 
     checkInfo :: Options -> FilePath -> Globals -> SourceModule -> (Ident,Info) -> Check SourceModule
     checkInfo opts cwd globals sm (c,info) = checkInModule cwd (snd sm) NoLoc empty $ do
@@ -235,8 +268,6 @@ wikiPredef db pgf = Map.fromList
   , (identS "int2decimal", \[VInt n] -> int2decimal abstr n >>= \v -> return (Const v))
   , (identS "float2decimal", \[VFlt f] -> float2decimal abstr f >>= \v -> return (Const v))
   , (identS "int2numeral", \[VInt n] -> int2numeral abstr n >>= \v -> return (Const v))
-  , (identS "markup", \[_, tag, attrs, v] -> markup' tag attrs v)
-  , (identS "linearize", linearize')
   , (identS "expr", \[typ,x] -> 
         case x of
           VStr qid -> get_expr qid
@@ -266,84 +297,11 @@ wikiPredef db pgf = Map.fromList
           e2 <- value2expr v
           return (EApp e1 e2)
     
-    linearize' :: [Value s] -> EvalM s (ConstValue (Value s))
-    linearize' [_, GF.Term.VInt n] = return (Const (VStr (show n)))
-    linearize' [_, GF.Term.VStr s] = return (Const (VStr (concatMap escape s)))
-    linearize' [_, GF.Term.VEmpty] = return (Const (VStr ""))
-    linearize' [_, GF.Term.VR [(_, tnk)]] =
-      do
-        v  <- force tnk
-        return (Const v)
-    linearize' [x, GF.Term.VC v1 v2] =
-      do
-        (Const (VStr s1)) <- linearize' [x, v1]
-        (Const (VStr s2)) <- linearize' [x, v2]
-        return (Const (VStr (s1 ++ s2)))
-    linearize' [_, v] = do
-                          let Just cnc = Map.lookup "ParseEng" (languages pgf)
-                          e <- value2expr  v
-                          return (Const (VStr (concatMap escape (linearize cnc e))))
-
     get_expr qid = do
       res <- unsafeIOToEvalM $ 
                runDaison db ReadOnlyMode $
                  select [return (Const (VApp (abstr,identS (lex_fun lex)) [])) | (_,lex) <- fromIndex lexemes_qid (at qid)]
       msum res
-
-    markup' (VStr tag) (VR attrs) VEmpty = 
-      do
-        attrs' <- constructAttrs attrs
-        return (Const 
-                (VStr
-                  (constructHtml tag (Just "") attrs')))
-    markup' (VStr tag) (VR attrs) (VStr v) = 
-      do
-        attrs' <- constructAttrs attrs
-        return (Const
-                (VStr
-                  (constructHtml tag Nothing attrs')))
-    markup' (VR attrs)  (VStr tag) (VStr v) =
-      do
-        attrs' <- constructAttrs attrs
-        return (Const
-                (VStr
-                  (constructHtml tag (Just v) attrs')))
-    markup' (VR attrs)  (VStr tag) vc@(VC _ _) =
-      do
-        attrs' <- constructAttrs attrs
-        return (Const
-                (VStr
-                  (constructHtml tag (constructFromConcat vc) attrs')))
-    markup' attrs tag v = evalError (pp "Invalid markup")
-
-constructFromConcat :: Value s -> Maybe String
-constructFromConcat (VStr v) = Just v
-constructFromConcat VEmpty = Nothing
-constructFromConcat (VC v1 v2) = case constructFromConcat v1 of
-                                    Just str -> Just (str ++ Data.Maybe.fromMaybe "" (constructFromConcat v2))
-                                    Nothing -> constructFromConcat v2
-constructFromConcat v = Nothing
-
-constructAttrs :: [(Label, Thunk s)] -> EvalM s [(String, String)]
-constructAttrs [] = return []
-constructAttrs ((LIdent l, v) : attrs) = do
-  VStr v' <- force v
-  vs <- constructAttrs attrs
-  return ((showRawIdent l, v') : vs)
-
-constructHtml :: String -> Maybe String -> [(String, String)] -> String
-constructHtml name payload attrs = "<" ++ name ++ " " ++ unwords (go attrs) ++ ">" ++ payload'
-      where go [] = [ "" ]
-            go ((lbl, val) : attrs) = (lbl ++ "=" ++ "\"" ++ concatMap escape val ++ "\"") : go attrs
-            payload' = case payload of
-                         Nothing -> ""
-                         Just payload -> payload ++ "</" ++ name ++ ">"
-
-escape '<' = "&lt;"
-escape '>' = "&gt;"
-escape '&' = "&amp;"
-escape '"' = "&quot;"
-escape c   = [c]
 
 filterJsonFromType :: JSObject [JSObject JSValue] -> Value s -> EvalM s (Value s)
 filterJsonFromType obj typ =
