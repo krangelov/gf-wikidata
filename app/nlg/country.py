@@ -118,10 +118,10 @@ def render(cnc, lexeme, entity):
     if cnc.name in ["ParseFin"]:
         phr1 = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
 #        phr2 = mkPhr(mkUtt(mkS(w.there_1_Adv, mkS(mkCl(mkVP(mkNP(mkNum(population),w.inhabitant_1_N)))))), fullStopPunct)
-        phr2 = mkPhr(mkUtt(mkS(w.ExistNPAdv(mkNP(mkNum(population),w.inhabitant_1_N), w.there_1_Adv))), fullStopPunct)
+        phr2 = mkPhr(mkUtt(mkS(w.ExistNPAdv(mkNP(mkNum(population),w.inhabitantMasc_1_N), w.there_1_Adv))), fullStopPunct)
         yield " " + cnc.linearize(phr1) + " " + cnc.linearize(phr2)
     else:
-        cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(population),w.inhabitant_1_N)))
+        cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(population),w.inhabitantMasc_1_N)))
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
         yield " " + cnc.linearize(phr)
     
