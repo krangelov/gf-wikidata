@@ -127,6 +127,8 @@ executeCode db gr sgr mn cwd qid lang code =
   where
     abs_mn = moduleNameS (abstractName gr)
 
+    Just cnc = lookup lang langs >>= \name -> Map.lookup name (languages gr)
+
     checkComputeProg jments = do
       let nlg_mn = moduleNameS (msrc nlg_mi)
           nlg_mi = ModInfo {
@@ -153,8 +155,8 @@ executeCode db gr sgr mn cwd qid lang code =
           qident = (nlg_mn,identS "main")
 
       term' <- lookupResDef  sgr' qident
-      
-      (term,res_ty) <- inferLType globals' (App (Q qident) (K qid))
+
+      (term,res_ty) <- inferLType globals' (App (App (Q qident) (K qid)) (K lang))
 
       checkWarn (ppTerm Unqualified 0 term')
       checkWarn (ppTerm Unqualified 0 term)
@@ -194,11 +196,10 @@ executeCode db gr sgr mn cwd qid lang code =
             Just s  -> s
             Nothing -> render (ppTerm Unqualified 0 t)
     toCell (QC (m,c)) t
-      | m == abs_mn    = let Just cnc = Map.lookup "ParseEng" (languages gr)
-                         in linearize cnc (toExpr t)
+      | m == abs_mn    = linearize cnc (toExpr t)
     toCell (Q (m,c)) t
       | m == cPredef && c == identS "Markup"
-                       = showsXML (toXML t) ""
+                       = foldr showsXML "" (toXML t)
       | m == cPredef && c == identS "Time"
                        = case toStr t of
                            Just s  -> s
@@ -224,11 +225,12 @@ executeCode db gr sgr mn cwd qid lang code =
                             return (s1 ++ s2)
     toStr _            = Nothing
 
-    toXML (Markup tag as ts) = Tag (showIdent tag) (map toAttr as) (map toXML ts)
+    toXML (Markup tag as ts)
+      | tag == identW = concatMap toXML ts
+      | otherwise     = [Tag (showIdent tag) (map toAttr as) (concatMap toXML ts)]
     toXML t                  = case toStr t of
-                                 Just s  -> Data s
-                                 Nothing -> let Just cnc = Map.lookup "ParseEng" (languages gr)
-                                            in Data (linearize cnc (toExpr t))
+                                 Just s  -> [Data s]
+                                 Nothing -> [Data (linearize cnc (toExpr t))]
 
     toAttr (id,t) =
       case toStr t of
@@ -268,12 +270,12 @@ wikiPredef db pgf = Map.fromList
   , (identS "int2decimal", \[VInt n] -> int2decimal abstr n >>= \v -> return (Const v))
   , (identS "float2decimal", \[VFlt f] -> float2decimal abstr f >>= \v -> return (Const v))
   , (identS "int2numeral", \[VInt n] -> int2numeral abstr n >>= \v -> return (Const v))
-  , (identS "expr", \[typ,x] -> 
+  , (identS "expr", \[typ,x] ->
         case x of
           VStr qid -> get_expr qid
           _ -> error (showValue x)
     )
-  , (identS "time2adv", \[x] -> 
+  , (identS "time2adv", \[x] ->
         case x of
           VStr time -> fmap Const (time2adv abstr time)
           _ -> error (showValue x)
@@ -622,3 +624,32 @@ value2int _        = RunTime
 
 toBool True  = VApp (cPredef,identS "True")  []
 toBool False = VApp (cPredef,identS "False") []
+
+langs = [
+  ("af", "ParseAfr"),
+  ("ar", "ParseAra"),
+  ("bg", "ParseBul"),
+  ("ca", "ParseCat"),
+  ("zh", "ParseChi"),
+  ("nl", "ParseDut"),
+  ("en", "ParseEng"),
+  ("et", "ParseEst"),
+  ("fi", "ParseFin"),
+  ("fr", "ParseFre"),
+  ("de", "ParseGer"),
+  ("it", "ParseIta"),
+  ("ko", "ParseKor"),
+  ("mt", "ParseMlt"),
+  ("pl", "ParsePol"),
+  ("pt", "ParsePor"),
+  ("ro", "ParseRon"),
+  ("ru", "ParseRus"),
+  ("sl", "ParseSlv"),
+  ("so", "ParseSom"),
+  ("es", "ParseSpa"),
+  ("sw", "ParseSwa"),
+  ("sv", "ParseSwe"),
+  ("th", "ParseTha"),
+  ("tr", "ParseTur"),
+  ("zu", "ParseZul")
+  ]
