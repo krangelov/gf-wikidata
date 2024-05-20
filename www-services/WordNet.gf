@@ -541,8 +541,10 @@ oper
 
 -- Proper names and pronouns can be used as noun phrases.
 
-      mkNP : PN -> NP             -- she  --:
+      mkNP : PN -> NP
       = UsePN    ; --%
+    mkNP : LN -> NP               -- Sweden  --:
+      = UseLN    ; --%
       mkNP : Pron -> NP           -- he  --:
       = UsePron  ; --%
 
@@ -918,6 +920,9 @@ oper
 
       mkAdv : Subj -> S -> Adv   -- when she sleeps  --:
       = SubjS ; --%
+      
+      mkAdv : Time -> Adv
+      = time2adv ;
 
 -- Adverbs can be modified by adadjectives.
 

@@ -128,15 +128,17 @@ class ConcrHelper:
 				text = "<span data-expr=\""+escape(str(e))+"\">"+text+"</span>"
 		return text
 
-	def get_lex_fun(self, qid, link=True):
+	def get_lex_fun(self, qid, link=True, filter=None):
 		lexemes = wikilexemes(qid)
+		if filter:
+			lexemes = [lexeme for lexeme in lexemes if filter in lexeme.lex_fun] or lexemes
 		if lexemes:
 			if link:
 				self.addLink(lexemes[0], qid)
 			return pgf.ExprFun(lexemes[0].lex_fun)
 		return None
 
-	def get_lexemes(self,prop,entity,qual=True,link=True):
+	def get_lexemes(self,prop,entity,qual=True,link=True,filter=None):
 		items = []
 		if qual:
 			for value in entity["claims"].get(prop,[]):
@@ -144,7 +146,7 @@ class ConcrHelper:
 					qid = value["mainsnak"]["datavalue"]["value"]["id"]
 				except KeyError:
 					continue
-				fun = self.get_lex_fun(qid,link)
+				fun = self.get_lex_fun(qid,link,filter)
 				if fun:
 					items.append((fun,value.get("qualifiers",{})))
 		else:
@@ -153,7 +155,7 @@ class ConcrHelper:
 					qid = value["mainsnak"]["datavalue"]["value"]["id"]
 				except KeyError:
 					continue
-				fun = self.get_lex_fun(qid,link)
+				fun = self.get_lex_fun(qid,link,filter)
 				if fun:
 					items.append(fun)
 		return items

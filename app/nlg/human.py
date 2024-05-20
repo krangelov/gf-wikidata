@@ -43,10 +43,11 @@ def render(cnc, lexeme, entity):
     current_position = mkCN(w.and_Conj, current_position)
     prev_position = mkCN(w.and_Conj, prev_position)
 
-    occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False)])
+    filter = "Fem" if "Q6581072" in gender else "Masc"
+    occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False, filter=filter)])
     if not occupations:
         if get_items("P184",entity):
-            occupations = mkCN(w.scientist_N)
+            occupations = mkCN(w.scientistFem_N if "Q6581072" in gender else w.scientistMasc_N)
         elif "Q6581097" in gender:
             occupations = mkCN(w.man_1_N)
         elif "Q6581072" in gender:
@@ -98,7 +99,7 @@ def render(cnc, lexeme, entity):
     if extra_description:
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,extra_description)))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
-
+    # double check this! (ex. Trump)
     if past_description and prev_position:
         phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron),mkNP(aSg_Det,prev_position)))),fullStopPunct)
         yield " "+cnc.linearize(phr)
@@ -138,7 +139,7 @@ def render(cnc, lexeme, entity):
             students.append(name)
     if students:
         students = mkNP(w.and_Conj,students)
-        phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisor_1_N),students))))),fullStopPunct)
+        phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisorMasc_1_N),students))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
     
 
@@ -188,8 +189,14 @@ def render(cnc, lexeme, entity):
 
     yield "</p>"
 
-    yield '<h2 class="gp-page-title">'+cnc.linearize(mkCN(w.personal_1_A,w.life_3_N))+'</h2>'
-    yield "<p>"
+    father = None
+    for father in get_entities("P22",entity,qual=False):
+        father = cnc.get_person_name(father)
+        break
+    mother = None
+    for mother in get_entities("P25",entity,qual=False):
+        mother = cnc.get_person_name(mother)
+        break
 
     sisters  = []
     brothers = []
@@ -226,16 +233,32 @@ def render(cnc, lexeme, entity):
     number = None
     for item in number_children_prop:
         number = int(item[0])
+    child_count = 0
 
-    father = None
-    for father in get_entities("P22",entity,qual=False):
-        father = cnc.get_person_name(father)
-        break
-    mother = None
-    for mother in get_entities("P25",entity,qual=False):
-        mother = cnc.get_person_name(mother)
-        break
+    unmarried_partners = sorted([(partner,
+                           get_time_qualifier("P580",quals) or "X",
+                           get_time_qualifier("P582",quals),
+                           get_item_qualifier("P1534",quals)) for partner,quals in get_entities("P451",entity)],key=lambda p: p[1])
+
+    spouse_novalue = has_novalue("P26",entity)
+    spouses = sorted([(spouse,
+                       get_time_qualifier("P580",quals) or "X",
+                       cnc.get_lexeme_qualifiers("P2842",quals),
+                       get_time_qualifier("P582",quals),
+                       get_item_qualifier("P1534",quals)) for spouse,quals in get_entities("P26",entity)],key=lambda p: p[1])
+
+    deathday   = get_date("P570",entity)
+    deathplace = cnc.get_lexemes("P20", entity, qual=False)
+
+    if mother or father or sisters or brothers or siblings or children or number_children_prop or number or unmarried_partners or spouses or spouse_novalue or deathday or deathplace:
+        yield '<h2 class="gp-page-title">'+cnc.linearize(mkCN(w.personal_1_A,w.life_3_N))+'</h2>'
+        yield "<p>"
+
     if mother and father:
+        #if cnc.name in ["ParseFre", "ParseSpa"]:
+        #    vp = mkVP(mkVP(w.bear_1_V), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
+        #else:
+        #    vp = mkVP(passiveVP(w.bear_2_V2), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
         vp = mkVP(passiveVP(w.bear_2_V2), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
         if siblings:
             vp = w.ConjVPS(w.and_Conj,w.BaseVPS(w.MkVPS(mkTemp(usePastTense,simultaneousAnt),positivePol,vp), w.MkVPS(mkTemp(presentTense,simultaneousAnt),positivePol,mkVP(w.have_1_V2,siblings))))
@@ -259,47 +282,87 @@ def render(cnc, lexeme, entity):
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2,siblings)))),fullStopPunct)
         yield " "+cnc.linearize(phr)
 
-    if has_novalue("P26",entity):
+    if spouse_novalue:
         spouses = None
         phr = mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(pron), mkVP(w.never_1_AdV,mkVP(w.marry_in_V))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
     else:
-        spouses = sorted([(spouse,
-                           get_time_qualifier("P580",quals) or "X",
-                           cnc.get_lexeme_qualifiers("P2842",quals),
-                           get_time_qualifier("P582",quals),
-                           get_item_qualifier("P1534",quals)) for spouse,quals in get_entities("P26",entity)],key=lambda p: p[1])
         for spouse,start,place,end,end_cause in spouses:
-            occupation = cnc.get_lexemes("P106", spouse, qual=False)
+            filter = "Fem" if "Q6581072" in get_items("P21",spouse,qual=False) else "Masc"
+            occupation = cnc.get_lexemes("P106", spouse, qual=False, filter=filter)
             occupation = mkCN(occupation[0]) if occupation else None
             all_adjs, ds = cnc.get_demonyms("P27", spouse)
             if ds:
-                ds = list(ds)[0] #converting the set to a list to access the first item
+                ds = list(ds)[0]
                 if all_adjs:
                     description = mkCN(mkAP(ds), occupation) if occupation else None
                 else:
                     description = occupation
             else:
                 description = occupation
+            
+            partner_spouse = False
 
             child = None
             child_name = []
+            no_names = False
+            same_parent_child = 0
             if children:
                 for kid in children:
                     if any(mother == spouse["id"] or father == spouse["id"] for mother in get_items("P25", kid, qual=False) for father in get_items("P22", kid, qual=False)):
+                        same_parent_child += 1
                         child = cnc.get_person_name(kid)
                         if child:
                             child_name.append(child)
+                        else:
+                            no_names = True
             number_children = len(child_name)
             child_name = mkNP(w.and_Conj, child_name)
 
             name = cnc.get_person_name(spouse)
-            if name:
+            spouse_pron = w.she_Pron if "Q6581072" in get_items("P21",spouse,qual=False) else w.he_Pron
+
+            for partner,start_up,end_up,end_cause_up in unmarried_partners:
+                if partner["id"] == spouse["id"] and end_cause_up == 'Q8445':
+                    partner_spouse = True
+                    if name:
+                        if description:
+                            if cnc.name in ["ParseFre", "ParseSpa", "ParseBul"]:
+                                name = mkNP(the_Det, mkCN(description, name))
+                                vp = mkVP(w.start_2_V2, mkNP(mkNP(aSg_Det, w.relationship_2_N), mkAdv(w.with_Prep, name)))
+                            else:
+                                name = mkCN(description, name)
+                                vp = mkVP(w.start_2_V2, mkNP(mkNP(aSg_Det, w.relationship_2_N), mkAdv(w.with_Prep, mkNP(name))))
+                        stmt = mkS(pastSimpleTense, mkCl(mkNP(pron), vp))
+                        if start_up:
+                                start_date = str2date(start_up)
+                                if start_date:
+                                    stmt = w.ExtAdvS(start_date,stmt)
+                        vp = mkVP(w.marry_1_V2,mkNP(spouse_pron))
+                        #vp = mkVP(w.marry_1_V)
+                        #Spanish / French: they married (se casaron/ils se sont mariés)
+                        if place:
+                            vp = mkVP(vp,mkAdv(place[0]))
+                        if start:
+                            start_date = str2date(start)
+                            if start_date:
+                                vp = mkVP(vp, start_date)
+                        stmt2 = mkS(usePastTense, mkCl(mkNP(pron), vp))
+                        #stmt2 = mkS(usePastTense, mkCl(mkNP(w.they_Pron), vp))
+                        phr = mkPhr(mkUtt(mkS(w.and_Conj, stmt, stmt2)), fullStopPunct)
+                        yield " "+cnc.linearize(phr)
+                        break
+
+            if not partner_spouse and name:
                 if description:
-                    name = mkCN(description, name)
-                    vp = mkVP(w.marry_1_V2,mkNP(name))
-                else:
-                    vp = mkVP(w.marry_1_V2,name)
+                    if cnc.name in ["ParseFre", "ParseSpa", "ParseBul"]: #["ParseFre", "ParseBul"]
+                        name = mkNP(the_Det, mkCN(description, name))
+                    #elif cnc.name in ["ParseSpa"]:
+                    #    name = mkNP(the_Det, mkCN(description, name))
+                    #    vp = mkVP(mkVP(w.marry_1_V), mkAdv(w.with_Prep, name))
+                    else:
+                        name = mkNP(mkCN(description, name))
+                vp = mkVP(w.marry_1_V2,name)
                 if place:
                     vp = mkVP(vp,mkAdv(place[0]))
                 stmt = mkS(usePastTense, mkCl(mkNP(pron), vp))
@@ -309,61 +372,110 @@ def render(cnc, lexeme, entity):
                         stmt = w.ExtAdvS(start,stmt)
                 phr = mkPhr(mkUtt(stmt),fullStopPunct)
                 yield " "+cnc.linearize(phr)
-                
+
+            if no_names:
+                child_count += same_parent_child
+                det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if number < 10 else mkDet(a_Quant, mkNum(same_parent_child))
+                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
+                yield " " + cnc.linearize(phr)
+            else:
                 if child_name:
                 # They have X children: [list of names]
                     if number_children < 10:
                         det = mkDet(a_Quant,mkNum(mkNumeral(number_children)))
                     else:
                         det = mkDet(a_Quant,mkNum(number_children))
+                    child_count += number_children
                     yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
-            
-                if end and end_cause not in ["Q4", "Q99521170", "Q24037741"]:
-                    if "Q6581072" in get_items("P21",spouse,qual=False):
-                        spouse_pron = w.she_Pron
-                    else:
-                        spouse_pron = w.he_Pron
-                    vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
-                    phr = mkPhr(mkUtt(mkS(usePastTense, mkCl(mkNP(pron), vp))),fullStopPunct)
-                    yield " "+cnc.linearize(phr)
+        
+            if end and end_cause not in ["Q4", "Q99521170", "Q24037741"]:
+                #if cnc.name in ["ParseFre", "ParseSpa"]:
+                #    vp = mkVP(mkVP(w.divorce_1_V),str2date(end)) #Entity divorced or should we go with "they divorced"?
+                #else:
+                #    vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
+                vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
+                phr = mkPhr(mkUtt(mkS(usePastTense, mkCl(mkNP(pron), vp))),fullStopPunct)
+                yield " "+cnc.linearize(phr)
 
     if spouses and not children and number_children_prop:
+        child_count += number
         det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
         yield " " + cnc.linearize(phr)
 
-    # If there is no spouse but there are children
-    child = None
-    child_name = []
-    if not spouses:
+    for partner,start,end,end_cause in unmarried_partners:
+        occupation = cnc.get_lexemes("P106", partner, qual=False)
+        occupation = mkCN(occupation[0]) if occupation else None
+        all_adjs, ds = cnc.get_demonyms("P27", partner)
+        if ds:
+            ds = list(ds)[0]
+            if all_adjs:
+                description = mkCN(mkAP(ds), occupation) if occupation else None
+            else:
+                description = occupation
+        else:
+            description = occupation
+        
+        child = None
+        child_name = []
+        no_names = False
+        same_parent_child = 0
         if children:
-            for child in children:
-                child = cnc.get_person_name(child)
-                if child:
-                    child_name.append(child)
+            for kid in children:
+                if any(mother == partner["id"] or father == partner["id"] for mother in get_items("P25", kid, qual=False) for father in get_items("P22", kid, qual=False)):
+                    same_parent_child += 1
+                    child = cnc.get_person_name(kid)
+                    if child:
+                        child_name.append(child)
+                    else:
+                        no_names = True # to avoid cases where we have names for some chidren (from the same couple) but not for others
         number_children = len(child_name)
         child_name = mkNP(w.and_Conj, child_name)
 
-        if child_name:
-            if number:
-                det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
+        name = cnc.get_person_name(partner)
+        if name and not end:
+            if description:
+                if cnc.name in ["ParseFre", "ParseSpa", "ParseBul"]:
+                    name = mkNP(the_Det, mkCN(description, name))
+                    vp = mkVP(w.start_2_V2, mkNP(mkNP(aSg_Det, w.relationship_2_N), mkAdv(w.with_Prep, name)))
+                else:
+                    name = mkCN(description, name)
+                    vp = mkVP(w.start_2_V2, mkNP(mkNP(aSg_Det, w.relationship_2_N), mkAdv(w.with_Prep, mkNP(name))))
+
+            stmt = mkS(pastSimpleTense, mkCl(mkNP(pron), vp))
+            if start:
+                    start = str2date(start)
+                    if start:
+                        stmt = w.ExtAdvS(start,stmt)
+            phr = mkPhr(mkUtt(stmt),fullStopPunct)
+            yield " "+cnc.linearize(phr)
+
+            if no_names:
+                child_count += same_parent_child
+                det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if number < 10 else mkDet(a_Quant, mkNum(same_parent_child))
+                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
+                yield " " + cnc.linearize(phr)
             else:
-                det = mkDet(a_Quant, mkNum(mkNumeral(number_children))) if number_children < 10 else mkDet(a_Quant, mkNum(number_children))
+                if child_name:
+                    # They have X children: [list of names]
+                    if number_children < 10:
+                        det = mkDet(a_Quant,mkNum(mkNumeral(number_children)))
+                    else:
+                        det = mkDet(a_Quant,mkNum(number_children))
+                    child_count += number_children
+                    yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
 
-            if not number or number_children == number or number_children > number:
-                yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
-            elif number and number_children < number:
-                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
-                yield " " + cnc.linearize(phr)
-        else:
-            # No children name but number of children property
-            if number:
-                det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
-                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
-                yield " " + cnc.linearize(phr)
+    # If the entity has other children but we have no info about their parents
+    # [entity] has X more child(ren).
+    # TO DO: Needs some specific work for SPA and FRE
+    if number:
+        other_child = number - child_count
+        if other_child > 0:
+            det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
+            phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
+            yield " " + cnc.linearize(phr)
 
-    deathday   = get_date("P570",entity)
-    deathplace = cnc.get_lexemes("P20", entity, qual=False)
+
     if deathday or deathplace:
         deathmanner= get_items("P1196", entity, qual=False)
         killer = get_entities("P157", entity, qual=False)
@@ -395,9 +507,13 @@ def render(cnc, lexeme, entity):
             universities.add(mkNP(uni))
         universities = mkNP(w.and_Conj, list(universities))
 
-        # He/She graduated from [university name]
-        phr = mkPhr(mkUtt(mkS(usePastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
+        if cnc.name in ["ParseFre"]: #Il/Elle a obtenu son diplôme de [la/le/l'] + institution(s)
+            phr = mkPhr(mkUtt(mkS(usePastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.obtain_1_V2, mkNP(mkQuant(pron), w.degree_3_N)), mkAdv(w.from_Prep, universities))))),fullStopPunct)
+        else:
+            # He/She graduated from [university name]
+            phr = mkPhr(mkUtt(mkS(usePastSimpleTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
         yield " " + cnc.linearize(phr)
+
 
         yield "</p>"
 
@@ -447,3 +563,17 @@ def render(cnc, lexeme, entity):
             else:
                 yield "<li>"+cnc.linearize(key)+"</li>"
         yield '</ul></p>'
+
+    #Nominated for - P1411
+    #TO DO: Add year?
+    nominations = get_entities(["P1411"],entity,qual=False)
+    if nominations:
+        yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(passiveVP(mkVPSlash(w.nominate_1_V2)), mkAdv(w.for_Prep, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))))+':'
+        yield "<ul>"
+        for nomination in nominations:
+            lbl = nomination["labels"]
+            lbl = lbl.get(cnc.lang) or lbl.get("en")
+            if lbl:
+                lbl = lbl["value"]
+                yield "<li><a href=\"index.wsgi?id="+nomination["id"]+"&lang="+cnc.lang+"\">"+lbl+"</a></li>"
+        yield "</ul>"
