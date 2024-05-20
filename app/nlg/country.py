@@ -153,10 +153,10 @@ def render(cnc, lexeme, entity):
                 phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.ProDrop(w.it_Pron)),mkVP(w.have_1_V2,mkNP(aSg_Det,mkCN(mkCN(w.border_1_N),mkAdv(w.with_Prep,neighbours[0]))))))),fullStopPunct)
         elif cnc.name in ["ParseFin"]:
             if len(neighbours) == 1:
-                its_neighbours_NP = mkNP(mkQuant(w.it_Pron), singularNum, w.abutter_N)
+                its_neighbours_NP = mkNP(mkQuant(w.it_Pron), singularNum, w.abutterMasc_N)
                 phr = mkPhr(mkUtt(mkS(mkCl(its_neighbours_NP, neighbours[0]))), fullStopPunct)
             else:
-                its_neighbours_NP = mkNP(mkQuant(w.it_Pron), pluralNum, w.abutter_N)
+                its_neighbours_NP = mkNP(mkQuant(w.it_Pron), pluralNum, w.abutterMasc_N)
                 phr = mkPhr(mkUtt(mkS(mkCl(its_neighbours_NP, mkNP(w.and_Conj, neighbours)))), fullStopPunct)            
         elif cnc.name in ["ParseFre"]: #"le pays" instead of 3perSg "il"
             if len(neighbours) > 1:
