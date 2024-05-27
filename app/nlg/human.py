@@ -44,10 +44,12 @@ def render(cnc, lexeme, entity):
     current_position = mkCN(w.and_Conj, current_position)
     prev_position = mkCN(w.and_Conj, prev_position)
 
-    occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False)])
+    filter = "Fem" if "Q6581072" in gender else "Masc"
+    occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False, filter=filter)])
     if not occupations:
         if get_items("P184",entity):
-            occupations = mkCN(w.scientistMasc_N)
+            occupations = mkCN(w.scientistFem_N if "Q6581072" in gender else w.scientistMasc_N)
+            # occupations = mkCN(w.scientistMasc_N)
         elif "Q6581097" in gender:
             occupations = mkCN(w.man_1_N)
         elif "Q6581072" in gender:
@@ -302,7 +304,8 @@ def render(cnc, lexeme, entity):
         yield " "+cnc.linearize(phr)
     else:
         for spouse,start,place,end,end_cause in spouses:
-            occupation = cnc.get_lexemes("P106", spouse, qual=False)
+            filter = "Fem" if "Q6581072" in get_items("P21",spouse,qual=False) else "Masc"
+            occupation = cnc.get_lexemes("P106", spouse, qual=False, filter=filter)
             occupation = mkCN(occupation[0]) if occupation else None
             all_adjs, ds = cnc.get_demonyms("P27", spouse)
             if ds:
@@ -377,7 +380,6 @@ def render(cnc, lexeme, entity):
                         #vp = mkVP(mkVP(w.marry_1_V), mkAdv(w.with_Prep, name))
                     else:
                         name = mkNP(mkCN(description, name))
-                print('this other marry')
                 vp = mkVP(w.marry_1_V2,name)
                 if place:
                     vp = mkVP(vp,mkAdv(place[0]))

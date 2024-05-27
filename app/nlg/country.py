@@ -112,11 +112,17 @@ def render(cnc, lexeme, entity):
     population_list = sorted(((population,get_time_qualifier("P585",quals) or "X") for population,quals in get_quantities("P1082",entity)),key=lambda p: p[1],reverse=True)
     if population_list:
         population = int(population_list[0][0])
-        cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(population),w.inhabitant_1_N)))
     else:
         population = None
-    phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
-    yield " " + cnc.linearize(phr)
+    if cnc.name in ["ParseFin"]:
+        phr1 = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
+#        phr2 = mkPhr(mkUtt(mkS(w.there_1_Adv, mkS(mkCl(mkVP(mkNP(mkNum(population),w.inhabitant_1_N)))))), fullStopPunct)
+        phr2 = mkPhr(mkUtt(mkS(w.ExistNPAdv(mkNP(mkNum(population),w.inhabitantMasc_1_N), w.there_1_Adv))), fullStopPunct)
+        yield " " + cnc.linearize(phr1) + " " + cnc.linearize(phr2)
+    else:
+        cn = mkCN(cn,mkAdv(w.with_Prep,mkNP(mkNum(population),w.inhabitantMasc_1_N)))
+        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme),mkNP(aSg_Det,cn)))),fullStopPunct)
+        yield " " + cnc.linearize(phr)
     
     # list neighbours
     neighbours = []
@@ -132,6 +138,8 @@ def render(cnc, lexeme, entity):
                         neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(aSg_Det,direction)))
                     elif cnc.name in ["ParseRus"]:
                         neighbour_expr = mkNP(neighbour_expr,mkAdv(w.at_2_Prep,mkNP(the_Det,direction)))
+                    elif cnc.name in ["ParseFin"]:
+                        neighbour_expr = mkNP(neighbour_expr, mkAdv(w.in_1_Prep,mkNP(the_Det,direction)))
                     else:
                         neighbour_expr = mkNP(neighbour_expr,mkAdv(w.to_2_Prep,mkNP(the_Det,direction)))
             neighbours.append(neighbour_expr)
@@ -142,6 +150,13 @@ def render(cnc, lexeme, entity):
                 phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.ProDrop(w.it_Pron)),mkVP(w.have_1_V2,mkNP(aPl_Det,mkCN(mkCN(w.border_1_N),mkAdv(w.with_Prep,mkNP(w.and_Conj,neighbours)))))))),fullStopPunct)
             else:
                 phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.ProDrop(w.it_Pron)),mkVP(w.have_1_V2,mkNP(aSg_Det,mkCN(mkCN(w.border_1_N),mkAdv(w.with_Prep,neighbours[0]))))))),fullStopPunct)
+        elif cnc.name in ["ParseFin"]:
+            if len(neighbours) == 1:
+                its_neighbours_NP = mkNP(mkQuant(w.it_Pron), singularNum, w.abutterMasc_N)
+                phr = mkPhr(mkUtt(mkS(mkCl(its_neighbours_NP, neighbours[0]))), fullStopPunct)
+            else:
+                its_neighbours_NP = mkNP(mkQuant(w.it_Pron), pluralNum, w.abutterMasc_N)
+                phr = mkPhr(mkUtt(mkS(mkCl(its_neighbours_NP, mkNP(w.and_Conj, neighbours)))), fullStopPunct)            
         elif cnc.name in ["ParseFre"]: #"le pays" instead of 3perSg "il"
             if len(neighbours) > 1:
                 phr = mkPhr(mkUtt(mkS(mkCl(mkNP(theSg_Det,w.country_2_N),mkVP(w.have_1_V2,mkNP(aPl_Det,mkCN(mkCN(w.border_1_N),mkAdv(w.with_Prep,mkNP(w.and_Conj,neighbours)))))))),fullStopPunct)
@@ -278,7 +293,7 @@ def render(cnc, lexeme, entity):
     if suicide_list:
         suicide = round(float(suicide_list[0][0]), 2)
         #The suicide rate stands at [12.4] deaths per 100,000 inhabitants yearly.
-        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(w.stand_at_V2, mkNP(mkNum(suicide), mkCN(mkCN(w.death_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.inhabitant_1_N, w.yearly_Adv))))))))), fullStopPunct)
+        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(the_Det, w.CompoundN(w.suicide_1_N,w.rate_4_N)), mkVP(w.stand_at_V2, mkNP(mkNum(suicide), mkCN(mkCN(w.death_1_N), mkAdv(w.per_Prep, mkNP(mkDigits(int(100000)), mkCN(w.inhabitantMasc_1_N, w.yearly_Adv))))))))), fullStopPunct)
         yield " " + cnc.linearize(phr)
 
 
@@ -287,7 +302,7 @@ def render(cnc, lexeme, entity):
     for city_qid, city_pop, country_qid in largest_cities:
         if entity["id"] == country_qid:
             city_name = cnc.get_lex_fun(city_qid)
-            city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitant_1_N))
+            city_population = mkAdv(w.with_Prep,mkNP(mkDecimal(int(city_pop)),w.inhabitantMasc_1_N))
             np = mkNP(mkDet(the_Quant,singularNum,mkOrd(w.large_1_A)),mkCN(w.city_1_N))
             if cnc.name in ["ParseFre", "ParseSpa"]:
                 np = mkNP(np, mkAdv(w.of_1_Prep,mkNP(lexeme)))
@@ -804,11 +819,11 @@ def render(cnc, lexeme, entity):
                 
             if curr_head_state:
                 if cnc.name in ["ParseFre"]:
-                    bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(the_Det, w.head_of_state_N)))))
+                    bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(the_Det, w.head_of_stateMasc_N)))))
                 elif cnc.name in ["ParseRus"]:
-                    bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.in_1_Prep, mkNP(mkCN(w.capacity_5_N, mkAdv(w.of_3_Prep, mkNP(w.head_of_state_N))))))))
+                    bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.in_1_Prep, mkNP(mkCN(w.capacity_5_N, mkAdv(w.of_3_Prep, mkNP(w.head_of_stateMasc_N))))))))
                 else:
-                    bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(w.head_of_state_N)))))
+                    bfog = mkCN(bfog, mkAdv(w.with_Prep, mkNP(curr_head_state, mkAdv(w.as_Prep, mkNP(w.head_of_stateMasc_N)))))
 
             # [Country name] is a [basic form of government], with [curr_head_state] as head of state.
             phr = mkPhr(mkUtt(mkS(mkCl(mkNP(lexeme), mkNP(aSg_Det, bfog)))), fullStopPunct)
