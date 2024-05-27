@@ -32,6 +32,7 @@ def render(cnc, lexeme, entity):
             useTense = presentTense
         usePastTense = pastTense
         usePastSimpleTense = pastSimpleTense
+        usePasseCompose = [presentTense,anteriorAnt]
 
     current_position = []
     prev_position = []
@@ -46,7 +47,7 @@ def render(cnc, lexeme, entity):
     occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False)])
     if not occupations:
         if get_items("P184",entity):
-            occupations = mkCN(w.scientist_N)
+            occupations = mkCN(w.scientistMasc_N)
         elif "Q6581097" in gender:
             occupations = mkCN(w.man_1_N)
         elif "Q6581072" in gender:
@@ -61,7 +62,7 @@ def render(cnc, lexeme, entity):
         if all_adjs:
             ap = mkAP(w.and_Conj,[mkAP(adj) for adj in ds])
             if current_position:
-                description = mkCN(ap,current_position)
+                description = mkCN(ap,current_position) #né / nacido
                 extra_description = occupations
             else:
                 description = mkCN(ap,occupations)
@@ -81,7 +82,7 @@ def render(cnc, lexeme, entity):
         else:
             description = occupations
             past_description = True
-
+    
     birthday   = get_date("P569",entity)
     birthplace = cnc.get_lexemes("P19", entity, qual=False)
     if birthday or birthplace:
@@ -138,7 +139,7 @@ def render(cnc, lexeme, entity):
             students.append(name)
     if students:
         students = mkNP(w.and_Conj,students)
-        phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisor_1_N),students))))),fullStopPunct)
+        phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(pron),mkNP(theSg_Det,w.PossNP(mkCN(w.supervisorMasc_1_N),students))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
     
 
@@ -185,7 +186,14 @@ def render(cnc, lexeme, entity):
         institutions = mkNP(w.and_Conj, list(institutions))
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkNP(aSg_Det, w.PossNP(mkCN(w.member_4_N), institutions))))),fullStopPunct)
         yield " " + cnc.linearize(phr)
-
+    
+    #institutions = []
+    #for inst, qual in get_entities(["P463"],entity):
+    #    if "P582" not in qual and inst != None:
+    #        lbl = inst["labels"]
+    #        lbl = lbl.get(cnc.lang) or lbl.get("en")
+    #        if lbl:
+    #            institutions.append(lbl["value"])
     yield "</p>"
 
     father = None
@@ -249,21 +257,28 @@ def render(cnc, lexeme, entity):
     deathday   = get_date("P570",entity)
     deathplace = cnc.get_lexemes("P20", entity, qual=False)
 
+    #personal_life = [mother, father, sisters, brothers, siblings, children, number_children_prop, number, unmarried_partners, spouses, spouse_novalue, deathday, deathplace]
+    #if any(personal_life):
+    #   yield '<h2 class="gp-page-title">'+cnc.linearize(mkCN(w.personal_1_A,w.life_3_N))+'</h2>'
+
     if mother or father or sisters or brothers or siblings or children or number_children_prop or number or unmarried_partners or spouses or spouse_novalue or deathday or deathplace:
         yield '<h2 class="gp-page-title">'+cnc.linearize(mkCN(w.personal_1_A,w.life_3_N))+'</h2>'
         yield "<p>"
 
     if mother and father:
-        #if cnc.name in ["ParseFre", "ParseSpa"]:
-        #    vp = mkVP(mkVP(w.bear_1_V), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
-        #else:
-        #    vp = mkVP(passiveVP(w.bear_2_V2), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
-        vp = mkVP(passiveVP(w.bear_2_V2), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
+        if cnc.name in ["ParseFre", "ParseSpa"]:
+            vp = mkVP(mkVP(w.be_born_V), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
+        else:
+            vp = mkVP(passiveVP(w.bear_2_V2), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
         if siblings:
-            vp = w.ConjVPS(w.and_Conj,w.BaseVPS(w.MkVPS(mkTemp(usePastTense,simultaneousAnt),positivePol,vp), w.MkVPS(mkTemp(presentTense,simultaneousAnt),positivePol,mkVP(w.have_1_V2,siblings))))
+            #vp = w.ConjVPS(w.and_Conj,w.BaseVPS(w.MkVPS(mkTemp(usePastTense,simultaneousAnt),positivePol,vp), w.MkVPS(mkTemp(presentTense,simultaneousAnt),positivePol,mkVP(w.have_1_V2,siblings))))
+            print('siblings')
+            vp = w.ConjVPS(w.and_Conj,w.BaseVPS(w.MkVPS(mkTemp(usePastSimpleTense,simultaneousAnt),positivePol,vp), w.MkVPS(mkTemp(presentTense,simultaneousAnt),positivePol,mkVP(w.have_1_V2,siblings))))
             phr = mkPhr(mkUtt(w.PredVPS(mkNP(pron),vp)),fullStopPunct)
         else:
-            phr = mkPhr(mkUtt(mkS(usePastTense,mkCl(mkNP(pron),vp))),fullStopPunct)
+            #phr = mkPhr(mkUtt(mkS(usePastTense,mkCl(mkNP(pron),vp))),fullStopPunct)
+            phr = mkPhr(mkUtt(mkS(usePastSimpleTense,mkCl(mkNP(pron),vp))),fullStopPunct)
+            #phr = mkPhr(mkUtt(mkS(usePasseCompose[0], usePasseCompose[1],mkCl(mkNP(pron),vp))),fullStopPunct)
         yield " "+cnc.linearize(phr)
     elif mother:
         stmt = mkS(useTense,mkCl(mkNP(mkDet(pron,singularNum),mkCN(w.mother_1_N)),mother))
@@ -336,8 +351,9 @@ def render(cnc, lexeme, entity):
                                 start_date = str2date(start_up)
                                 if start_date:
                                     stmt = w.ExtAdvS(start_date,stmt)
-                        vp = mkVP(w.marry_1_V2,mkNP(spouse_pron))
-                        #vp = mkVP(w.marry_1_V)
+                        #vp = mkVP(w.marry_1_V2,mkNP(spouse_pron))
+                        print('this marry')
+                        vp = mkVP(w.marry_1_V)
                         #Spanish / French: they married (se casaron/ils se sont mariés)
                         if place:
                             vp = mkVP(vp,mkAdv(place[0]))
@@ -345,33 +361,35 @@ def render(cnc, lexeme, entity):
                             start_date = str2date(start)
                             if start_date:
                                 vp = mkVP(vp, start_date)
-                        stmt2 = mkS(usePastTense, mkCl(mkNP(pron), vp))
-                        #stmt2 = mkS(usePastTense, mkCl(mkNP(w.they_Pron), vp))
+                        #stmt2 = mkS(usePastTense, mkCl(mkNP(pron), vp))
+                        stmt2 = mkS(usePastSimpleTense, mkCl(mkNP(w.they_Pron), vp))
                         phr = mkPhr(mkUtt(mkS(w.and_Conj, stmt, stmt2)), fullStopPunct)
                         yield " "+cnc.linearize(phr)
                         break
-            
+
             if not partner_spouse and name:
                 if description:
-                    if cnc.name in ["ParseFre", "ParseSpa", "ParseBul"]: #["ParseFre", "ParseBul"]
+                    if cnc.name in ["ParseFre", "ParseBul"]: #["ParseFre", "ParseSpa", "ParseBul"]
                         name = mkNP(the_Det, mkCN(description, name))
-                        vp = mkVP(w.marry_1_V2,name)
-                    #elif cnc.name in ["ParseSpa"]:
-                    #    name = mkNP(the_Det, mkCN(description, name))
-                    #    vp = mkVP(mkVP(w.marry_1_V), mkAdv(w.with_Prep, name))
+                        #vp = mkVP(w.marry_1_V2,name)
+                    elif cnc.name in ["ParseSpa"]:
+                        name = mkNP(the_Det, mkCN(description, name))
+                        #vp = mkVP(mkVP(w.marry_1_V), mkAdv(w.with_Prep, name))
                     else:
-                        name = mkCN(description, name)
-                        vp = mkVP(w.marry_1_V2,mkNP(name))
+                        name = mkNP(mkCN(description, name))
+                print('this other marry')
+                vp = mkVP(w.marry_1_V2,name)
                 if place:
                     vp = mkVP(vp,mkAdv(place[0]))
-                stmt = mkS(usePastTense, mkCl(mkNP(pron), vp))
+                #stmt = mkS(usePastTense, mkCl(mkNP(pron), vp))
+                stmt = mkS(usePastSimpleTense, mkCl(mkNP(pron), vp))
                 if start:
                     start = str2date(start)
                     if start:
                         stmt = w.ExtAdvS(start,stmt)
                 phr = mkPhr(mkUtt(stmt),fullStopPunct)
                 yield " "+cnc.linearize(phr)
-                
+
             if no_names:
                 child_count += same_parent_child
                 det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if number < 10 else mkDet(a_Quant, mkNum(same_parent_child))
@@ -388,12 +406,13 @@ def render(cnc, lexeme, entity):
                     yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
         
             if end and end_cause not in ["Q4", "Q99521170", "Q24037741"]:
-                #if cnc.name in ["ParseFre", "ParseSpa"]:
-                #    vp = mkVP(mkVP(w.divorce_1_V),str2date(end)) #Entity divorced or should we go with "they divorced"?
-                #else:
-                #    vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
-                vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
-                phr = mkPhr(mkUtt(mkS(usePastTense, mkCl(mkNP(pron), vp))),fullStopPunct)
+                if cnc.name in ["ParseFre", "ParseSpa"]:
+                    vp = mkVP(mkVP(w.divorce_2_V),str2date(end)) #Entity divorced or should we go with "they divorced"?
+                else:
+                    vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
+                #vp = mkVP(mkVP(w.divorce_2_V2,mkNP(spouse_pron)),str2date(end))
+                #phr = mkPhr(mkUtt(mkS(usePastTense, mkCl(mkNP(pron), vp))),fullStopPunct)
+                phr = mkPhr(mkUtt(mkS(usePastSimpleTense, mkCl(mkNP(w.they_Pron), vp))),fullStopPunct)
                 yield " "+cnc.linearize(phr)
 
     if spouses and not children and number_children_prop:
@@ -442,6 +461,7 @@ def render(cnc, lexeme, entity):
                     vp = mkVP(w.start_2_V2, mkNP(mkNP(aSg_Det, w.relationship_2_N), mkAdv(w.with_Prep, mkNP(name))))
 
             stmt = mkS(pastSimpleTense, mkCl(mkNP(pron), vp))
+            # presentTense in FR
             if start:
                     start = str2date(start)
                     if start:
@@ -473,7 +493,6 @@ def render(cnc, lexeme, entity):
         #    det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
         #    phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
         #    yield " " + cnc.linearize(phr)
-        other_child = 3
         if other_child > 0:
             if other_child == 1:
                 phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.also_AdV, mkVP(w.have_1_V2, mkNP(w.another_1_Quant, w.child_2_N)))))), fullStopPunct)
@@ -555,7 +574,9 @@ def render(cnc, lexeme, entity):
 
         # He/She received the following awards:
         yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
-        
+        #yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(usePasseCompose[0], usePasseCompose[1], mkCl(mkNP(pron), mkVP(w.receive_1_V2, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))+':'
+
+
         # List of awards:
         if len(awards_dict) < 5:
             column_count = 1
