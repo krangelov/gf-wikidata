@@ -494,18 +494,18 @@ def render(cnc, lexeme, entity):
     # TO DO: Needs some specific work for SPA and FRE
     if number:
         other_child = number - child_count
-        #if other_child > 0:
-        #    det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
-        #    phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
-        #    yield " " + cnc.linearize(phr)
         if other_child > 0:
-            if other_child == 1:
-                phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.also_AdV, mkVP(w.have_1_V2, mkNP(w.another_1_Quant, w.child_2_N)))))), fullStopPunct)
-                yield " " + cnc.linearize(phr)
-            else:
-                det = mkDet(a_Quant, mkNum(mkNumeral(other_child))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
-                phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, mkCN(w.other_1_A, w.child_2_N)))))), fullStopPunct)
-                yield " " + cnc.linearize(phr)
+            det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
+            phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
+            yield " " + cnc.linearize(phr)
+        #if other_child > 0:
+        #    if other_child == 1:
+        #        phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.also_AdV, mkVP(w.have_1_V2, mkNP(w.another_1_Quant, w.child_2_N)))))), fullStopPunct)
+        #        yield " " + cnc.linearize(phr)
+        #    else:
+        #        det = mkDet(a_Quant, mkNum(mkNumeral(other_child))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
+        #        phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, mkCN(w.other_1_A, w.child_2_N)))))), fullStopPunct)
+        #        yield " " + cnc.linearize(phr)
 
     if deathday or deathplace:
         deathmanner= get_items("P1196", entity, qual=False)
