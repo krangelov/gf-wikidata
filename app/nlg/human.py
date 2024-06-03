@@ -375,7 +375,7 @@ def render(cnc, lexeme, entity):
 
             if no_names:
                 child_count += same_parent_child
-                det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if number < 10 else mkDet(a_Quant, mkNum(same_parent_child))
+                det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if same_parent_child < 10 else mkDet(a_Quant, mkNum(same_parent_child))
                 phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
                 yield " " + cnc.linearize(phr)
             else:
