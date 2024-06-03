@@ -375,7 +375,7 @@ def render(cnc, lexeme, entity):
 
             if no_names:
                 child_count += same_parent_child
-                det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if same_parent_child < 10 else mkDet(a_Quant, mkNum(same_parent_child))
+                det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if same_parent_child in range(1,10) else mkDet(a_Quant, mkNum(same_parent_child))
                 phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
                 yield " " + cnc.linearize(phr)
             else:
@@ -399,7 +399,7 @@ def render(cnc, lexeme, entity):
 
     if spouses and not children and number_children_prop:
         child_count += number
-        det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number < 10 else mkDet(a_Quant, mkNum(number))
+        det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number in range(1,10) else mkDet(a_Quant, mkNum(number))
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
         yield " " + cnc.linearize(phr)
 
@@ -452,7 +452,7 @@ def render(cnc, lexeme, entity):
 
             if no_names:
                 child_count += same_parent_child
-                det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if number < 10 else mkDet(a_Quant, mkNum(same_parent_child))
+                det = mkDet(a_Quant, mkNum(mkNumeral(same_parent_child))) if number in range(1,10) else mkDet(a_Quant, mkNum(same_parent_child))
                 phr = mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
                 yield " " + cnc.linearize(phr)
             else:
@@ -471,7 +471,7 @@ def render(cnc, lexeme, entity):
     if number:
         other_child = number - child_count
         if other_child > 0:
-            det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
+            det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if number in range(1,10) else mkDet(a_Quant, mkNum(other_child))
             phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
             yield " " + cnc.linearize(phr)
 
