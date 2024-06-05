@@ -18,7 +18,7 @@ def render(cnc, lexeme, entity):
     speakers_list = sorted(((speakers,get_time_qualifier("P585",quals) or "X") for speakers,quals in get_quantities("P1098",entity)),key=lambda p: p[1],reverse=True)
     if speakers_list:
         speakers = int(speakers_list[0][0])
-        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNum(speakers),w.speaker_1_N)))),fullStopPunct)
+        phr = mkPhr(mkUtt(mkS(mkCl(mkNP(mkNum(speakers),w.speakerMasc_1_N)))),fullStopPunct)
         yield " "+cnc.linearize(phr)
 
     yield '<h2 class="gp-page-title">'+cnc.linearize(w.grammar_N)+'</h2>'
