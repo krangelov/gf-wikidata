@@ -191,6 +191,8 @@ def render_page(query, start_response):
     from nlg import render, render_list
     from nlg.util import get_entity, ConcrHelper
 
+    wordnet.w.__pgf__.checkoutBranch()
+
     if qid != None:
         entity = get_entity(qid)
         cnc = ConcrHelper(wordnet.grammar.languages[langs[lang][1]],lang,edit)
