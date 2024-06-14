@@ -119,7 +119,7 @@ def render(cnc, lexeme, entity):
     if advisors:
         num = singularNum if len(advisors) == 1 else pluralNum
         advisors = mkNP(w.and_Conj,advisors)
-        yield " "+cnc.linearize(mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(mkDet(pron,num),mkCN(w.doctoral_adviser_N)),advisors))),fullStopPunct))
+        yield " "+cnc.linearize(mkPhr(mkUtt(mkS(usePastTense,mkCl(mkNP(mkDet(pron,num),mkCN(w.doctoral_adviser_N)),advisors))),fullStopPunct))
 
     teachers = []
     adviser_teacher = False
@@ -166,12 +166,17 @@ def render(cnc, lexeme, entity):
         num = singularNum if len(native_lang) == 1 else pluralNum
         native_lang = mkNP(w.and_Conj,native_lang)
         other_langs = mkNP(w.and_Conj,other_langs)
+
+        if cnc.name in ["ParseDut","ParseSwe"]:
+            nat_lang_CN = mkCN(w.CompoundN(w.mother_1_N, w.language_1_N))
+        else:
+            nat_lang_CN = mkCN(w.native_2_A, w.language_1_N)
+        phr = mkS(useTense,mkCl(mkNP(mkDet(pron,num), nat_lang_CN), native_lang))
+
         if other_langs:
             # His/Her native lang(s) is/are [...] but he also speaks [...]
-            phr = mkPhr(mkUtt(mkS(w.but_1_Conj,mkS(useTense,mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang)),mkS(useTense,mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))),fullStopPunct)
-        else:
-            # His/Her native lang(s) is/are [...]
-            phr = mkPhr(mkUtt(mkS(useTense,mkCl(mkNP(mkDet(pron,num), mkCN(w.native_2_A, w.language_1_N)), native_lang))),fullStopPunct)
+            phr = mkS(w.but_1_Conj,phr,mkS(useTense,mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))
+        phr = mkPhr(mkUtt(phr),fullStopPunct)
         yield " " + cnc.linearize(phr)
     elif other_langs:
         other_langs = mkNP(w.and_Conj,other_langs)
@@ -540,6 +545,9 @@ def render(cnc, lexeme, entity):
 
         if cnc.name in ["ParseFre"]: #Il/Elle a obtenu son diplôme de [la/le/l'] + institution(s)
             phr = mkPhr(mkUtt(mkS(useTense,usePasseCompose, mkCl(mkNP(pron), mkVP(mkVP(w.obtain_1_V2, mkNP(mkQuant(pron), w.degree_3_N)), mkAdv(w.from_Prep, universities))))),fullStopPunct)
+        elif cnc.name in ["ParseDut"]:
+            # He/She graduated from [university name]
+            phr = mkPhr(mkUtt(mkS(presentTense,anteriorAnt, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.at_1_Prep, universities))))),fullStopPunct)
         else:
             # He/She graduated from [university name]
             phr = mkPhr(mkUtt(mkS(usePastTense, mkCl(mkNP(pron), mkVP(mkVP(w.graduate_V), mkAdv(w.from_Prep, universities))))),fullStopPunct)
