@@ -180,7 +180,7 @@ def render(cnc, lexeme, entity):
     area_list = sorted(((area,get_time_qualifier("P585",quals)) for area,quals in get_quantities("P2046",entity)),key=lambda p: p[1] or "",reverse=True)
     if area_list:
         area = area_list[0][0]
-        if cnc.name in ["ParseSwe", "ParseGer", "ParseFin", "ParseDut"]:
+        if cnc.name in ["ParseSwe", "ParseGer", "ParseFin"]:
             sq_km = w.CompoundN(w.square_1_N,w.kilometre_1_N)
         else:
             sq_km = mkCN(w.square_1_A,w.kilometre_1_N)
