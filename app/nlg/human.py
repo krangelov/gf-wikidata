@@ -167,12 +167,7 @@ def render(cnc, lexeme, entity):
         native_lang = mkNP(w.and_Conj,native_lang)
         other_langs = mkNP(w.and_Conj,other_langs)
 
-        if cnc.name in ["ParseDut","ParseSwe"]:
-            nat_lang_CN = mkCN(w.CompoundN(w.mother_1_N, w.language_1_N))
-        else:
-            nat_lang_CN = mkCN(w.native_2_A, w.language_1_N)
-        phr = mkS(useTense,mkCl(mkNP(mkDet(pron,num), nat_lang_CN), native_lang))
-
+        phr = mkS(useTense,mkCl(mkNP(mkDet(pron,num), mkCN(w.native_language_N)), native_lang))
         if other_langs:
             # His/Her native lang(s) is/are [...] but he also speaks [...]
             phr = mkS(w.but_1_Conj,phr,mkS(useTense,mkCl(mkNP(pron), mkVP(w.also_AdV,mkVP(w.speak_3_V2, other_langs)))))
