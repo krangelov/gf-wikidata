@@ -382,6 +382,9 @@ def render(cnc, lexeme, entity):
                     else:
                         name = mkNP(mkCN(description, name))
                         vp = mkVP(w.marry_1_V2,name)
+                else:
+                    vp = mkVP(w.marry_1_V2,name)
+
                 if place:
                     vp = mkVP(vp,mkAdv(place[0]))
                 if cnc.name in ["ParseFre"]:
