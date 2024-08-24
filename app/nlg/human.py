@@ -498,24 +498,19 @@ def render(cnc, lexeme, entity):
                         det = mkDet(a_Quant,mkNum(number_children))
                     child_count += number_children
                     yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
-
-    # If the entity has other children but we have no info about their parents
-    # [entity] has X more child(ren).
+    
+    # If the entity has (other) child(ren) but we have no info about the other parent
     # TO DO: Needs some specific work for SPA and FRE
     if number:
         other_child = number - child_count
         if other_child > 0:
-            det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if number in range(1,10) else mkDet(a_Quant, mkNum(other_child))
-            phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
-            yield " " + cnc.linearize(phr)
-        #if other_child > 0:
-        #    if other_child == 1:
-        #        phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.also_AdV, mkVP(w.have_1_V2, mkNP(w.another_1_Quant, w.child_2_N)))))), fullStopPunct)
-        #        yield " " + cnc.linearize(phr)
-        #    else:
-        #        det = mkDet(a_Quant, mkNum(mkNumeral(other_child))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
-        #        phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, mkCN(w.other_1_A, w.child_2_N)))))), fullStopPunct)
-        #        yield " " + cnc.linearize(phr)
+            if child_count == 0: # no info about the other parent AND no other child(ren) mentioned before (child_count == 0)
+                det = mkDet(a_Quant, mkNum(mkNumeral(other_child))) if other_child in range(1,10) else mkDet(a_Quant, mkNum(other_child))
+            else:
+                det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if other_child in range(1,10) else mkDet(a_Quant, w.NumMore(mkNum(other_child)))
+        # [entity] has X child(ren) / [entity] has X more child(ren)
+        phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
+        yield " " + cnc.linearize(phr)
 
     if deathday or deathplace:
         deathmanner= get_items("P1196", entity, qual=False)
