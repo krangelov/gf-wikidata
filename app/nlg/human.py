@@ -609,10 +609,11 @@ def render(cnc, lexeme, entity):
     #TO DO: Add year?
     nominations = get_entities(["P1411"],entity,qual=False)
     if nominations:
+        prep = w.to_1_Prep if cnc.name in ["ParseSpa"] else w.for_Prep
         if awards_dict:
-            yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(useTense,usePasseCompose, mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(passiveVP(mkVPSlash(w.nominate_1_V2)), mkAdv(w.for_Prep, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))))+':'
+            yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(useTense,usePasseCompose, mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(passiveVP(mkVPSlash(w.nominate_1_V2)), mkAdv(prep, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))))+':'
         else:
-            yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(useTense,usePasseCompose, mkCl(mkNP(pron), mkVP(passiveVP(mkVPSlash(w.nominate_1_V2)), mkAdv(w.for_Prep, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N)))))))))+':'
+            yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(useTense,usePasseCompose, mkCl(mkNP(pron), mkVP(passiveVP(mkVPSlash(w.nominate_1_V2)), mkAdv(prep, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N)))))))))+':'
         yield "<ul>"
         for nomination in nominations:
             lbl = nomination["labels"]
