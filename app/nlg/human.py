@@ -66,9 +66,8 @@ def render(cnc, lexeme, entity):
             occupations = mkCN(w.woman_1_N)
         else:
             occupations = mkCN(w.human_N)
-
+    
     extra_description = False
-    past_description = False
     all_adjs,ds = cnc.get_demonyms("P27", entity)
     if ds:
         if all_adjs:
@@ -86,14 +85,12 @@ def render(cnc, lexeme, entity):
                 extra_description = occupations
             else:
                 description = mkCN(occupations,mkAdv(w.from_Prep,np))
-                past_description = True
     else:
         if current_position:
             description = current_position
             extra_description = occupations
         else:
             description = occupations
-            past_description = True
     
     birthday   = get_date("P569",entity)
     birthplace = cnc.get_lexemes("P19", entity, qual=False)
@@ -111,8 +108,7 @@ def render(cnc, lexeme, entity):
     if extra_description:
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,extra_description)))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
-    # double check this! (ex. Trump)
-    if past_description and prev_position:
+    if prev_position:
         phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron),mkNP(aSg_Det,prev_position)))),fullStopPunct)
         yield " "+cnc.linearize(phr)
 
