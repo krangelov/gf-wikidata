@@ -17,9 +17,15 @@ def render(cnc, lexeme, entity):
     yield "<p>"
 
     if "Q6581072" in gender:
-        pron = w.she_Pron
+        if cnc.name in ["ParseSpa"]:
+            pron = w.ProDrop(w.she_Pron)
+        else:
+            pron = w.she_Pron
     else:
-        pron = w.he_Pron
+        if cnc.name in ["ParseSpa"]:
+            pron = w.ProDrop(w.he_Pron)
+        else:
+            pron = w.he_Pron
 
     if cnc.name in ["ParseBul"]:
         useTense = presentTense
@@ -56,6 +62,7 @@ def render(cnc, lexeme, entity):
     else:
         filter = "Fem" if "Q6581072" in gender else "Masc"
         occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False, filter=filter)])
+
     if not occupations:
         if get_items("P184",entity):
             occupations = mkCN(w.scientistFem_N if "Q6581072" in gender else w.scientistMasc_N)
@@ -65,21 +72,20 @@ def render(cnc, lexeme, entity):
             occupations = mkCN(w.woman_1_N)
         else:
             occupations = mkCN(w.human_N)
-
+    
     extra_description = False
-    past_description = False
     all_adjs,ds = cnc.get_demonyms("P27", entity)
     if ds:
         if all_adjs:
             ap = mkAP(w.and_Conj,[mkAP(adj) for adj in ds])
             if current_position:
                 if cnc.name in ["ParseRus"]:
-                    positions = [mkCN(ap, current_position[0]),]
+                    positions = [mkCN(ap, current_position[0]), ]
                     positions.extend(current_position[1:])
-                    description = mkCN(w.and_Conj,positions)
-                    extra_description = mkCN(w.and_Conj,occupations)
+                    description = mkCN(w.and_Conj, positions)
+                    extra_description = mkCN(w.and_Conj, occupations)
                 else:
-                    description = mkCN(ap,current_position) #né / nacido
+                    description = mkCN(ap, current_position)  # né / nacido
                     extra_description = occupations
             else:
                 if cnc.name in ["ParseRus"]:
@@ -87,7 +93,7 @@ def render(cnc, lexeme, entity):
                     positions.extend(occupations[1:])
                     description = mkCN(w.and_Conj, positions)
                 else:
-                    description = mkCN(ap,occupations)
+                    description = mkCN(ap, occupations)
         else:
             np = mkNP(w.and_Conj,[mkNP(pn) for pn in ds])
             description = mkCN(occupations,mkAdv(w.from_Prep,np))
@@ -96,14 +102,12 @@ def render(cnc, lexeme, entity):
                 extra_description = occupations
             else:
                 description = mkCN(occupations,mkAdv(w.from_Prep,np))
-                past_description = True
     else:
         if current_position:
             description = current_position
             extra_description = occupations
         else:
             description = occupations
-            past_description = True
     
     birthday   = get_date("P569",entity)
     birthplace = cnc.get_lexemes("P19", entity, qual=False)
@@ -127,8 +131,7 @@ def render(cnc, lexeme, entity):
     if extra_description:
         phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(mkNP(aSg_Det,extra_description)))))),fullStopPunct)
         yield " "+cnc.linearize(phr)
-    # double check this! (ex. Trump)
-    if past_description and prev_position:
+    if prev_position:
         phr = mkPhr(mkUtt(mkS(pastSimpleTense, mkCl(mkNP(pron),mkNP(aSg_Det,prev_position)))),fullStopPunct)
         yield " "+cnc.linearize(phr)
 
@@ -305,7 +308,8 @@ def render(cnc, lexeme, entity):
 
     if mother and father:
         if cnc.name in ["ParseFre", "ParseSpa", "ParseRus"]:
-            vp = mkVP(mkVP(w.be_born_V), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
+            prep = w.into_1_Prep if cnc.name in ["ParseFre"] else w.in_1_Prep
+            vp = mkVP(mkVP(w.be_born_V), mkAdv(prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
         else:
             vp = mkVP(passiveVP(w.bear_2_V2), mkAdv(w.in_1_Prep, mkNP(theSg_Det,w.PossNP(mkCN(w.family_1_N),mkNP(w.and_Conj,[father,mother])))))
         if siblings:
@@ -540,24 +544,19 @@ def render(cnc, lexeme, entity):
                         det = mkDet(a_Quant,mkNum(number_children))
                     child_count += number_children
                     yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
-
-    # If the entity has other children but we have no info about their parents
-    # [entity] has X more child(ren).
+    
+    # If the entity has (other) child(ren) but we have no info about the other parent
     # TO DO: Needs some specific work for SPA and FRE
     if number:
         other_child = number - child_count
         if other_child > 0:
-            det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if number in range(1,10) else mkDet(a_Quant, mkNum(other_child))
-            phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
-            yield " " + cnc.linearize(phr)
-        #if other_child > 0:
-        #    if other_child == 1:
-        #        phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.also_AdV, mkVP(w.have_1_V2, mkNP(w.another_1_Quant, w.child_2_N)))))), fullStopPunct)
-        #        yield " " + cnc.linearize(phr)
-        #    else:
-        #        det = mkDet(a_Quant, mkNum(mkNumeral(other_child))) if number < 10 else mkDet(a_Quant, mkNum(other_child))
-        #        phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, mkCN(w.other_1_A, w.child_2_N)))))), fullStopPunct)
-        #        yield " " + cnc.linearize(phr)
+            if child_count == 0: # no info about the other parent AND no other child(ren) mentioned before (child_count == 0)
+                det = mkDet(a_Quant, mkNum(mkNumeral(other_child))) if other_child in range(1,10) else mkDet(a_Quant, mkNum(other_child))
+            else:
+                det = mkDet(a_Quant, w.NumMore(mkNum(mkNumeral(other_child)))) if other_child in range(1,10) else mkDet(a_Quant, w.NumMore(mkNum(other_child)))
+        # [entity] has X child(ren) / [entity] has X more child(ren)
+        phr = mkPhr(mkUtt(mkS(mkCl(lexeme, mkVP(w.have_1_V2, mkNP(det, w.child_2_N))))), fullStopPunct)
+        yield " " + cnc.linearize(phr)
 
     if deathday or deathplace:
         deathmanner= get_items("P1196", entity, qual=False)
@@ -661,7 +660,11 @@ def render(cnc, lexeme, entity):
     #TO DO: Add year?
     nominations = get_entities(["P1411"],entity,qual=False)
     if nominations:
-        yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(useTense,usePasseCompose, mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(passiveVP(mkVPSlash(w.nominate_1_V2)), mkAdv(w.for_Prep, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))))+':'
+        prep = w.to_1_Prep if cnc.name in ["ParseSpa"] else w.for_Prep
+        if awards_dict:
+            yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(useTense,usePasseCompose, mkCl(mkNP(pron), mkVP(w.also_AdV, mkVP(passiveVP(mkVPSlash(w.nominate_1_V2)), mkAdv(prep, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N))))))))))+':'
+        else:
+            yield '<p>'+cnc.linearize(mkPhr(mkUtt(mkS(useTense,usePasseCompose, mkCl(mkNP(pron), mkVP(passiveVP(mkVPSlash(w.nominate_1_V2)), mkAdv(prep, mkNP(thePl_Det,mkCN(w.following_2_A, w.award_3_N)))))))))+':'
         yield "<ul>"
         for nomination in nominations:
             lbl = nomination["labels"]
