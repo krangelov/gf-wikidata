@@ -406,7 +406,7 @@ def render(cnc, lexeme, entity):
                                 if start_date:
                                     stmt = w.ExtAdvS(start_date,stmt)
                         #vp = mkVP(w.marry_1_V2,mkNP(spouse_pron))
-                        vp = mkVP(w.marry_1_V)
+                        vp = mkVP(w.marry_1a_V)
                         #Spanish / French: they married (se casaron/ils se sont mariés)
                         if place:
                             vp = mkVP(vp,mkAdv(place[0]))
@@ -428,15 +428,15 @@ def render(cnc, lexeme, entity):
                 if description:
                     if cnc.name in ["ParseFre", "ParseBul"]:
                         name = mkNP(the_Det, mkCN(description, name))
-                        vp = mkVP(w.marry_1_V2,name)
+                        vp = mkVP(w.marry_1a_V2,name)
                     elif cnc.name in ["ParseSpa"]:
                         name = mkNP(the_Det, mkCN(description, name))
-                        vp = mkVP(mkVP(w.marry_1_V), mkAdv(w.with_Prep, name))
+                        vp = mkVP(mkVP(w.marry_1a_V), mkAdv(w.with_Prep, name))
                     else:
                         name = mkNP(mkCN(description, name))
-                        vp = mkVP(w.marry_1_V2,name)
+                        vp = mkVP(w.marry_1a_V2,name)
                 else:
-                    vp = mkVP(w.marry_1_V2,name)
+                    vp = mkVP(w.marry_1a_V2,name)
 
                 if place:
                     vp = mkVP(vp,mkAdv(place[0]))
