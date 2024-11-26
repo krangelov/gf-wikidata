@@ -76,7 +76,8 @@ def render(cnc, lexeme, entity):
             current_position.append(mkCN(position))
     if cnc.name not in ["ParseRus"]:
         current_position = mkCN(w.and_Conj, current_position)
-        prev_position = mkCN(w.and_Conj, prev_position)
+    prev_position = mkCN(w.and_Conj, prev_position)
+
 
     if cnc.name in ["ParseRus"]:
         occupations = [mkCN(occupation) for occupation in
@@ -106,13 +107,12 @@ def render(cnc, lexeme, entity):
                     description = mkCN(w.and_Conj,positions)
                     extra_description = mkCN(w.and_Conj,occupations)
                 else:
-                    description = mkCN(ap, current_position)  # né / nacido
+                    description = mkCN(ap,current_position) #né / nacido
                     extra_description = occupations
             else:
                 if cnc.name in ["ParseRus"]:
                     positions = [mkCN(ap, occupations[0]), ]
                     positions.extend(occupations[1:])
-                    occupations = mkCN(w.and_Conj, occupations)
                     description = mkCN(w.and_Conj, positions)
                 else:
                     description = mkCN(ap, occupations)
@@ -120,7 +120,6 @@ def render(cnc, lexeme, entity):
             if cnc.name in ["ParseRus"]:
                 occupations = mkCN(w.and_Conj, occupations)
             np = mkNP(w.and_Conj,[mkNP(pn) for pn in ds])
-            description = mkCN(occupations,mkAdv(w.from_Prep,np))
             if current_position:
                 if cnc.name in ["ParseRus"]:
                     description = mkCN(mkCN(w.and_Conj, current_position), mkAdv(w.from_Prep, np))
