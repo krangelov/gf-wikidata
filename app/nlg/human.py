@@ -76,7 +76,7 @@ def render(cnc, lexeme, entity):
             current_position.append(mkCN(position))
     if cnc.name not in ["ParseRus"]:
         current_position = mkCN(w.and_Conj, current_position)
-        prev_position = mkCN(w.and_Conj, prev_position)
+    prev_position = mkCN(w.and_Conj, prev_position)
 
     if cnc.name in ["ParseRus"]:
         occupations = [mkCN(occupation) for occupation in
@@ -139,9 +139,6 @@ def render(cnc, lexeme, entity):
     birthday   = get_date("P569",entity)
     birthplace = cnc.get_lexemes("P19", entity, qual=False)
     if birthday or birthplace:
-       # if cnc.name in ["ParseRus"]:
-       #     verb = mkVPSlash(w.be_born_V)
-       # else:
         verb = mkVPSlash(w.bear_2_V2)
         if birthday:
             verb = mkVPSlash(verb,birthday)
@@ -347,9 +344,14 @@ def render(cnc, lexeme, entity):
         if siblings:
             if cnc.name in ["ParseFre"]:
                 vp = w.ConjVPS(w.and_Conj,w.BaseVPS(w.MkVPS(mkTemp(useTense, usePasseCompose),positivePol,vp), w.MkVPS(mkTemp(presentTense,simultaneousAnt),positivePol,mkVP(w.have_1_V2,siblings))))
+                phr = mkPhr(mkUtt(w.PredVPS(mkNP(pron), vp)), fullStopPunct)
+            elif cnc.name in ["ParseRus"]:
+                stm2 = mkS(mkAdv(w.at_1_Prep, mkNP(pron)), mkS(mkCl(siblings)))
+                phr = mkPhr(mkUtt(mkS(w.and_Conj, mkS(usePastTense,mkCl(mkNP(pron),vp)), stm2)), fullStopPunct)
+                #phr = mkPhr(mkUtt(stm2),fullStopPunct)
             else:
                 vp = w.ConjVPS(w.and_Conj,w.BaseVPS(w.MkVPS(mkTemp(usePastTense,simultaneousAnt),positivePol,vp), w.MkVPS(mkTemp(presentTense,simultaneousAnt),positivePol,mkVP(w.have_1_V2,siblings))))
-            phr = mkPhr(mkUtt(w.PredVPS(mkNP(pron),vp)),fullStopPunct)
+                phr = mkPhr(mkUtt(w.PredVPS(mkNP(pron),vp)),fullStopPunct)
         else:
             if cnc.name in ["ParseFre"]:
                 phr = mkPhr(mkUtt(mkS(useTense, usePasseCompose,mkCl(mkNP(pron),vp))),fullStopPunct)
@@ -496,7 +498,11 @@ def render(cnc, lexeme, entity):
                     else:
                         det = mkDet(a_Quant,mkNum(number_children))
                     child_count += number_children
-                    yield " " + cnc.linearize(mkPhr(mkUtt(mkS(useTense, mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
+                    if cnc.name in ["ParseRus"]:
+                        children_sent = mkS(mkAdv(w.at_1_Prep, mkNP(pron)), mkS(useTense, mkCl(mkNP(det, mkCN(w.child_2_N)))))
+                    else:
+                        children_sent = mkS(useTense, mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))
+                    yield " " + cnc.linearize(mkPhr(mkUtt(children_sent))) + ":" + cnc.linearize(child_name) + "."
         
             if end and end_cause not in ["Q4", "Q99521170", "Q24037741"]:
                 vp = mkVP(mkVP(w.divorce_2_V),str2date(end))
@@ -512,7 +518,10 @@ def render(cnc, lexeme, entity):
             phr = mkPhr(mkUtt(mkS(negativePol, mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(aPl_Det, mkCN(w.child_2_N)))))), fullStopPunct)
         else:
             det = mkDet(a_Quant, mkNum(mkNumeral(number))) if number in range(1,10) else mkDet(a_Quant, mkNum(number))
-            phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
+            if cnc.name in ["ParseRus"]:
+                phr = mkPhr(mkUtt(mkS(mkAdv(w.at_1_Prep, mkNP(pron)), mkS(mkCl(mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
+            else:
+                phr = mkPhr(mkUtt(mkS(mkCl(mkNP(pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))), fullStopPunct)
         yield " " + cnc.linearize(phr)
 
     for partner,start,end,end_cause in unmarried_partners:
@@ -578,7 +587,11 @@ def render(cnc, lexeme, entity):
                     else:
                         det = mkDet(a_Quant,mkNum(number_children))
                     child_count += number_children
-                    yield " " + cnc.linearize(mkPhr(mkUtt(mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))))) + ":" + cnc.linearize(child_name) + "."
+                    if cnc.name in ["ParseRus"]:
+                        children_sent = mkS(mkAdv(w.at_1_Prep, mkNP(pron)), mkS(mkCl(mkNP(det, mkCN(w.child_2_N)))))
+                    else:
+                        children_sent = mkS(mkCl(mkNP(w.they_Pron), mkVP(w.have_1_V2, mkNP(det, mkCN(w.child_2_N)))))
+                    yield " " + cnc.linearize(mkPhr(mkUtt(children_sent))) + ":" + cnc.linearize(child_name) + "."
     
     # If the entity has (other) child(ren) but we have no info about the other parent
     # TO DO: Needs some specific work for SPA and FRE
