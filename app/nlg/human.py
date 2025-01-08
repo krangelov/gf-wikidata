@@ -68,7 +68,12 @@ def render(cnc, lexeme, entity):
 
     current_position = []
     prev_position = []
-    filter = "Fem" if "Q6581072" in gender else "Masc"
+
+    if cnc.name in ["ParseRus"]:
+        filter = "Masc"
+    else:
+        filter = "Fem" if "Q6581072" in gender else "Masc"
+
     for position, qual in cnc.get_lexemes("P39", entity, filter=filter):
         if 'P582' in qual:
             prev_position.append(mkCN(position))
@@ -78,22 +83,19 @@ def render(cnc, lexeme, entity):
         current_position = mkCN(w.and_Conj, current_position)
     prev_position = mkCN(w.and_Conj, prev_position)
 
-    if cnc.name in ["ParseRus"]:
-        occupations = [mkCN(occupation) for occupation in
-                                        cnc.get_lexemes("P106", entity, qual=False, filter="Masc")]
-    else:
-        occupations = mkCN(w.and_Conj,[mkCN(occupation) for occupation in cnc.get_lexemes("P106", entity, qual=False, filter=filter)])
+    occupations = [mkCN(occupation) for occupation in
+                                    cnc.get_lexemes("P106", entity, qual=False, filter=filter)]
 
     if not occupations:
         if get_items("P184",entity):
-            occupations = mkCN(w.scientistFem_N if "Q6581072" in gender else w.scientistMasc_N)
+            occupations = [mkCN(w.scientistFem_N if "Q6581072" in gender else w.scientistMasc_N)]
         elif "Q6581097" in gender:
-            occupations = mkCN(w.man_1_N)
+            occupations = [mkCN(w.man_1_N)]
         elif "Q6581072" in gender:
-            occupations = mkCN(w.woman_1_N)
+            occupations = [mkCN(w.woman_1_N)]
         else:
-            occupations = mkCN(w.human_N)
-    
+            occupations = [mkCN(w.human_N)]
+
     extra_description = False
     all_adjs,ds = cnc.get_demonyms("P27", entity)
     if ds:
@@ -107,35 +109,31 @@ def render(cnc, lexeme, entity):
                     extra_description = mkCN(w.and_Conj,occupations)
                 else:
                     description = mkCN(ap, current_position)  # né / nacido
-                    extra_description = occupations
+                    extra_description = mkCN(w.and_Conj,occupations)
             else:
                 if cnc.name in ["ParseRus"]:
-                    positions = [mkCN(ap, occupations[0]), ]
+                    positions = [mkCN(ap, occupations[0])]
                     positions.extend(occupations[1:])
                     occupations = mkCN(w.and_Conj, occupations)
                     description = mkCN(w.and_Conj, positions)
                 else:
-                    description = mkCN(ap, occupations)
+                    description = mkCN(ap, mkCN(w.and_Conj,occupations))
         else:
-            if cnc.name in ["ParseRus"]:
-                occupations = mkCN(w.and_Conj, occupations)
             np = mkNP(w.and_Conj,[mkNP(pn) for pn in ds])
-            description = mkCN(occupations,mkAdv(w.from_Prep,np))
+            description = mkCN(mkCN(w.and_Conj, occupations),mkAdv(w.from_Prep,np))
             if current_position:
                 if cnc.name in ["ParseRus"]:
                     description = mkCN(mkCN(w.and_Conj, current_position), mkAdv(w.from_Prep, np))
                 else:
                     description = mkCN(current_position,mkAdv(w.from_Prep,np))
-                extra_description = occupations
-            else:
-                description = mkCN(occupations,mkAdv(w.from_Prep,np))
+                extra_description = mkCN(w.and_Conj, occupations)
     else:
         if current_position:
             description = current_position
-            extra_description = occupations
+            extra_description = mkCN(w.and_Conj, occupations)
         else:
-            description = occupations
-    
+            description = mkCN(w.and_Conj, occupations)
+
     birthday   = get_date("P569",entity)
     birthplace = cnc.get_lexemes("P19", entity, qual=False)
     if birthday or birthplace:
