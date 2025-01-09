@@ -103,7 +103,12 @@ def render(cnc, lexeme, entity):
         name_date_gov.sort(key=lambda x: x[1], reverse=True)
         prev_head_gov_qid = name_date_gov[0][0]
 
-    entities = get_entity([curr_head_gov_qid,prev_head_gov_qid])
+    head_gov = []
+    if curr_head_gov_qid:
+        head_gov.append(curr_head_gov_qid)
+    if prev_head_gov_qid:
+        head_gov.append(prev_head_gov_qid)
+    entities = get_entity(head_gov)
 
     # Linearizing:
     # The current head of government is [position] [name], who took office after [position] [name].
