@@ -556,10 +556,9 @@ def render(cnc, lexeme, entity):
             if description:
                 if cnc.name in ["ParseFre", "ParseSpa", "ParseBul"]:
                     name = mkNP(the_Det, mkCN(description, name))
-                    vp = mkVP(w.start_2_V2, mkNP(mkNP(aSg_Det, w.relationship_2_N), mkAdv(w.with_Prep, name)))
                 else:
-                    name = mkCN(description, name)
-                    vp = mkVP(w.start_2_V2, mkNP(mkNP(aSg_Det, w.relationship_2_N), mkAdv(w.with_Prep, mkNP(name))))
+                    name = mkNP(mkCN(description, name))
+            vp = mkVP(w.start_2_V2, mkNP(mkNP(aSg_Det, w.relationship_2_N), mkAdv(w.with_Prep, name)))
 
             if cnc.name in ["ParseFre"]:
                 stmt = mkS(useTense, mkCl(mkNP(pron), vp))
