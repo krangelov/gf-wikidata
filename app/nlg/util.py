@@ -121,7 +121,9 @@ class ConcrHelper:
 								text += '</a>'
 				elif isinstance(x,pgf.BIND):
 					bind = True
-		flatten(self.cnc.bracketedLinearize(e))
+		lin = self.cnc.bracketedLinearize(e)
+		if lin:
+			flatten(lin)
 		if len(text) > 0:
 			text = text[0].upper()+text[1:]
 			if self.edit:
