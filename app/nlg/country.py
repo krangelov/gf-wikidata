@@ -635,13 +635,13 @@ def render(cnc, lexeme, entity):
                 position_state = mkCN(w.prince_N)
                 break
             elif qid == 'Q258045': # San Marino
-                position_state = mkCN((w.CompoundN(w.captain_1_N, w.regent_1_N)))
+                position_state = mkCN((w.CompoundN(w.captainMasc_1_N, w.regentMasc_1_N)))
                 break
             elif qid == 'Q2081829': # Afghanistan
                 position_state = mkCN(w.amir_N)
                 break
             elif qid == 'Q1402561': # Burkina Faso
-                position_state = mkCN(w.military_2_A, w.leader_1_N)
+                position_state = mkCN(w.military_2_A, w.leaderMasc_1_N)
                 break
             elif qid == 'Q1472951': # Jamaica
                 position_state = mkCN(w.governor_general_N)
