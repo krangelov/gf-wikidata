@@ -1043,9 +1043,11 @@ def render(cnc, lexeme, entity):
             elif quality == "Q7174":
                 quality = mkNP(aSg_Det,mkCN(w.democratic_1_A,w.country_1_N))
                 break
+        else:
             quality = None
-        phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
-        yield " "+cnc.linearize(phr)
+        if quality:
+            phr = mkPhr(mkUtt(mkS(pol,mkCl(mkNP(w.freedom_in_the_world_PN), mkVP(mkVPSlash(w.consider_6_V3,mkNP(w.it_Pron)), quality)))), fullStopPunct)
+            yield " "+cnc.linearize(phr)
 
     # designated as terrorist state
     agents = []
