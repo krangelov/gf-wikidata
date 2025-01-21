@@ -666,7 +666,7 @@ def render(cnc, lexeme, entity):
                         position_state = mkCN(w.sultan_N)
                         break
                     elif subclass_qid == 'Q7645115': # supreme leader
-                        position_state = mkCN(w.supreme_2_A, w.leader_1_N)
+                        position_state = mkCN(w.supreme_2_A, w.leaderMasc_1_N)
                         break
                     elif subclass_qid == 'Q166382': # emir
                         position_state = mkCN(w.emir_N)
