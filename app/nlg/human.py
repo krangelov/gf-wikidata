@@ -664,12 +664,8 @@ def render(cnc, lexeme, entity):
 
     # award received:
     awards_dict = {}
-    for qid, qual in get_items("P166",entity):
-        award = cnc.get_lex_fun(qid)
-        if not award:
-            continue
-
-        dates = awards_dict.setdefault(award,[])
+    for award,qual in get_entities("P166",entity,qual=True):
+        dates = awards_dict.setdefault(award["id"],(award,[]))[1]
         if "P585" in qual:
             date = get_time_qualifier("P585",qual)
             dates.append(date)
@@ -692,13 +688,17 @@ def render(cnc, lexeme, entity):
         else:
             column_count = 4
         yield "<ul style='column-count: "+str(column_count)+"'>"
-        for key,dates in awards_dict.items():
+        for award,dates in awards_dict.values():
+            lbl = award["labels"]
+            lbl = lbl.get(cnc.lang) or lbl.get("en")
+            if not lbl:
+                continue
             if len(dates) > 1:
                 # it extracts the year part (ex.: 2019) from each date string (ex.: '+2019-00-00T00:00:00Z') and constructs the date_string with years only
                 date_string = ", ".join([date.split('-')[0].lstrip('+') for date in dates])
-                yield "<li>"+cnc.linearize(key) + " (" + cnc.linearize(w.in_1_Prep) + " " + date_string +")"+"</li>"
+                yield "<li><a href=\"index.wsgi?id="+award["id"]+"&lang="+cnc.lang+"\">"+lbl["value"] + "</a> (" + cnc.linearize(w.in_1_Prep) + " " + date_string +")"+"</li>"
             else:
-                yield "<li>"+cnc.linearize(key)+"</li>"
+                yield "<li><a href=\"index.wsgi?id="+award["id"]+"&lang="+cnc.lang+"\">"+lbl["value"]+"</a></li>"
         yield '</ul></p>'
 
     #Nominated for - P1411
