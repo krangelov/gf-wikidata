@@ -413,7 +413,7 @@ def get_entity(qid):
 	if isinstance(qid,str):
 		u2 = urllib.request.urlopen('https://www.wikidata.org/wiki/Special:EntityData/'+qid+'.json')
 		result = json.loads(u2.read())
-		return result["entities"][qid]
+		return next(iter(result["entities"].values()))
 	elif not qid:
 		return []
 	else:
