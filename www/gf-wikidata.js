@@ -1,8 +1,20 @@
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get("lang") == null)
+    urlParams.set("lang","ParseEng")
+
 function showSearches(searchbox) {
     if (searchbox.value.length < 3) return;
 
-	const content = document.getElementById("content");
-	fetch("https://www.wikidata.org/w/api.php?action=wbsearchentities&language="+content.dataset.lang+"&uselang="+content.dataset.lang+"&type=item&continue=0&origin=*&format=json&search="+encodeURIComponent(searchbox.value),
+    const lang = urlParams.get("lang");
+    let lang_code = null;
+    for (let i in gfwordnet.languages) {
+        if (gfwordnet.languages[i][1] == lang) {
+            lang_code = gfwordnet.languages[i][2];
+        }
+    }
+    if (!lang_code)
+        return;
+	fetch("https://www.wikidata.org/w/api.php?action=wbsearchentities&language="+lang_code+"&uselang="+lang_code+"&type=item&continue=0&origin=*&format=json&search="+encodeURIComponent(searchbox.value),
           { method: "GET" })
        .then((response) => response.json())
        .then((data) => {
@@ -112,31 +124,38 @@ function loadEntity(qid) {
     searchInput.value = "";
     const searchResults = document.getElementById("searchResults");
     searchResults.style.display = "none";
-
-    const content = document.getElementById("content");
-    window.location.href = "index.wsgi?id="+qid+"&lang="+content.dataset.lang;
+    window.location.href = "gf-wikidata.wiki?qid="+qid+"&lang="+urlParams.get("lang");
 }
 
 function init_editor() {
-	let langs = window.localStorage.getItem('gp-languages');
-	if (langs == null) {
-		langs = []
-	} else {
-		langs = langs.split(' ');
-	}
+    let langs = []
+    if (urlParams.get("edit")) {
+        let s = window.localStorage.getItem('gp-languages');
+        if (s) langs = langs.split(' ');
+    }
 
-	let table = document.getElementById("from");
-	let tr = table.lastElementChild.firstElementChild;
-	while (tr != null) {
-		var nameElem  = tr.firstElementChild.firstElementChild;
-		var checkElem = tr.lastElementChild.firstElementChild;
+    const from = element('from');
+    for (let i in gfwordnet.languages) {
+        const name = gfwordnet.languages[i][0];
+        let checked = langs.includes(name);
+        if (gfwordnet.languages[i][1] == urlParams.get("lang")) {
+            var row = tr([td([node("b",{},[text(name)])])]);
+            checked = true;
+        } else {
+            let url = "gf-wikidata.wiki"
+            url += "?lang="+gfwordnet.languages[i][1];
+            const qid = urlParams.get("qid");
+            if (qid != null)
+                url += "&qid="+qid;
+            var row = tr([td([node("a",{"href": url},[text(name)])])]);
+        }
 
-		var name = nameElem.innerHTML;
-		if (nameElem.tagName == "B" || langs.includes(name)) {
-			checkElem.checked = true;
-		}
-		tr = tr.nextElementSibling;
-	}
+        if (urlParams.get("edit")) {
+            row.appendChild(node("input",{value: checked},[]));
+        }
+
+        from.appendChild(row);
+    }
 }
 
 function select_language() {
@@ -310,4 +329,3 @@ if (user != null && author != 0) {
 	gfwordnet.set_user(user,author,token,0,null,commit);
 	commit.style.display = "inline";
 }
-
