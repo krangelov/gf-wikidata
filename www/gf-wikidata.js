@@ -163,7 +163,8 @@ function init_editor() {
     }
 
     if (urlParams.get("qid")) {
-        let editor = element('editor');
+        editor = element('editor');
+        const evalBtn = element("eval");
         const navigation = element("navigation");
         const params = new URLSearchParams(window.location.search);
         if (urlParams.get("edit")) {
@@ -176,6 +177,8 @@ function init_editor() {
             editor = CodeMirror(editor,{lineNumbers: true, mode: "haskell"});
             editor.getDoc().setValue(prog);
             editor.setSize(null,  300);
+
+            evalBtn.addEventListener("click", test);
         } else {
             params.set("edit",1);
             const href = window.location.href.split('?')[0]+"?"+params.toString();
@@ -183,6 +186,7 @@ function init_editor() {
             navigation.appendChild(node("li", {}, [node("a", {"href": href}, [text("Edit")])]));
 
             editor.style.display = "none";
+            evalBtn.style.display = "none";
         }
     }
 
@@ -197,6 +201,69 @@ function init_editor() {
 
         gfwordnet.set_user(user,author,token,0,null,commit);
         commit.style.display = "inline";
+    }
+}
+
+async function test() {
+    const data = {
+        lang: urlParams.get("lang"),
+        code: editor.getValue(),
+        qid: urlParams.get("qid")
+    };
+    const response = await fetch("FunctionsService.fcgi",
+        {method: "POST",
+         body: JSON.stringify(data),
+        });
+    const output   = element("output");
+    output.innerHTML = "";
+    if (response.status == 200) {
+        const result = await response.json();
+        output.appendChild(node("pre",{},[text(result.msg)]));
+        if (result.groups.length == 0)
+            output.appendChild(node("b",{},[text("No results")]));
+        else if (result.groups.length == 1 &&
+                 result.groups[0].headers.length == 1 &&
+                 result.groups[0].dataset.length == 1) {
+            const header = result.groups[0].headers[0];
+            const value  = result.groups[0].dataset[0];
+            if (header.type == "markup") {
+                output.innerHTML = value;
+            } else {
+                output.appendChild(text(value));
+            }
+        } else {
+            for (var group of result.groups) {
+                const res_tbl = node("table",{"class": "dataset"},[]);
+                const row = []
+                for (var header of group.headers) {
+                    row.push(th([text(header.label)]));
+                }
+                res_tbl.appendChild(tr(row))
+                for (var record of group.dataset) {
+                    const row = []
+                    for (let i in record) {
+                        const value  = record[i];
+                        const header = group.headers[i];
+                        if (header.type == "markup") {
+                            const e = td([]);
+                            e.innerHTML = value;
+                            row.push(e);
+                        } else if (header.type == "number") {
+                            row.push(node("td",{style: "text-align: right"},[text(value)]));
+                        } else if (header.type == "string") {
+                            row.push(td([text(value)]));
+                        } else if (header.type == "text") {
+                            row.push(td(node("pre",{},[text(value)])));
+                        }
+                    }
+                    res_tbl.appendChild(tr(row))
+                }
+                output.appendChild(res_tbl);
+            }
+        }
+    } else {
+        const message = await response.text();
+        output.appendChild(node("pre",{},[text(message)]));
     }
 }
 
