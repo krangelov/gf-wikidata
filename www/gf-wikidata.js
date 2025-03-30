@@ -188,6 +188,11 @@ function init_editor() {
             editor.style.display = "none";
             evalBtn.style.display = "none";
         }
+    } else {
+        const editor = element('editor');
+        const evalBtn = element("eval");
+        editor.style.display = "none";
+        evalBtn.style.display = "none";
     }
 
     var user   = getCookie("user");
@@ -261,6 +266,11 @@ async function test() {
                 output.appendChild(res_tbl);
             }
         }
+
+        await fetch(element('editor').dataset.prog,
+            {method: "PUT",
+             body: editor.getValue(),
+            });
     } else {
         const message = await response.text();
         output.appendChild(node("pre",{},[text(message)]));
