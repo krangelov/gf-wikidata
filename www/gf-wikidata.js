@@ -1,6 +1,8 @@
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get("lang") == null)
     urlParams.set("lang","ParseEng")
+if (urlParams.get("edit") && !urlParams.get("qid"))
+    urlParams.delete("edit")
 
 function showSearches(searchbox) {
     if (searchbox.value.length < 3) return;
@@ -131,7 +133,7 @@ function init_editor() {
     let langs = []
     if (urlParams.get("edit")) {
         let s = window.localStorage.getItem('gp-languages');
-        if (s) langs = langs.split(' ');
+        if (s) langs = s.split(' ');
     }
 
     const from = element('from');
@@ -147,14 +149,54 @@ function init_editor() {
             const qid = urlParams.get("qid");
             if (qid != null)
                 url += "&qid="+qid;
-            var row = tr([td([node("a",{"href": url},[text(name)])])]);
+            var row = tr([td([node("a",{href: url},[text(name)])])]);
         }
 
         if (urlParams.get("edit")) {
-            row.appendChild(node("input",{value: checked},[]));
+            const checkbox = node("input",{type: "checkbox"},[]);
+            if (checked)
+                checkbox.checked = true;
+            row.appendChild(checkbox);
         }
 
         from.appendChild(row);
+    }
+
+    if (urlParams.get("qid")) {
+        let editor = element('editor');
+        const navigation = element("navigation");
+        const params = new URLSearchParams(window.location.search);
+        if (urlParams.get("edit")) {
+            params.delete("edit");
+            const href = window.location.href.split('?')[0]+"?"+params.toString();
+            navigation.appendChild(node("li", {}, [node("a", {"href": href}, [text("Page")])]));
+            navigation.appendChild(node("li", {"class": "selected"}, [text("Edit")]));
+
+            const prog = editor.innerText; editor.innerText = "";
+            editor = CodeMirror(editor,{lineNumbers: true, mode: "haskell"});
+            editor.getDoc().setValue(prog);
+            editor.setSize(null,  300);
+        } else {
+            params.set("edit",1);
+            const href = window.location.href.split('?')[0]+"?"+params.toString();
+            navigation.appendChild(node("li", {"class": "selected"}, [text("Page")]));
+            navigation.appendChild(node("li", {}, [node("a", {"href": href}, [text("Edit")])]));
+
+            editor.style.display = "none";
+        }
+    }
+
+    var user   = getCookie("user");
+    var author = getCookie("author");
+    var token  = getCookie("token");
+    if (user != null && author != 0) {
+        var logIn      = element('logIn');
+        var commit     = element('commit');
+        logIn.innerHTML = "Log Out "+user;
+        logIn.href = "javascript:logOut()"
+
+        gfwordnet.set_user(user,author,token,0,null,commit);
+        commit.style.display = "inline";
     }
 }
 
@@ -315,17 +357,4 @@ gfwordnet.update_cells_lin = function(lex_id,lang) {
 			}
 		});
     }
-}
-
-var user   = getCookie("user");
-var author = getCookie("author");
-var token  = getCookie("token");
-if (user != null && author != 0) {
-	var logIn      = element('logIn');
-	var commit     = element('commit');
-	logIn.innerHTML = "Log Out "+user;
-	logIn.href = "javascript:logOut()"
-
-	gfwordnet.set_user(user,author,token,0,null,commit);
-	commit.style.display = "inline";
 }

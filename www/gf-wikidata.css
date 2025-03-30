@@ -110,6 +110,10 @@ h3.gp-page-title {
     border-bottom: 1px solid #a2a9b1;
 }
 
+.gp-editor {
+    border: 1px solid silver;
+}
+
 div.infobox {
 	float: right;
 	padding-left: 1em;
