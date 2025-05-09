@@ -174,7 +174,7 @@ function init_editor() {
             navigation.appendChild(node("li", {"class": "selected"}, [text("Edit")]));
 
             const prog = editor.innerText; editor.innerText = "";
-            editor = CodeMirror(editor,{lineNumbers: true, mode: "haskell"});
+            editor = CodeMirror(editor,{lineNumbers: true, mode: "haskell", matchBrackets: true});
             editor.getDoc().setValue(prog);
             editor.setSize(null,  300);
 
