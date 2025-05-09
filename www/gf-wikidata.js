@@ -174,7 +174,8 @@ function init_editor() {
             navigation.appendChild(node("li", {"class": "selected"}, [text("Edit")]));
 
             const prog = editor.innerText; editor.innerText = "";
-            editor = CodeMirror(editor,{lineNumbers: true, mode: "haskell", matchBrackets: true});
+            editor = CodeMirror(editor,{lineNumbers: true, mode: "haskell", matchBrackets: true,
+                                        gutters: ["CodeMirror-linenumbers", "error-markers"]});
             editor.getDoc().setValue(prog);
             editor.setSize(null,  300);
 
@@ -207,6 +208,14 @@ function init_editor() {
         gfwordnet.set_user(user,author,token,0,null,commit);
         commit.style.display = "inline";
     }
+}
+
+function make_dot(message) {
+    return node("div",{"class": "error-markers-element"},
+              [text("•")
+              ,node("span",{"class": "message"},
+                  [text(message)])
+              ]);
 }
 
 async function test() {
@@ -273,7 +282,26 @@ async function test() {
             });
     } else {
         const message = await response.text();
-        output.appendChild(node("pre",{},[text(message)]));
+        const found1 = message.match(/^(\d+):(\d+):(.*)/)
+        const found2 = message.matchAll(/^Main:(\d+)-(\d+):(.*)/g)
+        if (found1) {
+            const dot  = make_dot(found1[3]);
+            const line = parseInt(found1[1])-1;
+            const col  = parseInt(found1[2]);
+            editor.getDoc().setGutterMarker(line,"error-markers",dot);
+            editor.focus()
+            editor.setCursor({line: line, ch: col})
+        } if (found2) {
+            for (const spot of found2) {
+                const dot  = make_dot(message);
+                const line = parseInt(spot[1])-1;
+                editor.getDoc().setGutterMarker(line,"error-markers",dot);
+                editor.focus()
+                editor.setCursor({line: line, ch: 1})
+            }
+        } else {
+            output.appendChild(node("pre",{},[text(message)]));
+        }
     }
 }
 

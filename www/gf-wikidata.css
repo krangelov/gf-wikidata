@@ -160,3 +160,28 @@ span.selected-lexeme:hover {
 	background: #66c;
 	cursor: auto;
 }
+
+.error-markers {
+    width: 1em;
+}
+
+.error-markers-element {
+    color: red;
+    font-size: 2em;
+}
+
+.error-markers-element .message {
+  visibility: hidden;
+  background-color: #eee;
+  text-align: left;
+  font-size: 1em;
+  border-radius: 6px;
+
+  /* Position the tooltip text - see examples below! */
+  position: absolute;
+  z-index: 10;
+}
+
+.error-markers-element:hover .message {
+  visibility: visible;
+}
