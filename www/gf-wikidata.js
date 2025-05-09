@@ -283,7 +283,7 @@ async function test() {
     } else {
         const message = await response.text();
         const found1 = message.match(/^(\d+):(\d+):(.*)/)
-        const found2 = message.matchAll(/^Main:(\d+)-(\d+):(.*)/g)
+        const found2 = message.match(/^Main:(\d+)-(\d+):(.*)/)
         if (found1) {
             const dot  = make_dot(found1[3]);
             const line = parseInt(found1[1])-1;
@@ -292,13 +292,11 @@ async function test() {
             editor.focus()
             editor.setCursor({line: line, ch: col})
         } if (found2) {
-            for (const spot of found2) {
-                const dot  = make_dot(message);
-                const line = parseInt(spot[1])-1;
-                editor.getDoc().setGutterMarker(line,"error-markers",dot);
-                editor.focus()
-                editor.setCursor({line: line, ch: 1})
-            }
+            const dot  = make_dot(message);
+            const line = parseInt(found2[1])-1;
+            editor.getDoc().setGutterMarker(line,"error-markers",dot);
+            editor.focus()
+            editor.setCursor({line: line, ch: 1})
         } else {
             output.appendChild(node("pre",{},[text(message)]));
         }
