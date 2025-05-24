@@ -1,5 +1,6 @@
 ("gf-wikidata.html"
 ,[("Q6256", "country.gf")
  ,("Q112099", "country.gf")
+ ,("Q5", "person.gf")
  ]
 )
