@@ -230,6 +230,7 @@ async function test() {
         });
     const output   = element("output");
     output.innerHTML = "";
+    editor.getDoc().clearGutter("error-markers");
     if (response.status == 200) {
         const result = await response.json();
         output.appendChild(node("pre",{},[text(result.msg)]));
