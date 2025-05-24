@@ -187,6 +187,6 @@ span.selected-lexeme:hover {
 }
 
 div.CodeMirror span.CodeMirror-matchingbracket {
-    color: red;
+    color: blue;
     font-weight: bold;
 }
