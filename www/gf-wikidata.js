@@ -162,7 +162,7 @@ function init_editor() {
         from.appendChild(row);
     }
 
-    if (urlParams.get("qid")) {
+    if (urlParams.get("qid") && getCookie("user")) {
         editor = element('editor');
         const evalBtn = element("eval");
         const navigation = element("navigation");
