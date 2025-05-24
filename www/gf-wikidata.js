@@ -400,7 +400,7 @@ function edit_lex(span,event) {
 function logOut() {
 	gfwordnet.set_user(null,null,null,0,element('result'),null);
 	logIn.innerHTML = "Log In";
-	logIn.href = "https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=3b54eb78b27f94e182d0";
+	logIn.href = "https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=1e94c97e812a9f502068&redirect_uri=https://cloud.grammaticalframework.org/wordnet/ContentService.fcgi%3Fpath=gf-wikidata.wiki";
 	commit.style.display = "none";
 	deleteCookie("user");
 	deleteCookie("author");
