@@ -1,5 +1,4 @@
 
-
 let e = entity qid;
     gender = case e.P21.id of {
 	           "Q6581072" => she_Pron; 
@@ -17,7 +16,15 @@ let e = entity qid;
 	   "bul" => presentTense;
        -- "spa" => TPastSimple;
        _     => pastTense
-    }
+    } ;
+    to_list_class = \l ->
+      case compareInt l 5 of {
+        LT => "gp-short-list" ;
+        _  => case compareInt l 10 of {
+                LT => "gp-medium-list" ;
+                _  => "gp-long-list"
+              }
+      }
 in <div>
      <h1 class="gp-page-title"><expr qid : NP></h1>
      <div class="infobox">
@@ -27,8 +34,7 @@ in <div>
     	</table></tr></table>
      </div>
      <p>
-     -- mkPhrMark (mkS (mkCl (expr qid) ))
-     (mkVP (mkNP a_Quant [list: and_Conj | mkCN (gendered_expr e.P106.id e.P21.id)]))
+     mkPhrMark (mkS (mkCl (expr qid) (mkVP (mkNP a_Quant [list: and_Conj | mkCN (gendered_expr e.P106.id e.P21.id)])))) 
      </p>
 
 	 [concat | 
@@ -40,14 +46,14 @@ in <div>
               }
         in mkS temp positivePol (mkCl (mkNP pron) (mkVP receive_1_V2 (mkNP thePl_Det (mkCN following_2_A award_3_N)))) ;
         ":" ;
-        <ul>[concat' | <li>(entity e.P166.id).label</li>]</ul>
+        <ul class=[len: to_list_class | e.P166]>[concat' | <li>(entity e.P166.id).label</li>]</ul>
         let prep = case lang of {
                      "spa" => to_1_Prep ;
                      _     => for_Prep
                    }
         in mkPhr (mkUtt (mkS useTense anteriorAnt (mkCl (mkNP pron) (mkVP (passiveVP (mkVPSlash nominate_1_V2)) (mkAdv prep (mkNP thePl_Det (mkCN following_2_A award_3_N))))))) ;
         ":" ;
-        <ul>[concat' | <li>(entity e.P1411.id).label</li>]</ul>
+        <ul class=[len: to_list_class | e.P1411]>[concat' | <li>(entity e.P1411.id).label</li>]</ul>
         ]
 </div>
 

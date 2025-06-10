@@ -185,3 +185,11 @@ span.selected-lexeme:hover {
 .error-markers-element:hover .message {
   visibility: visible;
 }
+
+.gp-medium-list {
+    column-count: 2
+}
+
+.gp-long-list {
+    column-count: 4
+}
