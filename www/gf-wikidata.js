@@ -162,7 +162,7 @@ function init_editor() {
         from.appendChild(row);
     }
 
-    if (urlParams.get("qid") && getCookie("user")) {
+    if (urlParams.get("qid")) {
         editor = element('editor');
         const evalBtn = element("eval");
         const navigation = element("navigation");
@@ -242,7 +242,7 @@ async function test() {
             const header = result.groups[0].headers[0];
             const value  = result.groups[0].dataset[0];
             if (header.type == "markup") {
-                output.innerHTML = value;
+                output.innerHTML = value.fields[0];
             } else {
                 output.appendChild(text(value));
             }
@@ -400,7 +400,7 @@ function edit_lex(span,event) {
 function logOut() {
 	gfwordnet.set_user(null,null,null,0,element('result'),null);
 	logIn.innerHTML = "Log In";
-	logIn.href = "https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=1e94c97e812a9f502068&redirect_uri=https://cloud.grammaticalframework.org/wordnet/ContentService.fcgi%3Fpath=gf-wikidata.wiki";
+	logIn.href = "https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=3b54eb78b27f94e182d0";
 	commit.style.display = "none";
 	deleteCookie("user");
 	deleteCookie("author");
