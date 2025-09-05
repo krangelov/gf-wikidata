@@ -20,7 +20,7 @@
      <script src="../wordnet/js/cookies.js"></script>
      <script src="gf-wikidata.js"></script>
    </head>
-   <body onload="init_editor()">
+   <body>
      <div class="gp-head">
         <div id="p-personal">
            <a id="logIn" href="https://github.com/login/oauth/authorize?scope=user:email%20public_repo&client_id=1e94c97e812a9f502068&redirect_uri=https://cloud.grammaticalframework.org/wordnet/ContentService.fcgi%3Fpath=gf-wikidata.wiki">Log In</a>
@@ -55,6 +55,12 @@
          </div>
 
          <div class="gp-panel-section">
+           <h3 class="gp-page-title">Options</h3>
+           <table id="options" class="option-container">
+           </table>
+         </div>
+
+         <div class="gp-panel-section">
            <h3 class="gp-page-title">Languages</h3>
            <table id="from">
            </table>
@@ -68,5 +74,9 @@
             <%output%>
         </div>
      </div>
+     <script>
+        init_editor();
+        revalidate(<%options%>);
+     </script>
  </body>
 </html>

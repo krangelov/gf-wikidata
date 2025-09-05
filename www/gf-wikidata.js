@@ -129,6 +129,38 @@ function loadEntity(qid) {
     window.location.href = "gf-wikidata.wiki?qid="+qid+"&lang="+urlParams.get("lang");
 }
 
+function revalidate(options) {
+    const elemOpts = document.getElementById("options");
+    elemOpts.parentNode.style.display = "none";
+    elemOpts.innerHTML = "";
+    const optElems = [];
+    for (const opt of options) {
+        elemOpts.parentNode.style.display = "block";
+
+        const optLbl = node("div", { "class": "option-header" }, [node("b", {}, [text(opt.label)])]);
+        elemOpts.appendChild(optLbl);
+
+        const optBody = [];
+        for (let i = 0; i < opt.options.length; i++) {
+            const attrs = {"value": i};
+            if (i === opt.value) attrs["selected"] = "selected";
+            const valueElem = node("option", attrs, [text(opt.options[i])]);
+            optBody.push(valueElem)
+        }
+        const select = node("select", {}, optBody);
+        select.addEventListener("change", function() {
+            const input = [];
+            for (const pair of optElems) {
+                input.push(pair[0]);
+                input.push(Number(pair[1].value));
+            }
+            test(input,false);
+        });
+        optElems.push([opt.choice,select]);
+        elemOpts.appendChild(select);
+    }
+}
+
 function init_editor() {
     let langs = []
     if (urlParams.get("edit")) {
@@ -179,7 +211,7 @@ function init_editor() {
             editor.getDoc().setValue(prog);
             editor.setSize(null,  300);
 
-            evalBtn.addEventListener("click", test);
+            evalBtn.addEventListener("click", () => test([],true));
         } else {
             params.set("edit",1);
             const href = window.location.href.split('?')[0]+"?"+params.toString();
@@ -218,11 +250,13 @@ function make_dot(message) {
               ]);
 }
 
-async function test() {
+async function test(input,update) {
     const data = {
         lang: urlParams.get("lang"),
-        code: editor.getValue(),
-        qid: urlParams.get("qid")
+        code: urlParams.get("edit") ? editor.getValue() : element('editor').innerText,
+        qid: urlParams.get("qid"),
+        edit: urlParams.get("edit"),
+        input: input
     };
     const response = await fetch("FunctionsService.fcgi",
         {method: "POST",
@@ -230,7 +264,9 @@ async function test() {
         });
     const output   = element("output");
     output.innerHTML = "";
-    editor.getDoc().clearGutter("error-markers");
+    if (urlParams.get("edit")) {
+        editor.getDoc().clearGutter("error-markers");
+    }
     if (response.status == 200) {
         const result = await response.json();
         output.appendChild(node("pre",{},[text(result.msg)]));
@@ -246,6 +282,7 @@ async function test() {
             } else {
                 output.appendChild(text(value));
             }
+            revalidate(value.options);
         } else {
             for (var group of result.groups) {
                 const res_tbl = node("table",{"class": "dataset"},[]);
@@ -277,14 +314,19 @@ async function test() {
             }
         }
 
-        await fetch(element('editor').dataset.prog,
-            {method: "PUT",
-             body: editor.getValue(),
-            });
+        if (update) {
+            await fetch(element('editor').dataset.prog,
+                {method: "PUT",
+                 body: editor.getValue(),
+                });
+        }
     } else {
         const message = await response.text();
-        const found1 = message.match(/^(\d+):(\d+):(.*)/)
-        const found2 = message.match(/^Main:(\d+)-(\d+):(.*)/)
+        let found1 = false, found2 = false;
+        if (urlParams.get("edit")) {
+            found1 = message.match(/^(\d+):(\d+):(.*)/)
+            found2 = message.match(/^Main:(\d+)-(\d+):(.*)/)
+        }
         if (found1) {
             const dot  = make_dot(found1[3]);
             const line = parseInt(found1[1])-1;
