@@ -193,3 +193,11 @@ span.selected-lexeme:hover {
 .gp-long-list {
     column-count: 4
 }
+
+.gp-option-container {
+    width: 100%;
+    
+    select {
+        width: 100%;
+    }
+}
