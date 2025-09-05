@@ -7,9 +7,15 @@ let e = entity qid;
                 LT => "gp-medium-list" ;
                 _  => "gp-long-list"
               }
-      }
+      } ;
+    is_metric =
+      option CompoundN measurement_N system_1_N of {
+        metric_1_A => True; imperial_1_A => False;
+      };
 in <div>
      <h1 class="gp-page-title">expr qid</h1>
+
+     -- Infobox with flag, coat of arms and map
      <div class="infobox">
        <table border=1>
          <tr><td><table>
@@ -25,6 +31,7 @@ in <div>
          <tr><td>[concat: 1 | <img src=(e.P242.s) width=250/>]</td></tr> 
        </table>
      </div>
+
      <p>
      -- country region
      [concat: 1 |
@@ -41,38 +48,39 @@ in <div>
                     } ;
               with_population = [one | mkAdv with_Prep (mkNP (mkDet (mkDecimal <e.P1082.amount : Predef.Int>)) (mkCN inhabitantMasc_1_N))]
           in mkPhrMark (mkS (mkCl (mkNP (expr qid)) (mkVP (mkNP (mkNP a_Quant cn) with_population)))) ];
-     </p>
+
      -- neighbours
      [concat: 1 | 
-     let prep = case lang of {
-     	"rus" => at_2_Prep;
-        "fin" => in_1_Prep;
-        _ => to_2_Prep
-     };
-     article = case lang of {
-     	"bul" => aSg_Det;
-        _ => the_Det
-     };
-     neighbours = [list: and_Conj 
-     | [default: (mkNP (expr e.P47.id)) |
-                 AdvNP (mkNP (expr e.P47.id)) (mkAdv prep (mkNP article [one|expr e.P47.P654.id]))]];
-     num = [len: (\l -> case compareInt l 1 of {
-                        EQ => aSg_Det ;
-                        _  => aPl_Det
-                     })
-            | e.P47.id];
-     phr = case lang of {
-     	"fin" => mkPhrMark (mkCl (mkNP (mkQuant it_Pron) NumPl abutterMasc_N) (mkNP neighbours));
-     	"rus" => mkPhrMark (mkCl (mkNP it_Pron) (mkVP (mkVP border_5_V) (mkAdv with_Prep (mkNP neighbours))));
-        "fre" => mkPhrMark (mkCl (mkNP theSg_Det country_2_N) (mkVP have_1_V2 
-     (mkNP num (mkCN (mkCN border_1_N) (mkAdv with_Prep (mkNP neighbours))))));
-     	"bul" => mkPhrMark (mkCl (mkNP (ProDrop she_Pron)) (mkVP have_1_V2 
-     (mkNP num (mkCN (mkCN border_1_N) (mkAdv with_Prep (mkNP neighbours))))));
-        "spa" => mkPhrMark (mkCl (mkNP (ProDrop it_Pron)) (mkVP have_1_V2 
-     (mkNP num (mkCN (mkCN border_1_N) (mkAdv with_Prep (mkNP neighbours))))));
-        _ => mkPhrMark (mkCl (mkNP it_Pron) (mkVP have_1_V2 
-     (mkNP num (mkCN (mkCN border_1_N) (mkAdv with_Prep (mkNP neighbours))))))}
-     in phr ]; -- does not work to separate 
+        let prep = case lang of {
+                     "rus" => at_2_Prep;
+                     "fin" => in_1_Prep;
+                     _     => to_2_Prep
+                   };
+            article = case lang of {
+                       "bul" => aSg_Det;
+                       _      => the_Det
+                      };
+            neighbours = [list: and_Conj
+                            | [default: (mkNP (expr e.P47.id)) |
+                                  AdvNP (mkNP (expr e.P47.id)) (mkAdv prep (mkNP article [one|expr e.P47.P654.id]))]];
+            num = [len: (\l -> case compareInt l 1 of {
+                                 EQ => aSg_Det ;
+                                 _  => aPl_Det
+                               })
+                            | e.P47.id];
+        in case lang of {
+             "fin" => mkPhrMark (mkCl (mkNP (mkQuant it_Pron) NumPl abutterMasc_N) neighbours);
+             "rus" => mkPhrMark (mkCl (mkNP it_Pron) (mkVP (mkVP border_5_V) (mkAdv with_Prep neighbours)));
+             "fre" => mkPhrMark (mkCl (mkNP theSg_Det country_2_N) (mkVP have_1_V2
+                                                 (mkNP num (mkCN (mkCN border_1_N) (mkAdv with_Prep neighbours)))));
+             "bul" => mkPhrMark (mkCl (mkNP (ProDrop she_Pron)) (mkVP have_1_V2
+                                                 (mkNP num (mkCN (mkCN border_1_N) (mkAdv with_Prep neighbours)))));
+             "spa" => mkPhrMark (mkCl (mkNP (ProDrop it_Pron)) (mkVP have_1_V2
+                                                 (mkNP num (mkCN (mkCN border_1_N) (mkAdv with_Prep neighbours)))));
+             _     => mkPhrMark (mkCl (mkNP it_Pron) (mkVP have_1_V2
+                                                 (mkNP num (mkCN (mkCN border_1_N) (mkAdv with_Prep neighbours)))))
+           }
+     ];
      
      -- see :
      {- vp = case lang of {
@@ -90,102 +98,103 @@ in <div>
      in np -}
      
      [concat : 1 | 
-     let number = (mkNP (mkDet (mkDecimal (round <e.P2046.amount : Predef.Float> 2))) (expr "Q712226"));
-     copula = case lang of {
-        "fre" => (mkAdv of_1_Prep number); 
-        "rus" => (mkVP amount_to_1_V2 number); 
-        _ => number}
-     in mkPhrMark (mkCl (mkNP theSg_Det area_6_N) copula)];
+        let area =
+              case is_metric of {
+                 True  => mkNP (mkDet (mkDecimal (round e.P2046.amount 2))) (expr "Q712226") ;
+                 False => mkNP (mkDet (mkDecimal (round (mulFloat e.P2046.amount 0.3861021585424458) 2))) (expr "Q232291")
+              } ;
+            copula = case lang of {
+                       "fre" => mkVP (mkAdv of_1_Prep area);
+                       "rus" => (mkVP amount_to_1_V2 area);
+                       _     => mkVP area
+                     }
+        in mkPhrMark (mkCl (mkNP theSg_Det area_6_N) copula)];
     
      let capitals = [list: and_Conj | mkNP (expr e.P36.id)];
-     num = [len: (\l -> case compareInt l 1 of {
-                        EQ => aSg_Det ;
-                        _  => aPl_Det
-                     })
-            | e.P36.id];
-     order = case lang of {
-     	"rus" => (mkCl capitals (mkNP the_Det capital_3_N));
-        _ => (mkCl (mkNP num capital_3_N) capitals)}
+         num = [len: (\l -> case compareInt l 1 of {
+                              EQ => aSg_Det ;
+                              _  => aPl_Det
+                            })
+                     | e.P36.id];
+         order = case lang of {
+                   "rus" => mkCl capitals (mkNP the_Det capital_3_N);
+                   _     => mkCl (mkNP num capital_3_N) capitals
+                 }
      in mkPhrMark (mkS order) ;
-     
+
      -- official languages
      -- NB: it falls through variants although it should not happen: also for Sweden 
      -- it gives only Swedish but should give 3 languages
      let official_langs = [list: and_Conj | mkNP (expr e.P37.id)];
-     other_langs = [list: and_Conj | mkNP (expr e.P2936.id)] ;
-     num1 = [len: (\l -> case compareInt l 1 of {
-                        EQ => aSg_Det ;
-                        _  => aPl_Det
-                     })
-            | e.P37.id];
-     num2 = [len: (\l -> case compareInt l 1 of {
-                        EQ => aSg_Det ;
-                        _  => aPl_Det
-                     })
-            | e.P2936.id];
-     vp = case lang of {
-     	"bul" | "cat" | "ita" | "por" | "spa" => reflexiveVP speak_3_V2;
-        "rus" => passiveVP spread_8_V2;
-        _ => passiveVP speak_3_V2
-        } in
-     [concat: 1 | 
-     mkPhrMark
-     (variants {
-     	(mkS but_1_Conj (mkS (mkCl official_langs (mkNP num1 (mkCN official_1_A (mkCN language_1_N)))))
-        (mkS (mkCl other_langs (mkVP also_AdV vp))));
-     	(mkS (mkCl (mkNP num1 (mkCN official_1_A (mkCN language_1_N))) official_langs));
-        mkS (mkCl (mkNP num2 (mkCN spoken_A (mkCN language_1_N))) other_langs)})] ; 
-     
-     
-     --let np = mkNP apple_1_N in [default: np | AdvNP np (variants {}
+         other_langs    = [list: and_Conj | mkNP (expr e.P2936.id)] ;
+         num1 = [len: (\l -> case compareInt l 1 of {
+                               EQ => aSg_Det ;
+                               _  => aPl_Det
+                             })
+                    | e.P37.id];
+         num2 = [len: (\l -> case compareInt l 1 of {
+                               EQ => aSg_Det ;
+                               _  => aPl_Det
+                             })
+                    | e.P2936.id];
+         vp = case lang of {
+                "bul" | "cat" | "ita" | "por" | "spa" => reflexiveVP speak_3_V2;
+                "rus" => passiveVP spread_8_V2;
+                _     => passiveVP speak_3_V2
+              }
+     in [concat: 1 |
+           mkPhrMark
+             ( mkS but_1_Conj (mkS (mkCl official_langs (mkNP num1 (mkCN official_1_A (mkCN language_1_N)))))
+                              (mkS (mkCl other_langs (mkVP also_AdV vp)))
+             | mkS (mkCl (mkNP num1 (mkCN official_1_A (mkCN language_1_N))) official_langs)
+             | mkS (mkCl (mkNP num2 (mkCN spoken_A (mkCN language_1_N))) other_langs)
+             )] ;
+    </p>
 
     
-    <h2> demography_N</h2> 
+    <h2 class="gp-page-title">demography_N</h2>
     -- life expectancy 
-    let 
-    prep = case lang of {
-    	"spa" => of_1_Prep; 
-        _ => in_1_Prep};
-    number = mkNP (mkDecimal (round <e.P2250.amount: Predef.Float> 2)) year_5_N;
-    highest = mkNP (mkDet the_Quant NumSg (mkOrd high_1_A)) (mkCN life_expectancy_N);
-    lowest = mkNP (mkDet the_Quant NumSg (mkOrd low_1_A)) (mkCN life_expectancy_N);
-    average = mkAdv with_Prep (mkNP a_Det (mkCN (mkCN average_1_N 
-                	(mkAdv of_1_Prep number))));
-    phr = case qid of {
-    	"Q238" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest 
-        		 (mkAdv prep (AdvNP (mkNP theSg_Det (mkCN world_1_N)) average)))));
-    	"Q17" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest 
-        		 (mkAdv prep (AdvNP (mkNP asia_1_LN) average)))));
-        "Q262" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest 
-        		 (mkAdv prep (AdvNP (mkNP africa_LN) average)))));
-        "Q16" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest 
-        		 (mkAdv prep (AdvNP (mkNP north_america_1_LN) average)))));
-        "Q298" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest 
-        		 (mkAdv prep (AdvNP (mkNP south_america_1_LN) average)))));
-        "Q408" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest 
-        		 (mkAdv prep (AdvNP (mkNP insular_oceania_LN) average)))));
-        "Q1044" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
-        		 (mkAdv prep (AdvNP (mkNP theSg_Det (mkCN world_1_N)) average)))));
-        "Q212" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
-        		 (mkAdv prep (AdvNP (mkNP europe_1_LN) average)))));
-        "Q889" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
-        		 (mkAdv prep (AdvNP (mkNP asia_1_LN) average)))));
-        "Q790" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
-        		 (mkAdv prep (AdvNP (mkNP north_america_1_LN) average)))));
-        "Q734" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
-        		 (mkAdv prep (AdvNP (mkNP south_america_1_LN) average)))));
-        "Q709" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
-        		 (mkAdv prep (AdvNP (mkNP insular_oceania_LN) average)))));
-        
-        _ => mkPhrMark (mkCl (mkNP the_Det life_expectancy_N) number)}
-    	
-    in [concat: 1 | phr];
-  
-  	let np = mkNP (mkDecimal (round <e.P4841.amount: Predef.Float> 2)) (mkCN (mkCN child_2_N)) in 
-  	[concat: 1 | 
-  	mkPhrMark (mkS (mkCl (mkNP theSg_Det fertility_1_N) [default: np | AdvNP np (mkAdv per_Prep (mkNP woman_1_N))]
-  	))];
-  
+    let prep = case lang of {
+                 "spa" => of_1_Prep ;
+                 _     => in_1_Prep
+               };
+        number = mkNP (mkDecimal (round <e.P2250.amount: Predef.Float> 2)) year_5_N;
+        highest = mkNP (mkDet the_Quant NumSg (mkOrd high_1_A)) (mkCN life_expectancy_N);
+        lowest = mkNP (mkDet the_Quant NumSg (mkOrd low_1_A)) (mkCN life_expectancy_N);
+        average = mkAdv with_Prep (mkNP a_Det (mkCN (mkCN average_1_N (mkAdv of_1_Prep number))));
+    in [concat: 1 |
+          case qid of {
+            "Q238" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest
+                                      (mkAdv prep (AdvNP (mkNP theSg_Det (mkCN world_1_N)) average)))));
+            "Q17"  => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest
+                                      (mkAdv prep (AdvNP (mkNP asia_1_LN) average)))));
+            "Q262" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest
+                                      (mkAdv prep (AdvNP (mkNP africa_LN) average)))));
+            "Q16"  => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest
+                                      (mkAdv prep (AdvNP (mkNP north_america_1_LN) average)))));
+            "Q298" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest
+                                      (mkAdv prep (AdvNP (mkNP south_america_1_LN) average)))));
+            "Q408" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP highest
+                                      (mkAdv prep (AdvNP (mkNP insular_oceania_LN) average)))));
+            "Q1044" =>mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
+                                      (mkAdv prep (AdvNP (mkNP theSg_Det (mkCN world_1_N)) average)))));
+            "Q212" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
+                                      (mkAdv prep (AdvNP (mkNP europe_1_LN) average)))));
+            "Q889" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
+                                      (mkAdv prep (AdvNP (mkNP asia_1_LN) average)))));
+            "Q790" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
+                                      (mkAdv prep (AdvNP (mkNP north_america_1_LN) average)))));
+            "Q734" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
+                                      (mkAdv prep (AdvNP (mkNP south_america_1_LN) average)))));
+            "Q709" => mkPhrMark (mkCl (mkNP (expr qid)) (mkVP have_1_V2 (AdvNP lowest
+                                      (mkAdv prep (AdvNP (mkNP insular_oceania_LN) average)))));
+            _      => mkPhrMark (mkCl (mkNP the_Det life_expectancy_N) number)
+          }];
+
+    let np = mkNP (mkDecimal (round <e.P4841.amount: Predef.Float> 2)) (mkCN (mkCN child_2_N))
+    in [concat: 1 |
+	      mkPhrMark (mkS (mkCl (mkNP theSg_Det fertility_1_N) [default: np | AdvNP np (mkAdv per_Prep (mkNP woman_1_N))]))];
+
   let np = mkNP (mkDecimal (round <e.P3864.amount: Predef.Float> 2)) 
   (mkCN (mkCN death_1_N)) in 
  [concat: 1 | 
@@ -524,18 +533,18 @@ np = mkNP (mkDecimal <: Predef.Float>)
 	let 
     number = mkNP (mkDecimal (round <e.P3000.amount : Predef.Float> 2)) year_5_N;
     copula = case lang of {
-        "fre" => (mkAdv of_1_Prep number); 
+        "fre" => (mkVP (mkAdv of_1_Prep number));
         "rus" => (mkVP amount_to_1_V2 number); 
-        _ => number} in
+        _ => mkVP number} in
    [concat : 1 | 
   	mkPhrMark(mkS (mkCl (AdvNP (mkNP the_Det (mkCN minimum_A age_1_N)) (mkAdv of_3_Prep (mkNP marriage_1_N))) 
   	copula))];
   
   	let number = mkNP (mkDecimal (round <e.P3001.amount : Predef.Float> 2)) year_5_N;
     copula = case lang of {
-        "fre" => (mkAdv of_1_Prep number); 
+        "fre" => (mkVP (mkAdv of_1_Prep number));
         "rus" => (mkVP amount_to_1_V2 number); 
-        _ => number} in
+        _ => mkVP number} in
    [concat : 1 | 
   mkPhrMark(mkS (mkCl (AdvNP (mkNP the_Det (mkCN age_1_N)) (mkAdv of_3_Prep (mkNP retirement_1_N))) 
   copula))];
@@ -547,7 +556,7 @@ np = mkNP (mkDecimal <: Predef.Float>)
             
     in mkPhrMark (mkS (mkCl (mkNP aPl_Det (mkCN official_3_A religion_2_N)) religions))]; 
     
-   <h2>education_2_N</h2>
+   <h2 class="gp-page-title">education_2_N</h2>
    -- obligatory education
    let prep = case lang of {
    		"spa" => out_of_2_Prep;
@@ -558,13 +567,13 @@ np = mkNP (mkDecimal <: Predef.Float>)
    };
    number = QuantityNP (mkDecimal (round <e.P6897.amount : Predef.Float> 2)) percent_MU;
    copula = case lang of {
-        "fre" => (mkAdv of_1_Prep number); 
+        "fre" => mkVP (mkAdv of_1_Prep number);
         "rus" => (mkVP amount_to_1_V2 number); 
-        _ => number};
+        _ => mkVP number};
    obj_sf = case lang of {
-   		"spa" | "fre" => mkCN (mkCN child_1_N) (mkAdv prep 
-        				(mkNP (mkDecimal (round <e.P3270.amount : Predef.Float> 2)) year_5_N));
-        _ => mkCN (mkCN child_1_N) (mkAdv from_Prep (mkNP (mkDecimal (round <e.P3270.amount : Predef.Float> 2)) year_5_N))}
+              "spa" | "fre" => mkCN (mkCN child_1_N) (mkAdv prep (mkNP (mkDecimal (round <e.P3270.amount : Predef.Float> 2)) year_5_N));
+              _             => mkCN (mkCN child_1_N) (mkAdv from_Prep (mkNP (mkDecimal (round <e.P3270.amount : Predef.Float> 2)) year_5_N))
+            }
         in [concat: 1 | variants
     { [concat: 1 | variants
     {mkPhrMark (mkCl (mkNP education_2_N) (AdvAP (mkAP obligatory_1_A) (mkAdv for_Prep 
@@ -591,7 +600,7 @@ np = mkNP (mkDecimal <: Predef.Float>)
     (QuantityNP (mkDecimal <prOut : Predef.Float>) percent_MU)
     	(mkAdv of_1_Prep (mkNP theSg_Det population_1_N)))))]; 
     
-    <h2>mkNP aPl_Det (mkCN administrative_A unit_3_N)</h2>
+    <h2 class="gp-page-title">mkNP aPl_Det (mkCN administrative_A unit_3_N)</h2>
     
     -- not a dot but a semicolumn
     [concat: 1 | mkPhr (mkCl (mkNP theSg_Det country_1_N) (mkVP have_1_V2 (mkNP thePl_Det 
@@ -599,122 +608,109 @@ np = mkNP (mkDecimal <: Predef.Float>)
 
     <ul class=[len: to_list_class | e.P150]>[concat | <li>expr e.P150.id</li>]</ul>
 
-    <h2>politics_5_N</h2>
+    <h2 class="gp-page-title">politics_5_N</h2>
+
     let basicForm = entity e.P122.id;
-    officeState = entity e.P1906.id;
-    stateHead = [select: -1 | <entity e.P35.id, e.P35.P580.time>];
-    name = [select: -1 | <expr e.P35.id, e.P35.P580.time>];
-    statePosition1 = case e.P1906.id of {
-    	"Q844944" => mkNP (mkCN (mkCN chairman_N (mkAdv of_1_Prep (mkNP the_Det presidency_2_N))) name);
-        "Q955006" | "Q191954" => mkNP (mkCN (mkCN presidentMasc_1_N) name); 
-        "Q25711499" => mkNP (mkCN (mkCN emir_N) name); 
-        "Q63415597" | "Q2457774" => mkNP (mkCN (mkCN prince_N) name);
-        "Q258045" => mkNP (mkCN (mkCN(CompoundN captainMasc_1_N regentMasc_1_N)) name);
-        "Q2081829" => mkNP (mkCN (mkCN amir_N) name);
-        "Q1402561" =>   mkNP (mkCN (mkCN military_2_A leaderMasc_1_N) name);
-        "Q1472951" =>  mkNP (mkCN (mkCN governor_generalMasc_N) name);
-        "Q102181806" => mkNP (mkCN (mkCN chairman_N (mkAdv of_1_Prep (mkNP the_Det (mkCN presidential_1_A council_1_N)))) name);
-        "Q63107773" => mkNP (mkCN (mkCN chairman_N (mkAdv of_1_Prep (mkNP the_Det (mkCN transitional_A 
-        (mkCN military_2_A council_1_N))))) name);
-        _ => mkNP (mkCN (mkCN (expr e.P1906.id)) name)};
+        name = [select: -1 | <expr {NP} e.P35.id, e.P35.P580.time>];
+        statePosition1 = case e.P1906.id of {
+                           "Q844944" => mkNP (mkCN (mkCN chairman_N (mkAdv of_1_Prep (mkNP the_Det presidency_2_N))) name);
+                           "Q955006" | "Q191954" => mkNP (mkCN (mkCN presidentMasc_1_N) name);
+                           "Q25711499" => mkNP (mkCN (mkCN emir_N) name);
+                           "Q63415597" | "Q2457774" => mkNP (mkCN (mkCN prince_N) name);
+                           "Q258045" => mkNP (mkCN (mkCN(CompoundN captainMasc_1_N regentMasc_1_N)) name);
+                           "Q2081829" => mkNP (mkCN (mkCN amir_N) name);
+                           "Q1402561" =>   mkNP (mkCN (mkCN military_2_A leaderMasc_1_N) name);
+                           "Q1472951" =>  mkNP (mkCN (mkCN governor_generalMasc_N) name);
+                           "Q102181806" => mkNP (mkCN (mkCN chairman_N (mkAdv of_1_Prep (mkNP the_Det (mkCN presidential_1_A council_1_N)))) name);
+                           "Q63107773" => mkNP (mkCN (mkCN chairman_N (mkAdv of_1_Prep
+                                                        (mkNP the_Det (mkCN transitional_A (mkCN military_2_A council_1_N))))) name);
+                           _ => mkNP (mkCN (mkCN (expr e.P1906.id)) name)};
         statePosition2 = case e.P1906.P279.id of {
-                        "Q15995642" | "Q611644" => mkNP (mkCN (mkCN pope_1_N) name); 
-                        "Q30461" | "Q248577" => mkNP (mkCN (mkCN presidentMasc_1_N) name); 
-                        "Q43292" =>  mkNP ( mkCN (mkCN sultan_N) name);
-                        "Q7645115" => mkNP (mkCN (mkCN supreme_2_A leaderMasc_1_N) name);
-                        "Q166382" => mkNP (mkCN (mkCN emir_N) name);
-                        "Q39018" => mkNP (mkCN (mkCN emperor_1_N) name);
-                        "Q116" | "Q12097" | "Q16511993" => mkNP (mkCN (mkCN monarchMasc_1_N) name); 
-                        _ => mkNP (mkCN (mkCN (expr e.P1906.P279.id)) name)}
+                           "Q15995642" | "Q611644" => mkNP (mkCN (mkCN pope_1_N) name);
+                           "Q30461" | "Q248577" => mkNP (mkCN (mkCN presidentMasc_1_N) name);
+                           "Q43292" =>  mkNP ( mkCN (mkCN sultan_N) name);
+                           "Q7645115" => mkNP (mkCN (mkCN supreme_2_A leaderMasc_1_N) name);
+                           "Q166382" => mkNP (mkCN (mkCN emir_N) name);
+                           "Q39018" => mkNP (mkCN (mkCN emperor_1_N) name);
+                           "Q116" | "Q12097" | "Q16511993" => mkNP (mkCN (mkCN monarchMasc_1_N) name);
+                           _ => mkNP (mkCN (mkCN (expr e.P1906.P279.id)) name)
+                         }
     in [concat: 1 | variants {
     mkPhrMark (mkCl (mkNP (expr qid)) (mkNP aSg_Det (mkCN (expr basicForm.P279.id)
 	(mkAdv with_Prep (AdvNP(
-    variants {statePosition1; statePosition2; mkNP name})
+    variants {statePosition1; statePosition2; name})
    (mkAdv as_Prep (mkNP head_of_stateMasc_N)))))));
     mkPhrMark (mkCl (mkNP (expr qid)) (mkNP aSg_Det (mkCN (expr basicForm.P279.id))))
     }];
     
-    let 
-    cur_head = [select: -1 | <entity e.P35.id, e.P6.P580.time>];
-    prev_head = [select: -2 | <expr e.P35.id, e.P6.P580.time>];
-    gender = case cur_head.P21.id of {
-        "Q6581097" => he_Pron;
-        _ => she_Pron};
-    prep = case lang of {
-        "fre" => into_1_Prep;
-        _ => in_1_Prep
-    }
-    in 
-    [concat: 1 | mkPhrMark (mkS TPastSimple (mkCl (mkNP gender) (mkVP (mkVP succeed_V2 prev_head) (mkAdv prep (mkNP the_Det position_6_N)))))];
-    
+    let prev_head = [select: -2 | <expr e.P35.id, e.P35.P580.time>];
+        pron      = [select: -1 |
+                       let pron = case (entity e.P35.id).P21.id of {
+                                    "Q6581097" => he_Pron;
+                                    _          => she_Pron
+                                  }
+                       in <pron, e.P35.P580.time>];
+        prep = case lang of {
+                 "fre" => into_1_Prep;
+                 _ => in_1_Prep
+               }
+    in [concat: 1 | mkPhrMark (mkS TPastSimple (mkCl (mkNP pron) (mkVP (mkVP succeed_V2 prev_head) (mkAdv prep (mkNP the_Det position_6_N)))))];
 
-    
     let officeGov = entity e.P1313.id ;
-	officeGov = entity e.P1313.id ;
-    name = [select: -1 | <expr e.P6.id, e.P6.P580.time>];
-    prev_name = [select: -2 | <expr e.P6.id, e.P6.P580.time>]
-    in 
-    [concat: 1 | mkPhrMark (mkCl (mkNP the_Det (mkCN current_A head_of_government_N))
-     (variants {
-     (ExtRelNP (mkNP (mkCN (expr officeGov.P279.id) name)) 
-     (mkRS TPastSimple (mkRCl which_RP (mkVP (mkVP take_office_V) (mkAdv after_Prep prev_name)))));
-     (mkNP (mkCN (expr officeGov.P279.id) name)); (name)
-     }))] ;
-    
-    
+        name      = [select: -1 | <expr e.P6.id, e.P6.P580.time>];
+        prev_name = [select: -2 | <expr e.P6.id, e.P6.P580.time>]
+    in [concat: 1 | mkPhrMark (mkCl (mkNP the_Det (mkCN current_A head_of_government_N))
+                                    (variants {ExtRelNP (mkNP (mkCN (expr officeGov.P279.id) name))
+                                                        (mkRS TPastSimple (mkRCl which_RP (mkVP (mkVP take_office_V) (mkAdv after_Prep prev_name)))) ;
+                                               mkNP (mkCN (expr officeGov.P279.id) name) ;
+                                               name
+                                              }))] ;
+
     let orgs = [list: and_Conj | mkNP (expr e.P463.id)]
-    in 
-       mkPhrMark (mkCl (mkNP theSg_Det country_1_N) (mkNP aSg_Det (PossNP (mkCN member_4_N) orgs)));
-    
-    
-    let 
-    number = <e.P8328.amount : Predef.Float>;
-    democracy =  case (compareFloat number 9.0) of {
-        LT => case (compareFloat number 6.0) of {
-            LT => case (compareFloat number 4.0) of {
-                LT => mkNP a_Quant (mkCN authoritarian_1_A regime_1_N);
-                _ => mkNP a_Quant (mkCN hybrid_A regime_1_N)
-                };
-            _ => case lang of {
-              "fre" | "spa" => mkNP a_Quant (mkCN imperfect_1_A democracy_2_N); 
-              _ => mkNP a_Quant (mkCN democracy_2_N (mkAdv with_Prep (mkNP aPl_Det flaw_3_N)))
-        	}};
-        _ => case lang of 
-        {
-        "fre" => mkNP a_Quant (mkCN full_fledged_1_A democracy_2_N) ; 
-        _ => mkNP a_Quant (mkCN full_2_A democracy_2_N)}
-    }; 
-    vp = case lang of {
-        "rus" => passiveVP (Slash3V3 consider_6_V3 democracy);
-         _ => AdvVP (passiveVP (mkVPSlash rank_2_V2)) (mkAdv as_Prep democracy)
-    } in  
-    [concat: 1 | mkPhrMark (ExtAdvS 
-    (mkAdv with_Prep (AdvNP (mkNP a_Quant democracy_index_N)
-    (mkAdv of_1_Prep (mkNP (mkDecimal number) point_10_N)))) 
-    (mkS (mkCl (mkNP (expr qid)) (AdvVP (passiveVP (mkVPSlash rank_2_V2)) (mkAdv as_Prep democracy)))))];
+    in mkPhrMark (mkCl (mkNP theSg_Det country_1_N) (mkNP aSg_Det (PossNP (mkCN member_4_N) orgs)));
 
-    
+    let number = <e.P8328.amount : Predef.Float>;
+        democracy =  case compareFloat number 9.0 of {
+                       LT => case compareFloat number 6.0 of {
+                               LT => case compareFloat number 4.0 of {
+                                       LT => mkNP a_Quant (mkCN authoritarian_1_A regime_1_N);
+                                       _ => mkNP a_Quant (mkCN hybrid_A regime_1_N)
+                                     };
+                               _  => case lang of {
+                                       "fre" | "spa" => mkNP a_Quant (mkCN imperfect_1_A democracy_2_N);
+                                       _             => mkNP a_Quant (mkCN democracy_2_N (mkAdv with_Prep (mkNP aPl_Det flaw_3_N)))
+                                     }
+                             };
+                       _ => case lang of {
+                              "fre" => mkNP a_Quant (mkCN full_fledged_1_A democracy_2_N) ;
+                              _     => mkNP a_Quant (mkCN full_2_A democracy_2_N)}
+                            };
+        vp = case lang of {
+               "rus" => passiveVP (Slash3V3 consider_6_V3 democracy);
+               _     => AdvVP (passiveVP (mkVPSlash rank_2_V2)) (mkAdv as_Prep democracy)
+             }
+    in [concat: 1 | mkPhrMark (ExtAdvS
+                                  (mkAdv with_Prep (AdvNP (mkNP a_Quant democracy_index_N) (mkAdv of_1_Prep (mkNP (mkDecimal number) point_10_N))))
+                                  (mkS (mkCl (mkNP (expr qid)) (AdvVP (passiveVP (mkVPSlash rank_2_V2)) (mkAdv as_Prep democracy)))))];
+
     let freedom = entity e.P1552.id ;
-    quality = case freedom.P3729.id of {
-        "Q3174312" | "Q47185282" => mkNP aSg_Det (mkCN free_1_A country_1_N);
-         "Q47185145" => mkNP aSg_Det (mkCN (mkAP partly_AdA free_1_A) country_1_N);
-         "Q7174" => mkNP aSg_Det (mkCN democratic_1_A country_1_N)
-      };
-    pol = case freedom.P3729.id of {
-        "Q47185282" => PNeg;
-        _ => PPos
-     } in 
+        quality = case freedom.P3729.id of {
+                    "Q3174312" | "Q47185282" => mkNP aSg_Det (mkCN free_1_A country_1_N);
+                    "Q47185145" => mkNP aSg_Det (mkCN (mkAP partly_AdA free_1_A) country_1_N);
+                    "Q7174" => mkNP aSg_Det (mkCN democratic_1_A country_1_N)
+                  };
+        pol = case freedom.P3729.id of {
+                "Q47185282" => PNeg;
+                _           => PPos
+              }
+    in mkPhrMark (mkS pol (mkCl (mkNP freedom_in_the_world_PN) (mkVP (mkVPSlash consider_6_V3 (mkNP it_Pron)) quality)));
 
-    mkPhrMark(mkS pol (mkCl (mkNP freedom_in_the_world_PN)
-    (mkVP (mkVPSlash consider_6_V3 (mkNP it_Pron)) quality)));
-    
     let agents = [list: and_Conj | mkNP (expr e.P3461.id)] in 
   	[concat: 1 | mkPhrMark (mkCl (mkNP(ProDrop it_Pron))
   	(PassAgentVPSlash (AdvVPSlash (mkVPSlash designate_4_V2) (mkAdv as_Prep 
   	(mkNP aSg_Det (CompoundN terroristMasc_N state_4_N)))) agents))];
 
-
-    <h2>economy_1_N</h2>
+    <h2 class="gp-page-title">economy_1_N</h2>
     -- fix growth
     
     let 
@@ -727,26 +723,26 @@ np = mkNP (mkDecimal <: Predef.Float>)
      (AdvNP (mkNP aSg_Det growth)
 		(mkAdv of_1_Prep (QuantityNP (mkDecimal (round <economy.P2219.amount : Predef.Float> 2)) percent_MU))));
 	copula = case lang of {
-        "fre" => (mkAdv of_1_Prep number); 
-        "rus" => (mkVP amount_to_1_V2 number); 
-        _ => number } 
+               "fre" => mkVP (mkAdv of_1_Prep number);
+               "rus" => (mkVP amount_to_1_V2 number);
+               _     => mkVP number
+             }
         in
 
 	[concat : 1 | mkPhrMark (mkCl (mkNP theSg_Det gross_domestic_product_N) copula)];
-    
-  
+
     -- gdp 
     let number = (QuantityNP (mkDecimal (round <economy.P1279.amount : Predef.Float> 2)) percent_MU);
-    copula = case lang of {
-        "fre" => (mkAdv of_1_Prep number); 
-        "rus" => (mkVP amount_to_1_V2 number); 
-        _ => number} 
-    in 
-	[concat: 1 | mkPhrMark(mkCl(mkNP theSg_Det (CompoundN inflation_1_N rate_4_N)) copula)];
+        copula = case lang of {
+                   "fre" => mkVP (mkAdv of_1_Prep number);
+                   "rus" => (mkVP amount_to_1_V2 number);
+                   _ => mkVP number
+                 }
+    in [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det (CompoundN inflation_1_N rate_4_N)) copula)];
     
-    [concat: 1 | mkPhrMark(mkCl (mkNP theSg_Det country_2_N)
-    (mkVP have_1_V2 (AdvNP (mkNP aSg_Det (mkCN total_1_A reserve_2_N)) (mkAdv of_1_Prep 
-    (QuantityNP (mkDecimal (round <economy.P2134.amount : Predef.Float> 2)) dollar_MU)))))];
+    [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det country_2_N)
+                           (mkVP have_1_V2 (AdvNP (mkNP aSg_Det (mkCN total_1_A reserve_2_N))
+                                                  (mkAdv of_1_Prep (QuantityNP (mkDecimal (round <economy.P2134.amount : Predef.Float> 2)) dollar_MU)))))];
     
     -- add gini 
     
@@ -769,9 +765,10 @@ np = mkNP (mkDecimal <: Predef.Float>)
         }
     };
     copula = case lang of {
-        "fre" => (mkAdv of_1_Prep income); 
-        "rus" => (mkVP amount_to_1_V2 income); 
-        _ => income};
+               "fre" => mkVP (mkAdv of_1_Prep income);
+               "rus" => mkVP amount_to_1_V2 income;
+               _     => mkVP income
+             } ;
     medIncome = mkS (mkCl (mkNP theSg_Det (mkCN median_3_A income_N)) copula) ;
     giniIndex = mkS (mkCl (mkNP theSg_Det (PossNP (mkCN distribution_1_N) (mkNP income_N))) (mkVP show_2_V2 (mkNP aSg_Det gini.p1))) 
     in 
@@ -780,61 +777,52 @@ np = mkNP (mkDecimal <: Predef.Float>)
     [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det (mkCN official_1_A currency_1_N)) (mkNP theSg_Det (expr e.P38.id)))];
     
     let number = (QuantityNP (mkDecimal (round <e.P3529.amount: Predef.Float> 2)) percent_MU);
-    copula = case lang of {
-        "fre" => (mkAdv of_1_Prep number); 
-        "rus" => (mkVP amount_to_1_V2 number); 
-        _ => number} in
-    [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det unemployment_N) copula)];
+        copula = case lang of {
+                   "fre" => mkVP (mkAdv of_1_Prep number);
+                   "rus" => mkVP amount_to_1_V2 number;
+                   _     => mkVP number
+                 }
+    in [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det unemployment_N) copula)];
     
-    
-    let 
-    prep = case lang of {
-    	"rus" => on_1_Prep;
-        _ => for_Prep};
-    vats = [list: and_Conj | 
-    (AdvNP (QuantityNP (mkDecimal (round <e.P2855.amount : Predef.Float> 2)) percent_MU)
-    (mkAdv prep [list : and_Conj | mkNP (expr e.P2855.P518.id)]))];
-    copula = case lang of {
-        "fre" => (mkAdv of_1_Prep vats); 
-        "rus" => (mkVP amount_to_1_V2 vats); 
-        _ => vats}
-    
-    in 
-    [concat: 1 | mkPhrMark(mkCl(mkNP theSg_Det vat_1_N) copula)];
-    
+    let prep = case lang of {
+                 "rus" => on_1_Prep;
+                 _     => for_Prep
+               };
+        vats = [list: and_Conj |
+                       (AdvNP (QuantityNP (mkDecimal (round <e.P2855.amount : Predef.Float> 2)) percent_MU) (mkAdv prep [list : and_Conj | mkNP (expr e.P2855.P518.id)]))];
+        copula = case lang of {
+                   "fre" => mkVP (mkAdv of_1_Prep vats);
+                   "rus" => mkVP amount_to_1_V2 vats;
+                   _ => mkVP vats
+                 }
+    in [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det vat_1_N) copula)];
+
     let tax = [list : and_Conj | AdvNP (QuantityNP (mkDecimal (round <e.P2834.amount : Predef.Float> 2)) percent_MU)
-   (mkAdv above_Prep (QuantityNP (mkDecimal (round <e.P2834.P2835.amount : Predef.Float> 2)) dollar_MU))];
-    copula = case lang of {
-        "fre" => (mkAdv of_1_Prep tax); 
-        "rus" => (mkVP amount_to_1_V2 tax); 
-        _ => tax}
-     in 
-    [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det income_tax_N) copula)];
+                                       (mkAdv above_Prep (QuantityNP (mkDecimal (round <e.P2834.P2835.amount : Predef.Float> 2)) dollar_MU))];
+        copula = case lang of {
+                   "fre" => mkVP (mkAdv of_1_Prep tax);
+                   "rus" => mkVP amount_to_1_V2 tax;
+                   _ => mkVP tax}
+    in [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det income_tax_N) copula)];
     
-    [concat | <h2>climate_1_N</h2>
-    let 
-    maxNumber = (QuantityNP (mkDecimal (round <e.P6591.amount : Predef.Float> 2)) celsius_MU);
-	maxTemp = mkS TPastSimple (variants {mkCl 
-    (mkNP (mkNP (mkDet the_Quant (mkOrd high_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N)) 
-    (InLN (expr qid))) 
-    (mkVP reach_2_V2 maxNumber);
-    mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd high_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N))) 
-    (mkVP (mkVP reach_2_V2 maxNumber) (InLN (expr e.P6591.P276.id)))
-    }); 
-    minNumber = (QuantityNP (mkDecimal (round <e.P7422.amount : Predef.Float> 2)) celsius_MU);
-    minVP = AdvVP (mkVP drop_4_V) (mkAdv to_2_Prep minNumber);
-    minTemp = mkS TPastSimple (variants {
-    mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd low_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N))) 
-    ([default: (mkVP minVP (InLN (expr e.P7422.P276.id))) | (AdvVP (mkVP minVP (InLN (expr e.P7422.P276.id))) 
-    (time2adv e.P7422.P585.time))]);
-    mkCl
-    (mkNP (mkNP (mkDet the_Quant (mkOrd low_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N))
-    (InLN (expr qid))) 
-    ([default: minVP | AdvVP minVP (time2adv e.P7422.P585.time)])
-    })
-    
-    in 
-     [concat : 1 | mkPhrMark (variants {(mkS and_Conj minTemp maxTemp); minTemp ; maxTemp})] 
+    [concat |
+       <h2 class="gp-page-title">climate_1_N</h2>
+       let to_temp = \t -> case is_metric of {
+                             True  => QuantityNP (mkDecimal (round t 2)) celsius_MU;
+                             False => QuantityNP (mkDecimal (round (plusFloat (mulFloat t 1.8) 32.0) 2)) fahrenheit_MU
+                           } ;
+           maxNumber = to_temp e.P6591.amount;
+           maxTemp = mkS TPastSimple
+                         ( mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd high_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N)) (InLN (expr qid))) (mkVP reach_2_V2 maxNumber)
+                         | mkCl (mkNP (mkDet the_Quant (mkOrd high_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N)) (mkVP (mkVP reach_2_V2 maxNumber) (InLN (expr e.P6591.P276.id)))
+                         );
+           minNumber = to_temp e.P7422.amount;
+           minVP = AdvVP (mkVP drop_4_V) (mkAdv to_2_Prep minNumber);
+           minTemp = mkS TPastSimple
+                         ( mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd low_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N))) ([default: (mkVP minVP (InLN (expr e.P7422.P276.id))) | (AdvVP (mkVP minVP (InLN (expr e.P7422.P276.id))) (time2adv e.P7422.P585.time))])
+                         | mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd low_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N)) (InLN (expr qid))) ([default: minVP | AdvVP minVP (time2adv e.P7422.P585.time)])
+                         )
+       in [concat : 1 | mkPhrMark (mkS and_Conj minTemp maxTemp | minTemp | maxTemp)]
      ];
-    
+
    </div>
