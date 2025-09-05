@@ -47,10 +47,10 @@ in <div>
                       _         => cn0
                     } ;
               with_population = [one | mkAdv with_Prep (mkNP (mkDet (mkDecimal <e.P1082.amount : Predef.Int>)) (mkCN inhabitantMasc_1_N))]
-          in mkPhrMark (mkS (mkCl (mkNP (expr qid)) (mkVP (mkNP (mkNP a_Quant cn) with_population)))) ];
+          in mkPhrMark (mkS (mkCl (mkNP (expr qid)) (mkVP (mkNP' (mkNP a_Quant cn) with_population)))) ];
 
      -- neighbours
-     [concat: 1 | 
+     [concat: 1 |
         let prep = case lang of {
                      "rus" => at_2_Prep;
                      "fin" => in_1_Prep;
@@ -61,8 +61,7 @@ in <div>
                        _      => the_Det
                       };
             neighbours = [list: and_Conj
-                            | [default: (mkNP (expr e.P47.id)) |
-                                  AdvNP (mkNP (expr e.P47.id)) (mkAdv prep (mkNP article [one|expr e.P47.P654.id]))]];
+                            | mkNP' (mkNP (expr e.P47.id)) (mkAdv prep (mkNP article [one|expr e.P47.P654.id]))];
             num = [len: (\l -> case compareInt l 1 of {
                                  EQ => aSg_Det ;
                                  _  => aPl_Det
@@ -193,15 +192,12 @@ in <div>
 
     let np = mkNP (mkDecimal (round <e.P4841.amount: Predef.Float> 2)) (mkCN (mkCN child_2_N))
     in [concat: 1 |
-	      mkPhrMark (mkS (mkCl (mkNP theSg_Det fertility_1_N) [default: np | AdvNP np (mkAdv per_Prep (mkNP woman_1_N))]))];
+	      mkPhrMark (mkS (mkCl (mkNP theSg_Det fertility_1_N) (mkNP np (mkAdv per_Prep (mkNP woman_1_N)))))];
 
-  let np = mkNP (mkDecimal (round <e.P3864.amount: Predef.Float> 2)) 
-  (mkCN (mkCN death_1_N)) in 
- [concat: 1 | 
-  mkPhrMark (mkS (mkCl (mkNP the_Det (CompoundN suicide_1_N rate_4_N))
-  (mkVP stand_at_V2 [default: np | AdvNP np
-  (mkAdv per_Prep (mkNP (mkDecimal <100000 : Predef.Int>) (mkCN inhabitantMasc_1_N yearly_Adv)))])
- ))];
+    let np = mkNP (mkDecimal (round e.P3864.amount 2)) (mkCN (mkCN death_1_N))
+    in [concat: 1 |
+          mkPhrMark (mkS (mkCl (mkNP the_Det (CompoundN suicide_1_N rate_4_N))
+                               (mkVP stand_at_V2 (mkNP np (mkAdv per_Prep (mkNP (mkDecimal <100000 : Predef.Int>) (mkCN inhabitantMasc_1_N yearly_Adv)))))))];
  
  let 
  city = case qid of {
@@ -813,14 +809,14 @@ np = mkNP (mkDecimal <: Predef.Float>)
                            } ;
            maxNumber = to_temp e.P6591.amount;
            maxTemp = mkS TPastSimple
-                         ( mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd high_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N)) (InLN (expr qid))) (mkVP reach_2_V2 maxNumber)
-                         | mkCl (mkNP (mkDet the_Quant (mkOrd high_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N)) (mkVP (mkVP reach_2_V2 maxNumber) (InLN (expr e.P6591.P276.id)))
+                         ( mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd high_1_A)) (mkCN registered_2_A temperature_1_N)) (InLN (expr qid))) (mkVP reach_2_V2 maxNumber)
+                         | mkCl (mkNP (mkDet the_Quant (mkOrd high_1_A)) (mkCN registered_2_A temperature_1_N)) (mkVP (mkVP reach_2_V2 maxNumber) (InLN (expr e.P6591.P276.id)))
                          );
            minNumber = to_temp e.P7422.amount;
            minVP = AdvVP (mkVP drop_4_V) (mkAdv to_2_Prep minNumber);
            minTemp = mkS TPastSimple
-                         ( mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd low_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N))) ([default: (mkVP minVP (InLN (expr e.P7422.P276.id))) | (AdvVP (mkVP minVP (InLN (expr e.P7422.P276.id))) (time2adv e.P7422.P585.time))])
-                         | mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd low_1_A)) (mkCN (mkAP registered_2_A) temperature_1_N)) (InLN (expr qid))) ([default: minVP | AdvVP minVP (time2adv e.P7422.P585.time)])
+                         ( mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd low_1_A)) (mkCN registered_2_A temperature_1_N))) (mkVP' (mkVP minVP (InLN (expr e.P7422.P276.id))) (time2adv e.P7422.P585.time))
+                         | mkCl (mkNP (mkNP (mkDet the_Quant (mkOrd low_1_A)) (mkCN registered_2_A temperature_1_N)) (InLN (expr qid))) (mkVP' minVP (time2adv e.P7422.P585.time))
                          )
        in [concat : 1 | mkPhrMark (mkS and_Conj minTemp maxTemp | minTemp | maxTemp)]
      ];
