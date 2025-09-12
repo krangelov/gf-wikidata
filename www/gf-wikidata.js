@@ -210,6 +210,7 @@ function init_editor() {
                                         gutters: ["CodeMirror-linenumbers", "error-markers"]});
             editor.getDoc().setValue(prog);
             editor.setSize(null,  300);
+            editor.addKeyMap({"Ctrl-Space": wordnet_search});
 
             evalBtn.addEventListener("click", () => test([],true));
         } else {
@@ -240,6 +241,74 @@ function init_editor() {
         gfwordnet.set_user(user,author,token,0,null,commit);
         commit.style.display = "inline";
     }
+}
+
+function wordnet_search(cm)
+{
+    var selection = {
+		current: urlParams.get("lang"),
+		langs: {},
+		langs_list: []
+	};
+	var lemma = cm.getSelection();
+
+	var search_popup = element("search_popup");
+	var viewport = element("editor").getBoundingClientRect();
+	search_popup.style.top     = viewport.top+"px";
+	search_popup.style.left    = viewport.left+"px";
+	search_popup.style.display = "block";
+
+	function close_popup() {
+		search_popup.innerHtml = "";
+		search_popup.style.display = "none";
+		delete(window.onkeyup);
+		delete(window.onclick);
+	}
+	window.onkeyup = function (event) {
+		if (event.keyCode == 27) {
+			close_popup();
+		}
+	}
+	window.onclick = close_popup
+	search_popup.onclick = function (event) {
+		event.stopPropagation();
+	}
+
+	var index=1;
+    let elem = element("from").firstElementChild;
+	while (elem != null) {
+        const anchor = elem.firstElementChild.firstElementChild;
+        const check  = elem.firstElementChild.nextElementSibling;
+        if (check.checked) {
+            let lang = selection.current;
+            if (anchor.tagName == "A") {
+                const href = anchor.getAttribute("href");
+                const url=new URL(href,window.location.href);
+                lang = url.searchParams.get("lang");
+            }
+            selection.langs[lang] = {name: anchor.innerText, index: index};
+            selection.langs_list.push(lang);
+            index++;
+        }
+        elem = elem.nextElementSibling;
+	}
+	selection.isEqual = function(other) {
+		if (other.langs_list.length != this.langs_list.length)
+			return false;
+		for (var i = 0; i < other.langs_list.length; i++) {
+			if (other.langs_list[i] != this.langs_list[i])
+				return false;
+		}
+		return true;
+	}
+	gfwordnet.can_select=true;
+	gfwordnet.onclick_select = function(row) {
+        var lex_id = row.getAttribute("data-lex-id");
+        cm.replaceSelection(lex_id);
+		cm.focus();
+		close_popup();
+	}
+	gfwordnet.search(selection, lemma, element("domains"), element("result"), null);
 }
 
 function make_dot(message) {
