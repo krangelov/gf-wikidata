@@ -211,6 +211,7 @@ function init_editor() {
             editor.getDoc().setValue(prog);
             editor.setSize(null,  300);
             editor.addKeyMap({"Ctrl-Space": wordnet_search});
+            editor.addKeyMap({"Ctrl-S": () => test([],true)});
 
             evalBtn.addEventListener("click", () => test([],true));
         } else {
