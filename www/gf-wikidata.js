@@ -252,6 +252,13 @@ function wordnet_search(cm)
 		langs_list: []
 	};
 	var lemma = cm.getSelection();
+    if (lemma == "") {
+        const find = cm.findWordAt(cm.getCursor())
+        cm.setSelection(find.anchor, find.head);
+        lemma = cm.getSelection();
+        if (lemma == "")
+            return
+    }
 
 	var search_popup = element("search_popup");
 	var viewport = element("editor").getBoundingClientRect();
