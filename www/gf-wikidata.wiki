@@ -1,6 +1,15 @@
 ("gf-wikidata.html"
 ,[("Q6256", "country.gf")
  ,("Q112099", "country.gf")
+ ,("Q3624078", "country.gf")
  ,("Q5", "person.gf")
+ ,("Q34770", "language.gf")
+ ,("Q33742", "language.gf")
+ ,("Q1288568", "language.gf")
+ ,("Q3918", "university.gf")
+ ,("Q875538", "university.gf")
+ ,("Q11344", "chemical_elements.gf")
+ ,("Q28640", "profession.gf")
  ]
+,Nothing
 )
