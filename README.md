@@ -10,15 +10,15 @@ and family names plust ~4 million geographical names from Wikidata. This means
 that the total lexicon contains close to 5 million lexical items most of which
 are linked with their corresponding Wikidata items.
 These are the starting point to generating articles about people,
-countries, capitals and cities.
+countries, cities, universities and professions.
 
 For the NLG we don't need to write an application grammar. You can use
-the RGL api and the lexicon directly from Python. Look at 
-[nlg.country](app/nlg/country.py), [nlg.capital](app/nlg/capital.py) and [nlg.city](app/nlg/city.py) for
+the RGL api and extended version of the GF language, which can access Wikidata directly. Look at 
+[country.gf](country.gf), [city.gf](city.gf) and [person.gf](person.gf) for
 examples.
 
-There is also a mock up web interface here:
+There is also a web interface here:
 
-https://cloud.grammaticalframework.org/wikidata/index.wsgi
+https://cloud.grammaticalframework.org/wordnet/app/wikidata/
 
-Try searching for countries and cities! The response is currently slow since it takes time to fetch the data from Wikidata. This is something to be improved in the future.
+Try searching for countries and cities! The response may be slow since it takes time to fetch the data from Wikidata.
