@@ -126,7 +126,7 @@ function loadEntity(qid) {
     searchInput.value = "";
     const searchResults = document.getElementById("searchResults");
     searchResults.style.display = "none";
-    window.location.href = "gf-wikidata.wiki?qid="+qid+"&lang="+urlParams.get("lang");
+    window.location.href = "index.wiki?qid="+qid+"&lang="+urlParams.get("lang");
 }
 
 function revalidate(options) {
@@ -176,7 +176,7 @@ function init_editor() {
             var row = tr([td([node("b",{},[text(name)])])]);
             checked = true;
         } else {
-            let url = "gf-wikidata.wiki"
+            let url = "index.wiki"
             url += "?lang="+gfwordnet.languages[i][1];
             const qid = urlParams.get("qid");
             if (qid != null)
