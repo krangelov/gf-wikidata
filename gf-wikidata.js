@@ -335,7 +335,7 @@ async function test(input,update) {
         edit: urlParams.get("edit"),
         input: input
     };
-    const response = await fetch("FunctionsService.fcgi",
+    const response = await fetch("../../FunctionsService.fcgi",
         {method: "POST",
          body: JSON.stringify(data),
         });
