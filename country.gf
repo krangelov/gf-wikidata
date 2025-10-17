@@ -1,4 +1,5 @@
 
+
 let e = entity qid;
     economy = entity e.P8744.id;
     to_list_class = \l ->
@@ -138,8 +139,8 @@ in <div>
     
      let capitals = [list: and_Conj | mkNP (expr e.P36.id)];
          num = [len: (\l -> case compare l 1 of {
-                              EQ => aSg_Det ;
-                              _  => aPl_Det
+                              EQ => theSg_Det ;
+                              _  => thePl_Det
                             })
                      | e.P36.id];
          order = case lang of {
