@@ -171,13 +171,14 @@ function init_editor() {
     const from = element('from');
     for (let i in gfwordnet.languages) {
         const name = gfwordnet.languages[i][0];
-        let checked = langs.includes(name);
-        if (gfwordnet.languages[i][1] == urlParams.get("lang")) {
+        const cnc  = gfwordnet.languages[i][1];
+        let checked = langs.includes(cnc);
+        if (cnc == urlParams.get("lang")) {
             var row = tr([td([node("b",{},[text(name)])])]);
             checked = true;
         } else {
             let url = "index.wiki"
-            url += "?lang="+gfwordnet.languages[i][1];
+            url += "?lang="+cnc;
             const qid = urlParams.get("qid");
             if (qid != null)
                 url += "&qid="+qid;
@@ -185,10 +186,10 @@ function init_editor() {
         }
 
         if (urlParams.get("edit")) {
-            const checkbox = node("input",{type: "checkbox"},[]);
+            const checkbox = node("input",{type: "checkbox", name: cnc},[]);
             if (checked)
                 checkbox.checked = true;
-            row.appendChild(checkbox);
+            row.appendChild(td(checkbox));
         }
 
         from.appendChild(row);
@@ -441,7 +442,7 @@ function select_language() {
 	window.localStorage.setItem('gp-languages', langs);
 }
 
-function edit_lex(span,event) {
+function edit_lex(span) {
 	if (span.classList.contains("selected-lexeme"))
 		return;
 
@@ -449,7 +450,7 @@ function edit_lex(span,event) {
 
 	gfwordnet.selection = {langs_list: [], langs: {}}
 	let table = document.getElementById("from");
-	let tr = table.lastElementChild.firstElementChild;
+	let tr = table.firstElementChild;
 	while (tr != null) {
 		var nameElem  = tr.firstElementChild.firstElementChild;
 		var checkElem = tr.lastElementChild.firstElementChild;
