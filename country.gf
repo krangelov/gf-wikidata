@@ -1,5 +1,6 @@
 
 
+
 let e = entity qid;
     economy = entity e.P8744.id;
     to_list_class = \l ->
@@ -153,13 +154,13 @@ in <div>
      let official_langs = [list: and_Conj | mkNP (expr e.P37.id)];
          other_langs    = [list: and_Conj | mkNP (expr e.P2936.id)] ;
          num1 = [len: (\l -> case compare l 1 of {
-                               EQ => aSg_Det ;
-                               _  => aPl_Det
+                               EQ => theSg_Det ;
+                               _  => thePl_Det
                              })
                     | e.P37.id];
          num2 = [len: (\l -> case compare l 1 of {
-                               EQ => aSg_Det ;
-                               _  => aPl_Det
+                               EQ => theSg_Det ;
+                               _  => thePl_Det
                              })
                     | e.P2936.id];
          vp = case lang of {
@@ -557,7 +558,7 @@ in <div>
                       quality = mkCN ap (mkCN human_development_N) ;
                       html = <span>
                             mkPhr (mkUtt (mkCl (mkNP theSg_Det country_1_N) (mkVP have_1_V2 (mkNP aSg_Det quality))));
-                            "("; hdi_PN; hdi; ")"; FullStop
+                            " ("; hdi_PN; hdi; " )"; FullStop
                             </span>
                   in <html, e.P1081.P585.time>];
  
