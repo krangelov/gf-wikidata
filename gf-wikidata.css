@@ -148,17 +148,12 @@ span.checked:hover, span.unchecked:hover, span.guessed:hover {
 	cursor: pointer;
 }
 
-span.selected-lexeme {
+.selected-output {
 	background: #66c;
 	color: white;
-	padding-left: 0.4em;
-	padding-right: 0.4em;
+	padding-left: 0.2em;
+	padding-right: 0.2em;
 	font-weight: bold;
-}
-
-span.selected-lexeme:hover {
-	background: #66c;
-	cursor: auto;
 }
 
 .error-markers {

@@ -8,7 +8,7 @@ function showSearches(searchbox) {
     if (searchbox.value.length < 3) return;
 
     const lang = urlParams.get("lang");
-    const lang_code = langcode2(lang.slice(5);
+    const lang_code = langcode2[lang.slice(5)];
     if (!lang_code)
         return;
 	fetch("https://www.wikidata.org/w/api.php?action=wbsearchentities&language="+lang_code+"&uselang="+lang_code+"&type=item&continue=0&origin=*&format=json&search="+encodeURIComponent(searchbox.value),
@@ -129,6 +129,8 @@ function revalidate(options) {
     elemOpts.parentNode.style.display = "none";
     elemOpts.innerHTML = "";
     const optElems = [];
+    if (options==null)
+	return
     for (const opt of options) {
         elemOpts.parentNode.style.display = "block";
 
@@ -438,77 +440,103 @@ function select_language() {
 }
 
 function edit_lex(span) {
-	if (span.classList.contains("selected-lexeme"))
-		return;
 
-	const lexical_id = span.dataset.fun;
+    let n = span;
+    while (n != null) {
+        if (n.classList.contains("selected-output"))
+            break;
+        n = n.parentElement;
+    }
 
-	gfwordnet.selection = {langs_list: [], langs: {}}
-	let table = document.getElementById("from");
-	let tr = table.firstElementChild;
-	while (tr != null) {
-		var nameElem  = tr.firstElementChild.firstElementChild;
-		var checkElem = tr.lastElementChild.firstElementChild;
+	if (n != null) {
+        n.classList.remove("selected-output");
+		let parent = n.parentElement;
+        while (parent != null) {
+            if (parent.dataset.loc != null)
+                break;
+            parent = parent.parentElement;
+        }
 
-		var name = nameElem.innerHTML;
-		if (checkElem.checked) {
-			gfwordnet.selection.langs[checkElem.name] = {
-				name:  name,
-				index: gfwordnet.selection.langs_list.length+1
-			}
-			gfwordnet.selection.langs_list.push(checkElem.name);
-		}
-		if (nameElem.tagName == "B") {
-			gfwordnet.selection.current = checkElem.name;
-		}
-		tr = tr.nextElementSibling;
-	}
+        if (parent != null) {
+            const loc = parent.dataset.loc.split('-');
+            editor.setSelection({line: parseInt(loc[0],10), ch: 0}, {line: parseInt(loc[1],10)+1, ch: 0});
+            editor.focus()
+            parent.classList.add("selected-output");
+        }
+    } else {
+        const selected = document.querySelectorAll(".selected-output");
+        for (var i = 0; i < selected.length; i++) {
+            selected[i].classList.remove("selected-output");
+        }
 
-	const result = node("table",{class:"result"},[
-                     node("thead",{},[]),
-                     node("tbody",{},[])
-                   ]);
-    const popup = node("div",{},[result]);
-    document.body.appendChild(popup);
+        const lexical_id = span.dataset.fun;
 
-    span.classList.add("selected-lexeme");
+        gfwordnet.selection = {langs_list: [], langs: {}}
+        let table = document.getElementById("from");
+        let tr = table.firstElementChild;
+        while (tr != null) {
+            var nameElem  = tr.firstElementChild.firstElementChild;
+            var checkElem = tr.lastElementChild.firstElementChild;
 
-    document.body.addEventListener("click", function closeFn(event) {
-		let hit = (event.target == span);
-		if (!hit) {
-			let e = event.target;
-			while (e != null) {
-				if (e.className == "result" || e.className == "editor") {
-					hit = true;
-					break;
-				}
-				e = e.parentElement;
-			}
-		}
+            var name = nameElem.innerHTML;
+            if (checkElem.checked) {
+                gfwordnet.selection.langs[checkElem.name] = {
+                    name:  name,
+                    index: gfwordnet.selection.langs_list.length+1
+                }
+                gfwordnet.selection.langs_list.push(checkElem.name);
+            }
+            if (nameElem.tagName == "B") {
+                gfwordnet.selection.current = checkElem.name;
+            }
+            tr = tr.nextElementSibling;
+        }
 
-		if (!hit) {
-			popup.remove();
-			span.classList.remove("selected-lexeme");
-			document.body.removeEventListener("click",closeFn);
-		}
-	});
+        const result = node("table",{class:"result"},[
+                         node("thead",{},[]),
+                         node("tbody",{},[])
+                       ]);
+        const popup = node("div",{},[result]);
+        document.body.appendChild(popup);
 
-	const ctxt = {rows: gfwordnet.render_rows(result,gfwordnet.selection,true,[{lemma: lexical_id}])};
-	const helper = function (senses) {
-		gfwordnet.senses = senses; // save the result to be used for filtering
-		gfwordnet.render_senses(ctxt,gfwordnet.selection,result,null,senses);
-		setTimeout(function() {
-			popup.style.position = "absolute";
-			popup.style.top = span.offsetTop+span.offsetHeight-1;
-			popup.style.left = span.offsetLeft;
+        span.classList.add("selected-output");
 
-			const offsetRight = span.offsetLeft + popup.offsetWidth;
-			if (offsetRight > document.body.offsetWidth) {
-				popup.style.left = span.offsetLeft - (offsetRight - document.body.offsetWidth);
-			}
-		})
-	}
-	gfwordnet.sense_call("lexical_ids="+encodeURIComponent(lexical_id),helper);
+        const ctxt = {rows: gfwordnet.render_rows(result,gfwordnet.selection,true,[{lemma: lexical_id}])};
+        const helper = function (senses) {
+            document.body.addEventListener("click", function closeFn(event) {
+                let hit = false;
+                let e = event.target;
+                while (e != null) {
+                    if (e.className == "result" || e.className == "editor") {
+                        hit = true;
+                        break;
+                    }
+                    e = e.parentElement;
+                }
+
+                if (!hit) {
+                    popup.remove();
+                    span.classList.remove("selected-output");
+                    document.body.removeEventListener("click",closeFn);
+                }
+            });
+
+
+            gfwordnet.senses = senses; // save the result to be used for filtering
+            gfwordnet.render_senses(ctxt,gfwordnet.selection,result,null,senses);
+            setTimeout(function() {
+                popup.style.position = "absolute";
+                popup.style.top = span.offsetTop+span.offsetHeight-1;
+                popup.style.left = span.offsetLeft;
+
+                const offsetRight = span.offsetLeft + popup.offsetWidth;
+                if (offsetRight > document.body.offsetWidth) {
+                    popup.style.left = span.offsetLeft - (offsetRight - document.body.offsetWidth);
+                }
+            })
+        }
+        gfwordnet.sense_call("lexical_ids="+encodeURIComponent(lexical_id),helper);
+    }
 }
 
 

@@ -1,3 +1,4 @@
+
 let e = entity qid
 in <div>
      <h1>expr qid</h1>
@@ -19,7 +20,7 @@ in <div>
      [select: -1 | <mkPhrMark (mkS (mkCl (mkNP (mkDecimal <e.P2196.amount : Predef.Float>) studentMasc_1_N))),e.P2196.P585.time>] ;
 
      let office = entity e.P2388.id ;
-         title  = [one | expr office.P279.id | presidentMasc_5_N] ;
+         title  = [one | gendered_expr office.P279.id "Q6581097" | presidentMasc_5_N] ;
          holder = [select: -1 | <expr {NP} office.P1308.id, office.P1308.P580.time>]
      in mkPhrMark (mkS (mkCl (mkNP theSg_Det (mkCN current_A title)) holder))
      </p>

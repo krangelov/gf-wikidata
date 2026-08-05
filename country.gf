@@ -1,6 +1,7 @@
 
 
 
+
 let e = entity qid;
     economy = entity e.P8744.id;
     to_list_class = \l ->
@@ -725,7 +726,7 @@ in <div>
         name      = [select: -1 | <expr e.P6.id, e.P6.P580.time>];
         prev_name = [select: -2 | <expr e.P6.id, e.P6.P580.time>]
     in [concat: 1 | mkPhrMark (mkCl (mkNP the_Det (mkCN current_A head_of_government_N))
-                                    ( ExtRelNP (mkNP (mkCN (expr officeGov.P279.id) name))
+                                    ( ExtRelNP (mkNP (mkCN (gendered_expr officeGov.P279.id "Q6581097") name))
                                                (mkRS TPastSimple (mkRCl which_RP (mkVP (mkVP take_office_V)
                                                                                        (mkAdv after_Prep prev_name))))
                                     | mkNP (mkCN (expr officeGov.P279.id) name)

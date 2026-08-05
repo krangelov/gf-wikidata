@@ -2,6 +2,7 @@
 
 
 
+
 let e = entity qid;
     gender = case e.P21.id of {
 	           "Q6581072" => she_Pron; 
@@ -13,7 +14,7 @@ let e = entity qid;
     } ;
     useTense = case lang of {
 	   "bul"|"spa" | "rus" => presentTense;
-       _           => [one: presentTense | (\_ -> pastTense) e.P570]
+       _           => [one: presentTense | [const: pastTense | e.P570]]
     } ;
     usePastTense = case lang of {
 	   "bul" => presentTense;
