@@ -8,12 +8,7 @@ function showSearches(searchbox) {
     if (searchbox.value.length < 3) return;
 
     const lang = urlParams.get("lang");
-    let lang_code = null;
-    for (let i in gfwordnet.languages) {
-        if (gfwordnet.languages[i][1] == lang) {
-            lang_code = gfwordnet.languages[i][2];
-        }
-    }
+    const lang_code = langcode2(lang.slice(5);
     if (!lang_code)
         return;
 	fetch("https://www.wikidata.org/w/api.php?action=wbsearchentities&language="+lang_code+"&uselang="+lang_code+"&type=item&continue=0&origin=*&format=json&search="+encodeURIComponent(searchbox.value),
@@ -169,9 +164,9 @@ function init_editor() {
     }
 
     const from = element('from');
-    for (let i in gfwordnet.languages) {
-        const name = gfwordnet.languages[i][0];
-        const cnc  = gfwordnet.languages[i][1];
+    for (let i in languages) {
+        const name = languages[i].name;
+        const cnc  = "Parse"+languages[i].code;
         let checked = langs.includes(cnc);
         if (cnc == urlParams.get("lang")) {
             var row = tr([td([node("b",{},[text(name)])])]);
