@@ -763,13 +763,12 @@ in <div>
                                   (mkS (mkCl (mkNP (expr qid))
                                              (mkVP (passiveVP (mkVPSlash rank_2_V2)) (mkAdv as_Prep democracy)))))];
 
-    let freedom = entity e.P1552.id ;
-        quality = case freedom.P3729.id of {
+    let quality = case e.P1552.id of {
                     "Q3174312" | "Q47185282" => mkNP aSg_Det (mkCN free_1_A country_1_N);
                     "Q47185145" => mkNP aSg_Det (mkCN (mkAP partly_AdA free_1_A) country_1_N);
                     "Q7174" => mkNP aSg_Det (mkCN democratic_1_A country_1_N)
                   };
-        pol = case freedom.P3729.id of {
+        pol = case e.P1552.id of {
                 "Q47185282" => PNeg;
                 _           => PPos
               }
