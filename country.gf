@@ -784,7 +784,7 @@ in <div>
     <h2 class="gp-page-title">economy_1_N</h2>
     -- fix growth
     
-    let gdp0 = QuantityNP (mkDecimal (round economy.P2131.amount 2)) dollar_MU ;
+    let gdp0 = [select: -1 | <QuantityNP (mkDecimal (round economy.P2131.amount 2)) dollar_MU, economy.P2131.P585.time>];
         gdp  = [default: gdp0 | mkNP and_Conj gdp0
 		                             (mkNP (QuantityNP (mkDecimal (round economy.P2132.amount 2)) dollar_MU) per_capita_Adv)];
         growth = case compare economy.P2219.amount 0.0 of {
@@ -801,8 +801,8 @@ in <div>
                  }
     in [concat : 1 | mkPhrMark (mkCl (mkNP theSg_Det gross_domestic_product_N) copula)];
 
-    -- gdp 
-    let number = (QuantityNP (mkDecimal (round economy.P1279.amount 2)) percent_MU);
+    -- inflation rate
+    let number = [select: -1 | <QuantityNP (mkDecimal (round economy.P1279.amount 2)) percent_MU, economy.P1279.P585.time>];
         copula = case lang of {
                    "fre" => mkVP (mkAdv of_1_Prep number);
                    "rus" => (mkVP amount_to_1_V2 number);
@@ -810,11 +810,12 @@ in <div>
                  }
     in [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det (CompoundN inflation_1_N rate_4_N)) copula)];
     
-    [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det country_2_N)
-                           (mkVP have_1_V2 (AdvNP (mkNP aSg_Det (mkCN total_1_A reserve_2_N))
-                                                  (mkAdv of_1_Prep (QuantityNP (mkDecimal (round economy.P2134.amount 2)) dollar_MU)))))];
+    [select: -1 | <mkPhrMark (mkCl (mkNP theSg_Det country_2_N)
+                                  (mkVP have_1_V2 (AdvNP (mkNP aSg_Det (mkCN total_1_A reserve_2_N))
+                                                  (mkAdv of_1_Prep (QuantityNP (mkDecimal (round economy.P2134.amount 2)) dollar_MU))))),
+                   economy.P2134.P585.time>];
 
-	let income = QuantityNP (mkDecimal (round economy.P3529.amount 2)) dollar_MU;
+    let income = QuantityNP (mkDecimal (round economy.P3529.amount 2)) dollar_MU;
         number = e.P1125.amount;
         gini = case compare number 50.0 of {
                  GT => <mkCN extreme_1_A inequality_N, but_1_Conj>;
