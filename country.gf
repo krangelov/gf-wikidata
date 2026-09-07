@@ -220,7 +220,7 @@ in <div>
 
     let np = [select: -1 | <mkNP (mkDecimal (round <e.P4841.amount: Predef.Float> 2)) (mkCN (mkCN child_2_N)), e.P4841.P585.time>]
     in [concat: 1 |
-	      mkPhrMark (mkS (mkCl (mkNP theSg_Det fertility_1_N) (mkNP np (mkAdv per_Prep (mkNP woman_1_N)))))];
+	      mkPhrMark (mkS (mkCl (mkNP theSg_Det (CompoundN fertility_1_N rate_4_N)) (mkNP np (mkAdv per_Prep (mkNP woman_1_N)))))];
 
     let death_case =
           case lang of {
