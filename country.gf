@@ -846,7 +846,7 @@ in <div>
            
     [concat: 1 | mkPhrMark (mkCl (mkNP theSg_Det (mkCN official_1_A currency_1_N)) (mkNP theSg_Det (expr e.P38.id)))];
     
-    let number = QuantityNP (mkDecimal (round e.P1198.amount 2)) percent_MU;
+    let number = [select: -1 | <QuantityNP (mkDecimal (round e.P1198.amount 2)) percent_MU, e.P1198.P585.time>];
         copula = case lang of {
                    "fre" => mkVP (mkAdv of_1_Prep number);
                    "rus" => mkVP amount_to_1_V2 number;
