@@ -185,7 +185,7 @@ in <div>
                  "spa" => of_1_Prep ;
                  _     => in_1_Prep
                };
-        number = mkNP (mkDecimal (round <e.P2250.amount: Predef.Float> 2)) year_5_N;
+        number = [select: -1 | <mkNP (mkDecimal (round <e.P2250.amount: Predef.Float> 2)) year_5_N, e.P2250.P585.time>];
         highest = mkNP (mkDet the_Quant NumSg (mkOrd high_1_A)) (mkCN life_expectancy_N);
         lowest = mkNP (mkDet the_Quant NumSg (mkOrd low_1_A)) (mkCN life_expectancy_N);
         average = mkAdv with_Prep (mkNP a_Det (mkCN (mkCN average_1_N (mkAdv of_1_Prep number))));
