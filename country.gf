@@ -151,9 +151,8 @@ in <div>
                  }
      in mkPhrMark (mkS order) ;
 
-     -- TODO: exclude official_langs from other_langs
      let official_langs = [list: and_Conj | mkNP (expr e.P37.id)];
-         other_langs    = [list: and_Conj | mkNP (expr e.P2936.id)] ;
+         other_langs    = [list: and_Conj | [filter: (mkNP (expr e.P37.id)) | mkNP (expr e.P2936.id)]] ;
          num1 = [len: (\l -> case compare l 1 of {
                                EQ => theSg_Det ;
                                _  => thePl_Det
